@@ -1,0 +1,60 @@
+2026-10-19 — Guided care plans
+
+PASS: native iPhone 17 build and 45 unique native tests: 28 model tests and 17 UI journeys. Results combine the full run with focused remedy, final model, and final Home runs. The Home UI suite was rerun after moving Add plant into the collection. A real sheet-lifetime bug found by UI tests was fixed before all five remedy journeys passed.
+PASS: observation → assessment → explained provisional recommendation → explicit acceptance → actions → progress comparison → explicit resolution.
+PASS: uncertain signs route to inspection; widespread symptoms route to specialist support. Optional follow-up may be declined.
+PASS: reschedule, skip, Undo, actual completion timestamps, delayed automatic review, extra early check-ins, and reassessment into a revised plan.
+PASS: independent issues, ordinary reminder binding, persistence/relaunch, exact baseline/photos, older saved gardens, failure handling, and deletion cleanup.
+PASS: 10 focused standalone remedy checks and 16 existing standalone model checks.
+PASS: collection-owned labelled Add plant opens a full Search plants page, including empty-care states; no floating Home plus remains. See all and the collection toolbar Add plant remain available.
+PASS: existing plant creation, collection, soil check, observation, activity, fixed header, and navigation journeys.
+
+Manual live-app review after the final model run: six saved plants, previous observations, and care activity remain intact. No test/demo plan was inserted into the saved garden. Native Home, plan recommendation, and comparison screenshots were visually reviewed. Screenshots are in Previews; individual native outcomes are in iOS-Test-Results.txt.
+
+Tests use an isolated in-memory garden/temporary files and avoid notification permissions. Physical-device notification permission, delivery, and tap routing remain unverified. This first remedy is curated guidance for possible indoor mealybugs, with inspection/expert alternatives; automatic diagnosis and chemical recipes are outside this POC.
+
+Personalized search verification — 2026-10-19
+
+PASS: 7 new native model tests and 3 new native UI journeys, plus the 2 affected existing catalog/add-plant journeys. Northern/southern seasonal boundaries, tropical year-round behavior, light over climate, recommendation changes, aliases, ownership, bounded recent queries, reset, persistence, legacy bytes, and failed saves are covered.
+PASS: manual area/climate/light setup, Save/Cancel/reset, explained seasonal picks, ownership counts, alias results, recent replay/Clear, no-match custom setup, and saving a plant to the collection.
+PASS: existing 16 standalone store checks and 10 remedy checks rerun against the new model.
+PASS: iPhone build and native screenshot review. A parent accessibility identifier that overrode the personalization button identifier was removed after the first UI run found it; the focused suite was rerun.
+
+Settings and recent searches stay local. The area label is manually entered, with explicit climate/hemisphere settings; there is no geocoding, live weather, local popularity feed, or claim of outdoor suitability. The catalog currently contains three indoor species. Source links and editorial rules are documented in README.md and available in the search screen. The existing saved garden remains intact; UI tests never persist fixtures.
+
+Manual final launch: the six saved plants and existing task remain intact. Add plant opens the new discovery screen with Personalize picks and correct ownership counts. No area preference, test query, or new plant was inserted into the saved garden. The app is left on Search plants.
+
+Location and visual preferences verification — 2026-10-20
+
+PASS: 12 native search/location model checks: climate response completeness and missing values, coarse coordinates, disambiguated city results, derived hemispheres, multiple alternative plant-form preferences, legacy preferences, persistence and failed writes.
+PASS: live Open-Meteo city lookup and NASA POWER climatology for Berlin (public city coordinates, no user GPS data).
+PASS: 5 native iPhone UI journeys: manual city selection and saving; visual light and multiple plant forms; recommendation → illustrated Pothos review; Save/Cancel/reset; denial preserving a saved city with manual fallback; simulated Locate me success with unavailable climate still allowing Save; aliases/recent queries and custom-name plant setup.
+PASS: 16 existing store checks and 10 remedy checks rerun against the updated model.
+PASS: while-in-use location purpose is present in the built app; no always-on permission is configured. Native screenshots reviewed. The visual-card identifiers and explicit button accessibility traits were corrected; the offline-climate fixture was adjusted to start without cached climate. Affected journeys were rerun until all five passed. Final grid rows use top alignment.
+
+The UI journeys simulate location success/denial to avoid using personal location or changing system permissions. The actual iOS permission dialog, GPS delivery, Apple reverse-geocoding on a physical device, and notification delivery remain unverified. Public city/climate network integration passed separately. Approximate location and preferences stay unchanged until Save. Climate lookup failure does not prevent city saving, and city/location remain optional for light/type personalization.
+
+Final verification: build-for-testing passed after the final accessibility/layout changes. Two standalone equatorial-season regression checks passed: a mild equatorial location does not get a temperate season, and complete tropical data gets year-round context. Saved native screenshots were visually reviewed. After the user unlocked the Mac, the final app relaunched successfully with the six saved plants and existing task intact. Add plant → Personalize picks opens the new location/illustrated-light screen. It is left open for review; no GPS request, preference save, or garden reset was performed during this manual check.
+
+Compact preferences verification — 2026-10-20
+
+PASS: 6 native iPhone UI journeys, including the inline 44-point Locate me control at the right of the city field, saved-city/manual search, location denial and climate failure, multi-select preferences, recommendation/review, recent searches, and custom-name plant setup.
+PASS: Reset preferences clears light and plant types together while retaining the city. Cancel after Reset restores saved selections; Save applies the cleared choices. The reset action remains visible while scrolling.
+PASS: visual review found iOS collapsing a bottom toolbar Label to an icon; it was replaced with a fixed labelled footer and the Reset journey rerun. Light options are compact text rows; only plant forms retain illustrations, reduced in size. Location details moved into a collapsed disclosure.
+
+This change does not alter stored-model fields, climate services, or notification behavior. UI tests use isolated sample gardens and do not overwrite the saved garden.
+
+Final compact-screen manual review: Bloom relaunched with six saved plants and the existing Kitchen Monstera task intact. Add plant → Edit area & preferences opens the compact city field with inline Locate me, text light choices, illustrated plant forms, and a fixed labelled Reset preferences footer. The screen is left open for review. No actual location request or preference save was performed during this manual check.
+
+App preferences verification — 2026-10-20
+
+PASS: 78 latest passing native iPhone tests across the complete run and focused search rerun (50 model/integration checks and 28 UI journeys). Search test scrolling was corrected to bring whole preference cards above the fixed footer before tapping; affected journeys were rerun.
+PASS: shared profile across Preferences and Search; disabling picks retains city/light/forms; re-enabling reuses the city without another location request. Remove saved area has draft Save/Cancel and preserves light/forms.
+PASS: allowed/denied notification settings, global mute/re-enable, future-only alert restoration, plan-specific opt-in, no repeated task-creation permission requests, scheduling failures, and legacy notification intent. Tasks and history survive muting and denial. Automated notification tests use injected clients, never system alerts.
+PASS: default local reminder time persistence and DST date construction; existing ordinary reminder dates, plan tasks, care plans and records stay intact. Failed writes preserve original settings. Older gardens decode without rewriting on read.
+PASS: native Settings navigation, location status/recovery page, reminder-time Save/Cancel, clear-search confirmation and persistence into Search, privacy/source destinations, existing add-plant, collection, activity, care, remedy and comparison journeys.
+PASS: public city/climate integration; 16 standalone store checks and 10 standalone remedy checks against the updated model.
+
+The actual iOS permission prompts, physical-device location delivery/reverse geocoding, and notification delivery/tap routing remain a physical-device verification step. New gardens start with alerts off; older saved gardens retain their alert intent, subject to iOS permission. Existing navigation is preserved. Native Preferences screenshots are in Previews (29–33).
+
+Final manual launch: the six saved plants and existing Kitchen Monstera observation task remain intact. The Home gear opens the new native Preferences menu with shared growing-space summary, actual location access, notification status, reminder time, and data controls. It is left open for review. No preference change, location request, permission request, or garden reset was performed during this manual check.
