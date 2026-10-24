@@ -20,14 +20,33 @@ extension BloomStore {
         return saveRecord(record)
     }
 
+    func saveLeafAssessment(_ answers: LeafAssessment, observationID: UUID) -> Bool {
+        guard var record = record(observationID), record.kind == .change else { return false }
+        record.leafAssessment = answers
+        return saveRecord(record)
+    }
+
     /// Accepting advice creates planned work, never a performed-care record.
     func startCarePlan(observationID: UUID, answers: PestAssessment, reviewDays: Int?, replacing: UUID? = nil, now: Date = .now) -> UUID? {
-        guard answers.complete, let baseline = record(observationID), baseline.kind == .change, plant(baseline.plantID) != nil,
+        guard answers.complete else { return nil }
+        return createCarePlan(observationID: observationID, kind: answers.recommendation, pest: answers, leaf: nil, reviewDays: reviewDays, replacing: replacing, now: now)
+    }
+    func startLeafCarePlan(observationID: UUID, answers: LeafAssessment, reviewDays: Int?, replacing: UUID? = nil, now: Date = .now) -> UUID? {
+        guard let observation = record(observationID), let plant = plant(observation.plantID) else { return nil }
+        return createCarePlan(observationID: observationID, kind: answers.recommendation(for: observation, plant: plant), pest: nil, leaf: answers, reviewDays: reviewDays, replacing: replacing, now: now)
+    }
+    /// An accepted first-look task doesn't invent answers or identify a pest.
+    func startPestInspectionPlan(observationID: UUID, reviewDays: Int?, replacing: UUID? = nil, now: Date = .now) -> UUID? {
+        guard record(observationID)?.area == .pests else { return nil }
+        return createCarePlan(observationID: observationID, kind: .inspection, pest: nil, leaf: nil, reviewDays: reviewDays, replacing: replacing, now: now)
+    }
+    private func createCarePlan(observationID: UUID, kind: CarePlanKind, pest: PestAssessment?, leaf: LeafAssessment?, reviewDays: Int?, replacing: UUID?, now: Date) -> UUID? {
+        guard let baseline = record(observationID), baseline.kind == .change, plant(baseline.plantID) != nil,
               reviewDays == nil || (1...30).contains(reviewDays!) else { return nil }
         let existing = carePlans.first { $0.observationID == observationID && planIsOpen($0.id) }
         if let existing, replacing == nil { return existing.id }
         if let replacing { guard existing?.id == replacing else { return nil } }
-        let plan = CarePlan(plantID: baseline.plantID, observationID: observationID, createdAt: now, kind: answers.recommendation, assessment: answers, baseline: baseline, reviewAfterDays: reviewDays)
+        let plan = CarePlan(plantID: baseline.plantID, observationID: observationID, createdAt: now, kind: kind, assessment: pest, baseline: baseline, leafAssessment: leaf, reviewAfterDays: reviewDays, guidanceVersion: kind.isLeafGuidance ? "2026-10-24.1" : "2026-10-19.1")
         let actionDate = (Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now)) ?? now.addingTimeInterval(86400)).addingTimeInterval(-1)
         var work = plan.kind.actionSteps.enumerated().map { index, step in
             PlanTask(plantID: plan.plantID, planID: plan.id, step: step, position: index, due: actionDate)
@@ -41,15 +60,20 @@ extension BloomStore {
             }
             plans.append(plan); tasks.append(contentsOf: work)
             garden.carePlans = plans; garden.careTasks = tasks
-            if let index = garden.records.firstIndex(where: { $0.id == observationID }) { garden.records[index].assessment = answers }
+            if let index = garden.records.firstIndex(where: { $0.id == observationID }) {
+                if let pest { garden.records[index].assessment = pest }
+                if let leaf { garden.records[index].leafAssessment = leaf }
+            }
         }) else { return nil }
         return plan.id
     }
 
-    func finishPlanAction(taskID: UUID, skipped: Bool = false, note: String = "", now: Date = .now) -> PlanTaskReceipt? {
+    func finishPlanAction(taskID: UUID, skipped: Bool = false, note: String = "", now: Date = .now, wateringAction: CareAction? = nil) -> PlanTaskReceipt? {
         guard let task = careTask(taskID), task.status == .pending, task.step != .review,
               let plan = carePlan(task.planID), planIsOpen(plan.id) else { return nil }
-        let record = CareRecord(plantID: task.plantID, date: now, kind: .careAction, note: note, parentID: plan.observationID,
+        if task.step == .waterDryRoots && !skipped && wateringAction != .watered && wateringAction != .waited { return nil }
+        let actualWatering = task.step == .waterDryRoots && !skipped ? wateringAction : nil
+        let record = CareRecord(plantID: task.plantID, date: now, kind: .careAction, action: actualWatering, note: note, parentID: plan.observationID,
                                 outcome: skipped ? "Skipped" : "Done", planID: plan.id, planTaskID: task.id, actionTitle: task.step.title)
         guard commit({ garden in
             guard let index = garden.careTasks?.firstIndex(where: { $0.id == task.id }) else { return }
@@ -65,7 +89,7 @@ extension BloomStore {
         guard let task = careTask(taskID), task.step == .review, task.status == .pending,
               let plan = carePlan(task.planID), planIsOpen(plan.id) else { return nil }
         let record = CareRecord(plantID: task.plantID, date: now, kind: .followUp, observation: plan.baseline.observation, note: note, photo: photo,
-                                parentID: plan.observationID, outcome: outcome.rawValue, planID: plan.id, planTaskID: task.id)
+                                parentID: plan.observationID, outcome: outcome.title(for: plan.kind), planID: plan.id, planTaskID: task.id)
         guard commit({ garden in
             guard let index = garden.careTasks?.firstIndex(where: { $0.id == task.id }),
                   let p = garden.carePlans?.firstIndex(where: { $0.id == plan.id }) else { return }
@@ -107,7 +131,7 @@ extension BloomStore {
     }
     func reviewPlanNow(_ id: UUID, now: Date = .now) -> UUID? {
         guard let plan = carePlan(id), planIsOpen(id), tasks(for: id).contains(where: { $0.step != .review && $0.status == .completed }) else { return nil }
-        if let existing = tasks(for: id).first(where: { $0.step == .review && $0.status == .pending }) { return existing.id }
+        if let existing = tasks(for: id).first(where: { $0.step == .review && $0.status == .pending && ($0.due ?? .distantFuture) <= now }) { return existing.id }
         let next = PlanTask(plantID: plan.plantID, planID: id, step: .review, position: tasks(for: id).count, due: now, customDate: true)
         guard commit({ garden in
             // An extra early check-in doesn't consume the check after all actions.
@@ -126,7 +150,7 @@ extension BloomStore {
     func closePlan(_ id: UUID, resolved: Bool) -> Bool {
         guard planIsOpen(id) else { return false }
         if resolved {
-            guard garden.records.filter({ $0.planID == id && $0.kind == .followUp }).max(by: { $0.date < $1.date })?.outcome == PlanOutcome.none.rawValue else { return false }
+            guard PlanOutcome.fromStored(garden.records.filter({ $0.planID == id && $0.kind == .followUp }).max(by: { $0.date < $1.date })?.outcome) == PlanOutcome.none else { return false }
         }
         return commit { garden in
             if let index = garden.carePlans?.firstIndex(where: { $0.id == id }) { garden.carePlans?[index].status = resolved ? .resolved : .stopped }
@@ -192,16 +216,17 @@ extension BloomStore {
 extension Garden {
     /// Recompute only the automatic, not user-picked, review date from real action completions.
     mutating func updateAutomaticReview(for planID: UUID) {
-        guard let planIndex = carePlans?.firstIndex(where: { $0.id == planID }), let plan = carePlans?[planIndex], let days = plan.reviewAfterDays else { return }
+        guard let planIndex = carePlans?.firstIndex(where: { $0.id == planID }), let plan = carePlans?[planIndex] else { return }
         let actions = (careTasks ?? []).filter { $0.planID == planID && $0.step != .review }
         let terminal = !actions.isEmpty && actions.allSatisfy { $0.status == .completed || $0.status == .skipped }
         let lastCompletion = actions.compactMap(\.completedAt).max()
+        if terminal && lastCompletion == nil { carePlans?[planIndex].status = .needsReview }
+        guard let days = plan.reviewAfterDays else { return }
         for index in (careTasks ?? []).indices where careTasks?[index].planID == planID && careTasks?[index].step == .review && careTasks?[index].isOpen == true {
             guard careTasks?[index].customDate != true else { continue }
             careTasks?[index].status = terminal && lastCompletion != nil ? .pending : .waiting
             careTasks?[index].due = terminal ? lastCompletion.flatMap { Calendar.current.date(byAdding: .day, value: days, to: $0) } : nil
         }
-        if terminal && lastCompletion == nil { carePlans?[planIndex].status = .needsReview }
     }
     mutating func removeCareRecords(startingAt root: UUID) {
         var ids: Set<UUID> = [root]
@@ -215,5 +240,36 @@ extension Garden {
         }
         records.removeAll { ids.contains($0.id) || $0.planID.map(plans.contains) == true }
         carePlans?.removeAll { plans.contains($0.id) }; careTasks?.removeAll { plans.contains($0.planID) }
+    }
+}
+
+
+extension BloomStore {
+    func announceCarePlan(_ id: UUID) {
+        guard let plan = carePlan(id) else { return }
+        careFeedback = CareFlowFeedback(plantID: plan.plantID, title: "Care plan added", detail: "Next: \(plan.kind.actionSteps.first?.title ?? "Check your plant").", planID: id)
+    }
+
+    func announceCareTask(_ receipt: PlanTaskReceipt) {
+        guard let record = record(receipt.recordID), let plan = carePlan(receipt.task.planID) else { return }
+        let title: String
+        let detail: String
+        if record.kind == .followUp {
+            title = "Check-in saved"
+            switch PlanOutcome.fromStored(record.outcome) {
+            case .worse, .unclear: detail = "Let's review the next step before trying another treatment."
+            case .some(.none): detail = "No concerning changes? You can mark this issue as resolved."
+            default: detail = "Keep watching for new changes. Your comparison is saved in Activity."
+            }
+        } else {
+            title = record.outcome == "Skipped" ? "Action skipped" : "Action recorded"
+            if let action = tasks(for: plan.id).first(where: { $0.step != .review && $0.status == .pending }) {
+                detail = "Next: \(action.step.title)."
+            } else if let review = tasks(for: plan.id).first(where: { $0.step == .review && $0.status == .pending }), let due = review.due {
+                detail = "Check again \(due.formatted(date: .abbreviated, time: .omitted))."
+            } else if plan.status == .needsReview { detail = "Review your next step. No check-in timer has started." }
+            else { detail = "Saved in Activity. You can check progress from your care plan." }
+        }
+        careFeedback = CareFlowFeedback(plantID: plan.plantID, title: title, detail: detail, planID: plan.id, receipt: receipt)
     }
 }

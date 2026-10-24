@@ -5,68 +5,115 @@ struct PlanTaskFlowView: View {
     @Environment(BloomStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let taskID: UUID
-    @State private var receipt: PlanTaskReceipt?
     @State private var note = ""
     @State private var earlier = false
     @State private var performedAt = Date()
     @State private var outcome: PlanOutcome?
+    @State private var wateringDecision: CareAction?
     @State private var photo: Data?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var photoLoading = false
     @State private var message: String?
     @State private var scheduling = false
     @State private var skipping = false
-    @State private var reassessing = false
-    @State private var resolving = false
+    @State private var completedReceipt: PlanTaskReceipt?
+    @State private var reviewDate = Date()
     private var task: PlanTask? { store.careTask(taskID) }
+    private var isEarlyReview: Bool {
+        guard let task, task.step == .review else { return false }
+        return (task.due ?? .distantPast) > Date()
+    }
     private var plan: CarePlan? { task.flatMap { store.carePlan($0.planID) } }
     var body: some View {
         NavigationStack {
             Group {
-                if let receipt, let record = store.record(receipt.recordID), let plan { confirmation(record, plan: plan, receipt: receipt) }
-                else if let task, let plan, let plant = store.plant(task.plantID) {
-                    if task.status == .pending && store.planIsOpen(plan.id) {
+                if let task, let plan, let plant = store.plant(task.plantID) {
+                    if completedReceipt != nil {
                         Form {
                             Section {
                                 BloomPlantIdentity(plant: plant)
-                                Text(plan.kind.title).font(.headline)
-                                if let due = task.due { Text("Scheduled: \(due.formatted(date: .abbreviated, time: .shortened))").font(.subheadline).foregroundStyle(.secondary) }
+                                Text("Action recorded").font(BloomType.title).accessibilityIdentifier("action-completion-title")
+                                Text("Your care record is saved.").font(BloomType.body).foregroundStyle(.secondary)
                             }
-                            if task.step == .review { comparison(plan) }
+                            Section("Check progress later?") {
+                                DatePicker("Check-in date", selection: $reviewDate, in: Date()..., displayedComponents: .date)
+                                Text("Compare with your original observation. This is a check-in, not a recovery deadline.")
+                                    .font(BloomType.supporting).foregroundStyle(.secondary)
+                            }
+                            if let message { Text(message).foregroundStyle(.red) }
+                        }.bloomNativeForm().navigationTitle("Next step").navigationBarTitleDisplayMode(.inline)
+                            .bloomNativeFooter {
+                                VStack(spacing: 8) {
+                                    BloomPrimaryAction(title: "Schedule check-in") {
+                                        if store.schedulePlanReview(plan.id, date: reviewDate) {
+                                            store.careFeedback?.detail = "Check again \(reviewDate.formatted(date: .abbreviated, time: .omitted))."
+                                            dismiss()
+                                        } else { message = "Choose a future date to schedule your check-in." }
+                                    }.accessibilityIdentifier("schedule-completion-check-in")
+                                    Button("Not now") { dismiss() }.frame(minHeight: 44).accessibilityIdentifier("skip-completion-check-in")
+                                }
+                            }
+                    } else if task.status == .pending && store.planIsOpen(plan.id) {
+                        Form {
+                            Section {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    BloomPlantIdentity(plant: plant)
+                                    if task.step != .review { Text(task.step.title).font(BloomType.section) }
+                                    if let due = task.due {
+                                        Text(task.customDate ? "Scheduled: \(due.formatted(date: .abbreviated, time: .shortened))" : Calendar.current.isDateInToday(due) ? "Today" : "\(task.step == .review ? "Check-in" : "Due"): \(due.formatted(date: .abbreviated, time: .omitted))")
+                                            .font(BloomType.body).foregroundStyle(.secondary)
+                                    }
+                                    if task.step == .review && isEarlyReview {
+                                        Label("Checking early keeps your scheduled check-in.", systemImage: "calendar").font(BloomType.supporting).foregroundStyle(.secondary)
+                                    }
+                                }.padding(.vertical, 2)
+                            }
+                            if task.step == .review {
+                                comparison(plan)
+                            }
                             else {
-                                Section("What you'll need") { Text(task.step.materials) }
-                                Section("How to do it") {
-                                    ForEach(Array(task.step.instructions.enumerated()), id: \.offset) { index, instruction in
-                                        HStack(alignment: .top, spacing: 10) {
-                                            Text("\(index + 1)").font(.subheadline.weight(.semibold)).foregroundStyle(BloomTheme.teal)
-                                            Text(instruction).fixedSize(horizontal: false, vertical: true)
-                                        }
+                                Section("Your next step") {
+                                    LeafVisualSteps(step: task.step)
+                                    DisclosureGroup("Details and materials") {
+                                        Text(task.step.materials).font(BloomType.section)
+                                        ForEach(task.step.instructions, id: \.self) { Text($0).font(BloomType.body) }
                                     }
                                 }
                             }
-                            if task.step != .review {
-                                Section {
-                                    Toggle("I did this earlier", isOn: $earlier)
-                                    if earlier { DatePicker("Completed", selection: $performedAt, in: ...Date(), displayedComponents: [.date, .hourAndMinute]) }
-                                } footer: { Text("The progress check uses the completion time you record.") }
+                            if task.step == .waterDryRoots {
+                                Section("What did you decide after checking?") {
+                                    Picker("Watering decision", selection: $wateringDecision) {
+                                        Text("Choose what you did").tag(CareAction?.none)
+                                        Text("I watered after checking").tag(Optional(CareAction.watered))
+                                        Text("I checked and chose to wait").tag(Optional(CareAction.waited))
+                                    }.pickerStyle(.inline).accessibilityIdentifier("leaf-watering-decision")
+                                }
                             }
-                            Section("Notes · Optional") { TextField("What did you notice or do?", text: $note, axis: .vertical).lineLimit(3...6) }
                             Section {
-                                Button("Reschedule or set notification", systemImage: "calendar") { scheduling = true }.accessibilityIdentifier("reschedule-plan-task")
-                                if task.step != .review { Button("Skip this action", systemImage: "forward") { skipping = true }.accessibilityIdentifier("skip-plan-action") }
+                                DisclosureGroup("Add a note or change the date") {
+                                    TextField("What did you notice or do?", text: $note, axis: .vertical).lineLimit(2...4)
+                                    if task.step != .review {
+                                        Toggle("I did this earlier", isOn: $earlier)
+                                        if earlier { DatePicker("Completed", selection: $performedAt, in: ...Date(), displayedComponents: [.date, .hourAndMinute]) }
+                                    }
+                                    Button("Reschedule or set notification") { scheduling = true }.accessibilityIdentifier("reschedule-plan-task")
+                                    if task.step != .review { Button("Skip this action") { skipping = true }.accessibilityIdentifier("skip-plan-action") }
+                                }
                             }
-                            if let message { Section { Text(message).font(.footnote).foregroundStyle(.red) } }
-                        }.bloomNativeForm().navigationTitle(task.step == .review ? "Check progress" : "Care action").navigationBarTitleDisplayMode(.inline)
+                            if let message { Section { Text(message).font(BloomType.supporting).foregroundStyle(.red) } }
+                        }.bloomNativeForm().listSectionSpacing(16)
+                            .contentMargins(.top, 12, for: .scrollContent)
+                            .navigationTitle(task.step == .review ? "Check progress" : "Care action").navigationBarTitleDisplayMode(.inline)
                             .bloomNativeFooter {
-                                BloomPrimaryAction(title: task.step == .review ? "Save check-in" : "Mark action done", symbol: "checkmark") { finish(task, skipped: false) }
-                                    .disabled(photoLoading || task.step == .review && outcome == nil).accessibilityIdentifier("finish-plan-task")
+                                BloomPrimaryAction(title: task.step == .review ? "Save check-in" : "Complete action") { finish(task, skipped: false) }
+                                    .disabled(photoLoading || task.step == .review && outcome == nil || task.step == .waterDryRoots && wateringDecision == nil).accessibilityIdentifier("finish-plan-task")
                             }
                     } else {
                         List {
                             Section {
                                 BloomPlantIdentity(plant: plant)
-                                Text(task.step.title).font(.headline)
-                                StatusTag(text: task.status.rawValue, tone: .teal)
+                                Text(task.step.title).font(BloomType.section)
+                                StatusTag(text: task.status.displayTitle, tone: .teal)
                                 if task.status == .waiting { Text("Record the plan's actions before its progress check is scheduled.").foregroundStyle(.secondary) }
                                 NavigationLink("View care plan") { CarePlanDetailView(planID: plan.id) }
                             }
@@ -79,18 +126,15 @@ struct PlanTaskFlowView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(receipt == nil ? "Close" : "Done") { dismiss() }.accessibilityIdentifier("close-plan-task")
+                    Button("Close") { dismiss() }.accessibilityIdentifier("close-plan-task")
                 }
             }
         }
         .sheet(isPresented: $scheduling) { PlanTaskScheduleView(taskID: taskID) }
-        .sheet(isPresented: $reassessing) { if let plan { CareGuidanceFlow(observationID: plan.observationID, replacing: plan.id) } }
         .confirmationDialog("Skip this action?", isPresented: $skipping, titleVisibility: .visible) {
             Button("Skip action") { if let task { finish(task, skipped: true) } }
         } message: { Text("It will be recorded as skipped, not as treatment completed. If every action is skipped, no progress timer starts.") }
-        .confirmationDialog("Mark this issue as resolved?", isPresented: $resolving, titleVisibility: .visible) {
-            Button("Mark resolved") { if let plan { _ = store.closePlan(plan.id, resolved: true) } }
-        } message: { Text("This records your decision after the check-in, and cancels any pending tasks for this plan.") }
+        .onAppear { store.careFeedback = nil }
         .onChange(of: selectedPhoto) { _, selected in
             guard let selected else { return }; photoLoading = true; message = nil
             Task {
@@ -106,24 +150,49 @@ struct PlanTaskFlowView: View {
     private func comparison(_ plan: CarePlan) -> some View {
         Group {
             Section("Your starting observation") {
-                Text(plan.baseline.observation).font(.headline)
-                Text(plan.baseline.date, format: .dateTime.month(.abbreviated).day().year()).font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(plan.baseline.observation).font(BloomType.section)
+                    Text(plan.baseline.date, format: .dateTime.month(.abbreviated).day().year()).font(BloomType.supporting).foregroundStyle(.secondary)
+                }.padding(.vertical, 2)
                 if let data = plan.baseline.photo, let image = UIImage(data: data) { Image(uiImage: image).resizable().scaledToFit().accessibilityLabel("Before photo") }
             }
-            Section("What you recorded doing") {
-                ForEach(store.tasks(for: plan.id).filter { $0.step != .review }) { action in
-                    LabeledContent(action.step.title, value: action.status.rawValue)
+            Section("What do you notice now?") {
+                VStack(spacing: 4) {
+                    ForEach([PlanOutcome.fewer, .same, .worse, .unclear], id: \.self) { value in
+                        let selected = outcome == value || value == .fewer && outcome == PlanOutcome.none
+                        Button { outcome = value; BloomFeedback.selection() } label: {
+                            HStack(spacing: 10) {
+                                BloomSymbol(name: value == .fewer ? "leaf" : value == .same ? "equal" : value == .worse ? "exclamationmark.triangle" : "questionmark.circle")
+                                    .foregroundStyle(value == .worse ? BloomTone.yellow.ink : selected ? BloomTheme.teal : BloomTheme.secondary)
+                                Text(value == .fewer ? "Better" : value == .same ? "Same" : value == .worse ? "Worse" : "Not sure yet")
+                                    .font(.body.weight(selected ? .semibold : .regular)).foregroundStyle(BloomTheme.ink)
+                                Spacer(minLength: 8)
+                                BloomSymbol(name: selected ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selected ? BloomTheme.teal : BloomTheme.secondary)
+                            }.padding(.horizontal, 12).padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                .background(selected ? BloomTheme.selected : Color.clear, in: RoundedRectangle(cornerRadius: 12))
+                                .contentShape(RoundedRectangle(cornerRadius: 12))
+                        }.buttonStyle(.plain)
+                            .accessibilityIdentifier(value == .unclear ? "progress-unsure" : "progress-\(value.rawValue)")
+                            .accessibilityAddTraits(selected ? .isSelected : [])
+                    }
+                }.listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                if outcome == .fewer || outcome == PlanOutcome.none {
+                    Toggle(PlanOutcome.none.title(for: plan.kind), isOn: Binding(get: { outcome == PlanOutcome.none }, set: { outcome = $0 ? PlanOutcome.none : .fewer }))
+                        .accessibilityIdentifier("progress-no-new-signs")
                 }
             }
-            Section { Text(plan.kind.improvement).font(.subheadline) }
             Section {
-                Picker("Progress", selection: $outcome) {
-                    Text("Choose what you see").tag(PlanOutcome?.none)
-                    ForEach(PlanOutcome.allCases) { Text($0.rawValue).tag(Optional($0)) }
-                }.pickerStyle(.inline)
-            } header: { Text("What do you notice now?") }
+                DisclosureGroup("What to compare") {
+                    Text(plan.kind.improvement).font(BloomType.body)
+                    ForEach(store.tasks(for: plan.id).filter { $0.step != .review }) { action in
+                        LabeledContent(action.step.title, value: action.status.displayTitle).font(BloomType.body)
+                    }
+                }
+            }
             Section("Photo now · Optional") {
-                PhotosPicker(selection: $selectedPhoto, matching: .images) { Label("Add a comparison photo", systemImage: "photo") }.disabled(photoLoading)
+                PhotosPicker(selection: $selectedPhoto, matching: .images) { Text("Add a comparison photo") }.disabled(photoLoading)
                 if photoLoading { ProgressView("Opening photo…") }
                 if let photo, let image = UIImage(data: photo) {
                     Image(uiImage: image).resizable().scaledToFit().accessibilityLabel("Current photo")
@@ -134,35 +203,24 @@ struct PlanTaskFlowView: View {
     }
     private func finish(_ task: PlanTask, skipped: Bool) {
         let result: PlanTaskReceipt?
-        if task.step == .review, let outcome { result = store.finishPlanReview(taskID: task.id, outcome: outcome, note: note, photo: photo) }
-        else { result = store.finishPlanAction(taskID: task.id, skipped: skipped, note: note, now: earlier && !skipped ? performedAt : .now) }
-        if let result { receipt = result; BloomFeedback.success() }
+        if task.step == .review, let outcome {
+            // An early comparison is a separate record; the planned follow-up stays scheduled.
+            let reviewID = isEarlyReview ? store.reviewPlanNow(task.planID) : task.id
+            if let reviewID { result = store.finishPlanReview(taskID: reviewID, outcome: outcome, note: note, photo: photo) }
+            else { result = nil }
+        } else { result = store.finishPlanAction(taskID: task.id, skipped: skipped, note: note, now: earlier && !skipped ? performedAt : .now, wateringAction: wateringDecision) }
+        if let result {
+            store.announceCareTask(result); BloomFeedback.success()
+            let remaining = store.tasks(for: task.planID).filter { $0.step != .review && $0.isOpen }
+            if task.step != .review && !skipped && remaining.isEmpty,
+               !store.tasks(for: task.planID).contains(where: { $0.step == .review && $0.status == .pending }) {
+                reviewDate = Calendar.current.date(byAdding: .day, value: plan?.kind.defaultReviewDays ?? 3, to: Date()) ?? Date().addingTimeInterval(259200)
+                completedReceipt = result
+            } else { dismiss() }
+        }
         else { message = "This task couldn't be saved. Your previous records are unchanged." }
     }
-    private func confirmation(_ record: CareRecord, plan: CarePlan, receipt: PlanTaskReceipt) -> some View {
-        List {
-            Section {
-                Label(record.kind == .followUp ? "Check-in saved" : record.outcome == "Skipped" ? "Action skipped" : "Action recorded", systemImage: "checkmark.circle.fill")
-                    .font(.title2.weight(.semibold)).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("plan-task-saved")
-                Text(record.kind == .followUp ? record.outcome : record.actionTitle ?? "Care action").font(.headline)
-                if record.kind == .followUp {
-                    Text(record.outcome == PlanOutcome.worse.rawValue || record.outcome == PlanOutcome.unclear.rawValue ? "Let's reassess the evidence before choosing further treatment." : record.outcome == PlanOutcome.none.rawValue ? "No visible signs is encouraging. You decide whether to mark the issue resolved; Bloom won't close it automatically." : "Your comparison is saved. Keep watching for new signs before deciding whether another action is needed.").foregroundStyle(.secondary)
-                } else if let review = store.tasks(for: plan.id).first(where: { $0.step == .review && $0.status == .pending }), let due = review.due {
-                    Text("Progress check: \(due.formatted(date: .abbreviated, time: .shortened))").foregroundStyle(.secondary)
-                } else { Text("Your action is saved in Activity. Any automatic progress check waits until the remaining actions are recorded.").foregroundStyle(.secondary) }
-            }
-            Section {
-                NavigationLink("View care plan") { CarePlanDetailView(planID: plan.id) }
-                if store.canUndoPlanTask(receipt) {
-                    Button("Undo", systemImage: "arrow.uturn.backward") { if store.undoPlanTask(receipt) { dismiss() } }.accessibilityIdentifier("undo-plan-task")
-                }
-                if record.kind == .followUp && store.planIsOpen(plan.id) {
-                    Button("Reassess this plan", systemImage: "arrow.triangle.2.circlepath") { reassessing = true }.accessibilityIdentifier("reassess-after-check")
-                    if record.outcome == PlanOutcome.none.rawValue { Button("Mark issue as resolved", systemImage: "checkmark.seal") { resolving = true }.accessibilityIdentifier("resolve-after-check") }
-                }
-            }
-        }.listStyle(.insetGrouped).bloomNativeForm().navigationTitle("Saved").navigationBarTitleDisplayMode(.inline)
-    }
+
 }
 
 struct PlanTaskScheduleView: View {

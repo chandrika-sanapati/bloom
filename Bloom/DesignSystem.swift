@@ -43,7 +43,15 @@ enum BloomTheme {
     static let tagRadius: CGFloat = 8
     static let spring = Animation.spring(response: 0.34, dampingFraction: 0.86)
     static let heading = Font.system(.title2, design: .rounded).weight(.bold)
-    static let section = Font.system(.title3, design: .rounded).weight(.bold)
+    static let section = Font.system(.body).weight(.semibold)
+}
+
+/// Four semantic roles, all scaled by the user's Dynamic Type setting.
+enum BloomType {
+    static let title = BloomTheme.heading
+    static let section = BloomTheme.section
+    static let body = Font.body
+    static let supporting = Font.footnote
 }
 
 @MainActor enum BloomFeedback {
@@ -69,15 +77,34 @@ struct BloomPressStyle: ButtonStyle {
     }
 }
 
+/// Interface symbols share a scaled square and weight; compact is for inline indicators.
+struct BloomSymbol: View {
+    let name: String
+    var compact = false
+    @ScaledMetric(relativeTo: .body) private var edge = 24
+    var body: some View {
+        Image(systemName: name)
+            .font(.system(size: edge * (compact ? 0.55 : 0.75), weight: .semibold))
+            .frame(width: edge * (compact ? 2.0 / 3.0 : 1), height: edge * (compact ? 2.0 / 3.0 : 1))
+            .accessibilityHidden(true)
+    }
+}
+
+struct BloomLabelStyle: LabelStyle {
+    @ScaledMetric(relativeTo: .body) private var edge = 24
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 8) {
+            configuration.icon.font(.system(size: edge * 0.75, weight: .semibold))
+                .frame(width: edge, height: edge).accessibilityHidden(true)
+            configuration.title
+        }
+    }
+}
+
 struct BloomActionLabel: View {
     let title: String
-    var symbol = "arrow.right"
     var body: some View {
-        HStack(spacing: 12) {
-            Text(title).fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 6)
-            Image(systemName: symbol).font(.body.weight(.semibold)).accessibilityHidden(true)
-        }
+        Text(title).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity)
     }
 }
 
@@ -96,7 +123,7 @@ struct BloomIconTile: View {
     var tone: BloomTone = .teal
     @ScaledMetric(relativeTo: .body) private var size = 42
     var body: some View {
-        Image(systemName: symbol).font(.body.weight(.medium)).imageScale(.large)
+        BloomSymbol(name: symbol)
             .foregroundStyle(emphasized && tone != .yellow ? .white : tone.ink)
             .frame(width: size, height: size)
             .background(emphasized ? tone.accent : tone.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -113,6 +140,9 @@ struct BloomPanel: ViewModifier {
 }
 
 extension View {
+    func bloomHeading(_ font: Font = BloomTheme.section) -> some View {
+        self.font(font).foregroundStyle(BloomTheme.ink).accessibilityAddTraits(.isHeader)
+    }
     func bloomCard(padding: CGFloat = 18) -> some View { modifier(BloomPanel(padding: padding)) }
     func bloomFooter<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         safeAreaInset(edge: .bottom) {
@@ -124,7 +154,7 @@ extension View {
 struct Eyebrow: View {
     let text: String
     var body: some View {
-        Text(text).font(.subheadline).foregroundStyle(BloomTheme.secondary)
+        Text(text).font(BloomType.body).foregroundStyle(BloomTheme.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -137,8 +167,8 @@ struct InfoCard: View {
         HStack(alignment: .top, spacing: 13) {
             BloomIconTile(symbol: icon)
             VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(BloomTheme.ink)
-                Text(message).font(.footnote).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(title).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                Text(message).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }.bloomCard()
     }
@@ -170,9 +200,9 @@ struct StatusTag: View {
     var tone: BloomTone = .teal
     var body: some View {
         HStack(spacing: 4) {
-            if let symbol { Image(systemName: symbol).accessibilityHidden(true) }
+            if let symbol { BloomSymbol(name: symbol, compact: true) }
             Text(text)
-        }.font(.footnote.weight(.semibold)).foregroundStyle(tone.ink)
+        }.font(BloomType.supporting.weight(.semibold)).foregroundStyle(tone.ink)
             .padding(.horizontal, 8).padding(.vertical, 4)
             .background(tone.surface, in: RoundedRectangle(cornerRadius: BloomTheme.tagRadius, style: .continuous))
             .fixedSize(horizontal: false, vertical: true)
@@ -184,8 +214,8 @@ struct BloomSectionHeader: View {
     var detail: String? = nil
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title).font(BloomTheme.section)
-            if let detail { Text(detail).font(.subheadline).foregroundStyle(BloomTheme.secondary) }
+            Text(title).bloomHeading()
+            if let detail { Text(detail).font(BloomType.body).foregroundStyle(BloomTheme.secondary) }
             Spacer(minLength: 0)
         }
     }
@@ -197,17 +227,20 @@ struct BloomPlantCard: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            PlantPortrait(plant: plant, contentMode: typeSize.isAccessibilitySize ? .fit : .fill).frame(height: typeSize.isAccessibilitySize ? 220 : 108)
-            VStack(alignment: .leading, spacing: 8) {
-                Text(plant.name).font(.subheadline.weight(.medium)).foregroundStyle(BloomTheme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(plant.location.isEmpty ? "Location not set" : plant.location).font(.caption).foregroundStyle(BloomTheme.secondary)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                if plant.reminder != nil {
-                    StatusTag(text: plant.reminderKind == .observation ? "Observe" : "Check soil", tone: tagTone)
+            PlantPortrait(plant: plant, contentMode: typeSize.isAccessibilitySize ? .fit : .fill)
+                .frame(height: typeSize.isAccessibilitySize ? 220 : 108)
+                .overlay(alignment: .topTrailing) {
+                    if plant.reminder != nil {
+                        StatusTag(text: plant.reminderKind == .observation ? "Observe" : "Check soil", tone: tagTone)
+                            .padding(8)
+                    }
                 }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(plant.name).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(plant.location.isEmpty ? "Location not set" : plant.location).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
             }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
-                .frame(minHeight: typeSize.isAccessibilitySize ? nil : 106, alignment: .topLeading)
         }.background(BloomTheme.surface)
             .clipShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
@@ -244,12 +277,12 @@ struct RecordRow: View {
         HStack(alignment: .top, spacing: 12) {
             BloomIconTile(symbol: symbol, tone: tone)
             VStack(alignment: .leading, spacing: 6) {
-                Text(activity).font(.subheadline.weight(.semibold)).foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
+                Text(activity).font(BloomType.section).foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
                 Text(record.kind == .check ? "Soil · \(record.soil?.rawValue ?? "Not sure")" : (record.kind == .followUp || record.kind == .careAction) ? record.outcome : record.observation)
-                    .font(.caption).foregroundStyle(BloomTheme.secondary)
+                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                 HStack(spacing: 8) {
                     StatusTag(text: tag, tone: tone)
-                    Text(record.date, format: .dateTime.month(.abbreviated).day().hour().minute()).font(.caption2).foregroundStyle(BloomTheme.secondary)
+                    Text(record.date, format: .dateTime.month(.abbreviated).day().hour().minute()).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }.padding(.vertical, 3)
@@ -263,15 +296,15 @@ struct BloomReminderRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(plant.name).font(.subheadline.weight(.semibold))
+                Text(plant.name).font(BloomType.section)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 StatusTag(text: kind == .soilCheck ? "Check soil" : "Observe", tone: tone)
             }
             HStack {
-                if let date = plant.reminder { Text(date, format: .dateTime.month(.abbreviated).day().hour().minute()).font(.caption).foregroundStyle(BloomTheme.secondary) }
+                if let date = plant.reminder { Text(date, format: .dateTime.month(.abbreviated).day().hour().minute()).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary) }
                 Spacer(minLength: 8)
-                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
+                BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
             }
         }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
             .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))

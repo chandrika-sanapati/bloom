@@ -23,12 +23,10 @@ final class AppPreferencesUITests: XCTestCase {
         let app = start()
         XCTAssertTrue(app.navigationBars["Preferences"].waitForExistence(timeout: 5))
         capture("29 Native app preferences", app)
-        let picks = app.switches["preferences-personalized-picks"]
-        toggle("preferences-personalized-picks", app); XCTAssertEqual(picks.value as? String, "0")
         app.buttons["close-preferences"].tap(); app.buttons["home-add-plant"].tap()
+        app.buttons["personalize-plant-search"].tap(); tap("reset-plant-personalization", app)
         XCTAssertTrue(app.staticTexts["Choose a plant"].waitForExistence(timeout: 5))
-        app.navigationBars["Search plants"].buttons.firstMatch.tap(); app.buttons["home-preferences"].tap()
-        toggle("preferences-personalized-picks", app); app.buttons["close-preferences"].tap(); app.buttons["home-add-plant"].tap()
+        app.buttons["personalize-plant-search"].tap(); app.buttons["save-search-personalization"].tap()
         XCTAssertTrue(app.staticTexts["Seasonal picks"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Bushy · Trailing"].exists)
         app.buttons["personalize-plant-search"].tap()
@@ -37,14 +35,14 @@ final class AppPreferencesUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Berlin"].exists)
     }
     @MainActor func testRemoveAreaUsesDraftSaveAndKeepsLightAndTypes() {
-        let app = start(); app.buttons["preferences-growing-space"].tap()
+        let app = start(); app.buttons["close-preferences"].tap(); app.buttons["home-add-plant"].tap()
+        app.buttons["personalize-plant-search"].tap()
         app.buttons["remove-search-area"].tap()
         XCTAssertTrue(app.textFields["search-growing-area"].exists)
         app.navigationBars["Your growing space"].buttons["Cancel"].tap()
-        app.buttons["preferences-growing-space"].tap()
+        app.buttons["personalize-plant-search"].tap()
         XCTAssertTrue(app.staticTexts["Berlin"].exists)
         app.buttons["remove-search-area"].tap(); app.buttons["save-search-personalization"].tap()
-        app.buttons["close-preferences"].tap(); app.buttons["home-add-plant"].tap()
         XCTAssertTrue(app.staticTexts["For your space"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Bushy · Trailing"].exists)
         app.buttons["personalize-plant-search"].tap()
@@ -52,35 +50,30 @@ final class AppPreferencesUITests: XCTestCase {
         XCTAssertEqual(app.buttons["search-light-Lower natural light"].value as? String, "Selected")
     }
     @MainActor func testNotificationToggleAndTimeEditorDoNotChangeExistingTasks() {
-        let app = start(); tap("preferences-notifications", app)
+        let app = start()
         let toggle = app.switches["task-notifications-toggle"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5)); XCTAssertEqual(toggle.value as? String, "0")
         self.toggle("task-notifications-toggle", app); XCTAssertEqual(toggle.value as? String, "1")
         capture("30 Native task notification preferences", app)
         self.toggle("task-notifications-toggle", app); XCTAssertEqual(toggle.value as? String, "0")
-        app.navigationBars["Task notifications"].buttons.firstMatch.tap()
         tap("preferences-reminder-time", app)
         XCTAssertTrue(app.datePickers["default-reminder-time-picker"].exists)
         capture("31 Native default reminder time", app)
-        app.navigationBars["Default reminder time"].buttons["Cancel"].tap()
+        app.navigationBars["Reminder time"].buttons["Cancel"].tap()
         tap("preferences-reminder-time", app); app.buttons["save-default-reminder-time"].tap()
         app.buttons["close-preferences"].tap()
         XCTAssertTrue(app.staticTexts["My plants (5)"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Monstera")).firstMatch.exists)
     }
     @MainActor func testDeniedNotificationsKeepToggleOffAndShowRecovery() {
-        let app = start(["--uitesting-notifications-denied"]); tap("preferences-notifications", app)
+        let app = start(["--uitesting-notifications-denied"])
         toggle("task-notifications-toggle", app)
         XCTAssertEqual(app.switches["task-notifications-toggle"].value as? String, "0")
         XCTAssertTrue(app.buttons["Open iOS Settings"].exists)
         XCTAssertTrue(app.staticTexts["notification-preference-message"].waitForExistence(timeout: 5))
     }
-    @MainActor func testLocationPrivacySourcesAndClearSearchesAreReachable() {
-        let app = start(); tap("preferences-location", app)
-        XCTAssertTrue(app.staticTexts["Berlin"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["preferences-change-area"].exists)
-        capture("32 Native location access preferences", app)
-        app.navigationBars["Location access"].buttons.firstMatch.tap()
+    @MainActor func testPrivacySourcesAndClearSearchesAreReachable() {
+        let app = start()
         tap("preferences-clear-searches", app)
         app.buttons["Clear searches"].tap()
         capture("33 Native recent searches cleared", app)

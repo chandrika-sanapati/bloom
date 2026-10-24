@@ -6,14 +6,14 @@ struct BloomPlantSearchField: View {
     @FocusState private var focused: Bool
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(BloomTheme.secondary).accessibilityHidden(true)
-            TextField("Search plants", text: $query).font(.body)
+            BloomSymbol(name: "magnifyingglass").foregroundStyle(BloomTheme.secondary).accessibilityHidden(true)
+            TextField("Search plants", text: $query).font(BloomType.body)
                 .autocorrectionDisabled().textInputAutocapitalization(.never).submitLabel(.search)
                 .focused($focused).onSubmit { submitted(); focused = false }
                 .accessibilityIdentifier("plant-search-field")
             if !query.isEmpty {
                 Button { query = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(BloomTheme.secondary).frame(width: 28, height: 44)
+                    BloomSymbol(name: "xmark.circle.fill").foregroundStyle(BloomTheme.secondary).frame(width: 28, height: 44)
                 }.buttonStyle(.plain).accessibilityLabel("Clear search").accessibilityIdentifier("plant-search-clear")
             }
 
@@ -37,26 +37,26 @@ struct BloomDiscoveryCard: View {
                     ZStack {
                         BloomTone.blue.surface
                         PlantFormArtwork(form: species.forms.first ?? .upright).padding(24)
-                        Text("Illustration").font(.caption2).foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(10)
+                        Text("Illustration").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(10)
                     }
                 } else { PlantPortrait(plant: Plant(name: species.name, species: species.scientific, asset: species.asset)) }
             }.frame(height: typeSize.isAccessibilitySize ? 280 : 196)
                 .overlay(alignment: .bottomLeading) {
                     ZStack(alignment: .bottomLeading) {
                         LinearGradient(colors: [.clear, .black.opacity(0.75)], startPoint: .top, endPoint: .bottom)
-                        Text(species.name).font(.headline.weight(.semibold)).foregroundStyle(.white)
+                        Text(species.name).font(BloomType.section).foregroundStyle(.white)
                             .fixedSize(horizontal: false, vertical: true).padding(12)
                     }.frame(minHeight: 88)
                 }
             VStack(alignment: .leading, spacing: 9) {
                 if ownedCount > 0 {
                     Label("\(ownedCount) in My plants", systemImage: "checkmark.circle")
-                        .font(.caption.weight(.medium)).foregroundStyle(BloomTheme.teal)
+                        .font(BloomType.supporting).foregroundStyle(BloomTheme.teal)
                 }
                 StatusTag(text: "\(species.care.rawValue) care", tone: species.care == .easy ? .teal : .yellow)
                 Label(species.light.rawValue, systemImage: species.light.symbol)
-                    .font(.footnote).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
-                if let reason { Text(reason).font(.caption).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true) }
+                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
+                if let reason { Text(reason).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true) }
             }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
         }.background(BloomTheme.surface)
             .clipShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
@@ -87,15 +87,15 @@ struct PlantDiscoveryView: View {
                 if !store.recentPlantSearches.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("Recent searches").font(.headline)
+                            Text("Recent searches").bloomHeading()
                             Spacer()
-                            Button("Clear", action: store.clearPlantSearches).font(.subheadline).frame(minHeight: 44).accessibilityIdentifier("clear-recent-searches")
+                            Button("Clear", action: store.clearPlantSearches).font(BloomType.body).frame(minHeight: 44).accessibilityIdentifier("clear-recent-searches")
                         }
                         ScrollView(.horizontal) {
                             HStack(spacing: 10) {
                                 ForEach(store.recentPlantSearches, id: \.self) { recent in
                                     Button { query = recent } label: {
-                                        Label(recent, systemImage: "clock").frame(minHeight: 28)
+                                        Text(recent).frame(minHeight: 28)
                                     }.buttonStyle(.bordered).accessibilityIdentifier("recent-search-\(recent)")
                                 }
                             }
@@ -103,25 +103,25 @@ struct PlantDiscoveryView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(profile == nil ? "Choose a plant" : (profile?.location == nil ? "For your space" : "Seasonal picks")).font(BloomTheme.section)
+                    Text(profile == nil ? "Choose a plant" : (profile?.location == nil ? "For your space" : "Seasonal picks")).bloomHeading()
                     Text(profile == nil ? "Start with a familiar face, or search to add your own." : "Ideas for your indoor space. Tap a plant to make it yours.")
-                        .font(.subheadline).foregroundStyle(BloomTheme.secondary)
+                        .font(BloomType.body).foregroundStyle(BloomTheme.secondary)
                 }
                 if hasTypes {
                     HStack(spacing: 8) {
-                        Image(systemName: "checkmark.square.fill").foregroundStyle(BloomTheme.teal)
-                        Text(profile!.selectedTypes.map(\.rawValue).joined(separator: " · ")).font(.subheadline.weight(.medium))
+                        BloomSymbol(name: "checkmark.square.fill").foregroundStyle(BloomTheme.teal)
+                        Text(profile!.selectedTypes.map(\.rawValue).joined(separator: " · ")).font(BloomType.section)
                     }.accessibilityIdentifier("search-selected-types")
                     if !preferred.isEmpty { plantGrid(preferred) }
-                    else { Text("No matching shape in our small catalog yet. You can search for any plant and add it by name.").font(.subheadline).foregroundStyle(.secondary) }
+                    else { Text("No matching shape in our small catalog yet. You can search for any plant and add it by name.").font(BloomType.body).foregroundStyle(.secondary) }
                     if !otherShapes.isEmpty {
-                        Text("Other shapes to explore").font(BloomTheme.section)
+                        Text("Other shapes to explore").bloomHeading()
                         plantGrid(otherShapes)
                     }
                 } else { plantGrid(suggestions) }
                 if profile != nil {
                     Text("Curated indoor picks for your light, plant shapes, and location. Local popularity and live weather aren't measured.")
-                        .font(.footnote).foregroundStyle(BloomTheme.secondary)
+                        .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                     DisclosureGroup("How these picks work") {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Your light and selected plant shapes guide these picks. A chosen city supplies coordinates for the season; NASA POWER monthly climate data adds regional context. These are indoor ideas, not outdoor hardiness or availability advice.")
@@ -130,29 +130,29 @@ struct PlantDiscoveryView: View {
                             Link("Trailing and climbing · RHS", destination: URL(string: "https://www.rhs.org.uk/plants/epipremnum/growing-guide")!)
                             Link("Indoor light · University of Minnesota", destination: URL(string: "https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/lighting-for-indoor-plants")!)
                             Link("Choosing houseplants · RHS", destination: URL(string: "https://www.rhs.org.uk/plants/types/houseplants/winter-interest-houseplants-care")!)
-                        }.font(.footnote).padding(.top, 10)
-                    }.font(.subheadline)
+                        }.font(BloomType.supporting).padding(.top, 10)
+                    }.font(BloomType.body)
                 }
             } else {
                 HStack {
-                    Text("Search results").font(BloomTheme.section)
+                    Text("Search results").bloomHeading()
                     Spacer()
                     Text("\(results.count)").foregroundStyle(.secondary)
                 }
-                Text("Searching all catalog plants, regardless of your area settings.").font(.subheadline).foregroundStyle(BloomTheme.secondary)
+                Text("Searching all catalog plants, regardless of your area settings.").font(BloomType.body).foregroundStyle(BloomTheme.secondary)
                 if results.isEmpty {
                     VStack(spacing: 10) {
                         Image(systemName: "leaf").font(.largeTitle).foregroundStyle(BloomTheme.teal)
-                        Text("No catalog match yet").font(.headline)
-                        Text("You can still add \"\(search)\" by name and keep its care records.").font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        Text("No catalog match yet").font(BloomType.section)
+                        Text("You can still add \"\(search)\" by name and keep its care records.").font(BloomType.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     }.frame(maxWidth: .infinity).padding(.vertical, 20)
                 } else {
                     plantGrid(results.map { PlantSearchSuggestion(species: $0, reason: "", ownedCount: PlantSearchEngine.ownedCount($0, plants: store.garden.plants)) })
                 }
-                Button { addCustom(search) } label: { Label("Add \"\(search)\" by name", systemImage: "plus").frame(maxWidth: .infinity, minHeight: 32) }
+                Button { addCustom(search) } label: { Text("Add \"\(search)\" by name").frame(maxWidth: .infinity, minHeight: 32) }
                     .buttonStyle(.bordered).accessibilityIdentifier("add-custom-search")
             }
-            Text("Can't find it? Enter any plant name to add your own.").font(.footnote).foregroundStyle(BloomTheme.secondary)
+            Text("Can't find it? Enter any plant name to add your own.").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
         }.sheet(isPresented: $personalizing) { PlantSearchPersonalizationView() }
     }
     private var areaCard: some View {
@@ -160,13 +160,13 @@ struct PlantDiscoveryView: View {
             HStack(alignment: .top, spacing: 12) {
                 BloomIconTile(symbol: profile.map { PlantSearchEngine.season(for: $0, date: .now).symbol } ?? "leaf", tone: .yellow)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(profile.map { "\($0.displayArea) · \(PlantSearchEngine.season(for: $0, date: .now).rawValue)" } ?? "Find a plant for your space").font(.headline)
+                    Text(profile.map { "\($0.displayArea) · \(PlantSearchEngine.season(for: $0, date: .now).rawValue)" } ?? "Find a plant for your space").font(BloomType.section)
                     Text(profile.map { PlantSearchEngine.seasonalNote($0) } ?? "Find your city, choose your light, and pick the plant shapes you love.")
-                        .font(.subheadline).foregroundStyle(BloomTheme.secondary)
+                        .font(BloomType.body).foregroundStyle(BloomTheme.secondary)
                 }
             }
             Button(profile == nil ? "Personalize picks" : "Edit area & preferences") { personalizing = true }
-                .font(.subheadline.weight(.semibold)).frame(minHeight: 44).accessibilityIdentifier("personalize-plant-search")
+                .font(BloomType.section).frame(minHeight: 44).accessibilityIdentifier("personalize-plant-search")
         }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
             .background(BloomTone.yellow.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius))
     }

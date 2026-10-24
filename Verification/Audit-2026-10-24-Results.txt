@@ -1,0 +1,27 @@
+Bloom audit verification — 24 October 2026
+
+Scope: 36 source entries in New Comments and Review Comments, grouped into 22 prioritized tasks. One duplicate feedback item was consolidated. Original source tabs were not edited. Newer navigation-name guidance takes precedence over the older conflicting request.
+
+Native iPhone 17 / iOS Simulator 27.0:
+- Full rerun: 112 of 113 passed (68 model + 44 UI). Remaining UI assertion used an incorrect activity-page title.
+- Final focused UI rerun: 1 of 1 passed after matching Plant activity. Includes inline preferences, photo viewer, nickname editing, preserved species/location, neutral observation cards and activity navigation.
+- Latest model-only run: 69 of 69 passed, including new all-actions-skipped/no-follow-up case.
+- Aggregate unique native coverage: 69 model tests and 45 UI tests passed. This is coverage across full and focused runs, not a single 114-test run.
+- Real saved garden was not replaced with test fixtures. UI tests use isolated sample state.
+
+Web:
+- 61 tests passed across 9 files.
+- TypeScript check passed.
+- Production webpack build passed.
+- Static demo JavaScript syntax and Git whitespace checks passed.
+- Manual care journey: observation, causes, atomic actions, neutral Undo, optional scheduling, progress comparison and linked activity.
+- Manual add/care journey: duplicate nickname hint, named add feedback, damp-soil wait decision and Save care.
+- Desktop (1280px) and mobile (375px) checked: project cover, expanded demo explanation, no horizontal overflow, 16px demo-note text and 44px link target.
+
+Typography uses four semantic roles with Dynamic Type. Semantic palette preserved: teal actions, blue soil/water, yellow observations/caution. Measured normal-text contrast ratios: teal/white 5.08; primary/canvas 14.01; secondary/canvas 4.90; selected teal 4.59; blue ink/surface 6.21; yellow ink/surface 5.92.
+
+Limits: Simulator validation, not physical-device usability research. Full replacement-photo selection was not automated; viewer, change control and cancel/preservation were checked. Guidance remains curated and uncertain; completing tasks does not imply recovery.
+
+Release: The user approved committing and pushing these changes after validation. Pre-existing Bloom work is included; the existing V1 tag is preserved. The Git commit identifies the released source.
+
+Final handoff: Normal launch verified after simulator restart and ending the stalled debugger session. Updated Your garden screen rendered with all four saved plants and existing upcoming care task. Bloom left open in Device Hub. Screenshot: outputs/BloomAudit/final-saved-garden-handoff.png.

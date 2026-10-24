@@ -1,15 +1,16 @@
 # Bloom
 
-A focused native SwiftUI iOS app for intentional plant care: **observe → understand → choose a care plan → act → compare**. Add your plants, check their soil or record a change, choose what to do, and keep a useful history. Waiting counts as care, too.
+A focused native SwiftUI iOS app for intentional plant care: **notice → act → check improvement**. Add your plants, check their soil or record a change, choose what to do, and keep a useful history. Waiting counts as care, too.
 
 Open **Bloom.xcodeproj**, select **Bloom → iPhone 17** (or another installed iPhone Simulator), then press **⌘R**. Your other Xcode projects are independent. Requires iOS 18 or later. No packages, accounts, or API keys are needed. A physical iPhone requires your development team in Signing & Capabilities.
 
 ## MVP scope
 
 - **My plants:** Home shows the full collection count and a horizontal row of plant cards. A partial next card signals scrolling; tapping a card opens that plant. **See all** opens the searchable collection. Each plant keeps its room, optional photo, starting condition, and care history.
-- **Add a plant:** a labelled **＋ Add plant** button sits directly below the cards inside My plants and opens Search plants. Choose from a small local catalog or enter any name, optionally attach a photo, choose its room, and record its current status. Saving opens that plant's detail page. Nothing is added until setup is saved.
+- **Add a plant:** a labelled **Add plant** button sits directly below the cards inside My plants and opens Search plants. Choose from a small local catalog or enter any name, optionally attach a photo, choose its room, and record its current status. Saving opens that plant's detail page. Nothing is added until setup is saved.
 - **Check and decide:** record soil as Dry, Damp, or Not sure, then record whether you watered, waited, or will check later. Saving offers Edit, Undo, an optional reminder, and Done.
-- **Observe and find next steps:** record a change and optional photo/context. The saved observation offers **Find next steps**. Answer focused questions, read an explained recommendation with sources, then explicitly choose whether to start a care plan. Closing the assessment keeps the observation and answers; no plan is started until acceptance.
+- **Observe and find next steps:** tap an illustrated area card, choose a single visible-change card, then add optional notes/photo. **Save change** saves the record and immediately opens the visual cause/first-step guide with a **Change saved** notice. **Add to care plan** explicitly creates planned work; it never records treatment as done. Adding the plan returns directly to the plant, where the next care task is visible. Back to plant keeps the observation without starting a plan. There is no intermediate saved receipt or plan-setup confirmation. Activity keeps guidance and editing available.
+- **Care on a plant:** the next action or progress check opens directly from the plant's Care section. Care plan details remain available as a secondary link; past plans stay accessible. Optional materials, notes, dates and sources are expandable.
 - **Care → Tasks:** all scheduled checks appear on Home, grouped into Overdue, Today, and Upcoming. Tasks retain their type: Check soil, Observe, plan Action, or progress Review. Multiple plan tasks and ordinary soil reminders coexist. A plan that needs reassessment stays visible on Home. Completing a check clears only its matching task; Undo restores it while preserving any newer reminder you chose. An overdue check never means a plant automatically needs water.
 - **Care → Activity:** a native segmented control switches the same care area to the five most recent saved activities. This includes unscheduled checks, observations, and decisions to wait. Tap a record to review it, or choose **See all activity** for search and plant/type filters. Returning from a record preserves the Activity selection. Each plant also retains its own activity archive.
 
@@ -31,32 +32,47 @@ Search checks common/scientific names and aliases across the whole catalog regar
 
 Plant-care context also uses [University of Minnesota indoor-light guidance](https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/lighting-for-indoor-plants), [RHS seasonal guidance](https://www.rhs.org.uk/plants/types/houseplants/winter-interest-houseplants-care), and [RHS Monstera guidance](https://www.rhs.org.uk/plants/swiss-cheese-plants/how-to-grow-swiss-cheese-plants). Sources checked 20 October 2026. Source links are available under How these picks work.
 
-## First remedy journey
+## Sourced leaf guidance
 
-This version supports a focused, nonchemical indoor-mealybug journey. Cotton-like clusters in a small reachable area on indoor leaves or stems offer **Possible mealybugs**: keep the plant separate, then gently remove reachable visible insects with tweezers. The explanation states that the identification is provisional. Fine webbing, soil-only signs, outdoor placement, and uncertain evidence receive an inspection plan. Widespread symptoms receive an inspection-and-specialist plan. There is no invented confidence score, photo diagnosis, chemical recipe, or automatic escalation.
+After **Record a change → Leaves card → Dropping leaves card → Continue → Save change**, the **What could help** page immediately explains possible causes using colored symbol cards. Users do not choose or confirm a diagnosis. A first action is shown as short visual steps, with detailed instructions under **How to do this** and explanations/source links under **Why this might help**.
+
+**Add to care plan** works without answering questions and creates a conservative inspection task when evidence is missing. **I've checked my plant** is an optional disclosure for recording observations; soil choices use visual cards, drainage only appears for dry mix, and previously supplied placement is reused. These refinements save for resuming and can be cleared together. Missing answers remain unknown. Watering still requires dry mix, confirmed drainage, no reported warning signs and a supported indoor plant; other evidence-dependent actions retain conservative bounds.
+
+For the existing indoor catalog, dry mix with drainage, soggy mix and a recent environmental change have distinct routes. Unknown species, spots, outdoors, uncertain answers and pest signs lead to inspection rather than an assumed watering treatment. Soft/dark stems or rapid decline lead to prompt specialist help, with follow-up off by default. Visible pests link to the existing pest assessment. This is an offline, curated decision flow, not live internet search or automatic photo diagnosis.
+
+A dry-root action requires recording **I watered after checking** or **I checked and chose to wait**. Only actual watering updates watering history. New inspection plans separate soil moisture, light/temperature and leaf inspection into independent tasks. Each completion is saved separately. After the final action, Bloom offers **Schedule check-in** or **Not now**, with an editable suggested date. A new plan does not preselect a follow-up. Existing scheduled checks are preserved. Completing an action does not resolve the issue; resolution requires an explicit decision after a comparison.
+
+Leaf guidance uses [RHS houseplant troubleshooting](https://www.rhs.org.uk/plants/types/houseplants/how-to-help-a-poorly-houseplant), [RHS leaf damage](https://www.rhs.org.uk/prevention-protection/leaf-damage-on-houseplants), [University of Maryland indoor plant problems](https://extension.umd.edu/resource/diagnose-indoor-plant-problems), [RHS water absorption](https://www.rhs.org.uk/advice/understanding-plants/how-plants-absorb-water) and [RHS Snake plant care](https://www.rhs.org.uk/plants/sansevieria/growing-guide). Checked 21 October 2026; new leaf plans carry guidance version `2026-10-24.1`; existing plans retain their original version. Similar symptoms can have several causes; three days is an editorial comparison interval, not a source-prescribed cure deadline.
+
+## Pest remedy journey
+
+New pest observations also open an immediate visual guide, with possible pest causes and a conservative inspection task available without identifying the pest or inventing assessment answers. The optional **Take a closer look at the pests** action opens focused checks; previously saved pest checks remain resumable. Presentation routing stays stable while those checks save.
+
+This version also supports a focused, nonchemical indoor-mealybug journey. Cotton-like clusters in a small reachable area on indoor leaves or stems offer **Possible mealybugs**: keep the plant separate, then gently remove reachable visible insects with tweezers. The explanation states that the identification is provisional. Fine webbing, soil-only signs, outdoor placement, and uncertain evidence receive an inspection plan. Widespread symptoms receive an inspection-and-specialist plan. There is no invented confidence score, photo diagnosis, chemical recipe, or automatic escalation.
 
 Guidance is based on [University of Minnesota Extension](https://extension.umn.edu/garden-and-home/yard-and-garden/yard-and-garden-insects/insects-on-indoor-plants) and [University of Maryland Extension](https://extension.umd.edu/resource/mealybugs-indoor-plants), checked 19 October 2026. The app displays these sources with the plan.
 
 - Acceptance creates planned work, never a performed-treatment activity. New actions are due today rather than becoming instantly overdue.
 - Each action opens instructions/materials, optional notes, Done, Skip, and Reschedule. If the user already acted, they can record an earlier completion time. Undo corrects the action and its activity together.
-- Follow-up is optional. Seven days for the focused mealybug plan and three days for an inspection are editable product defaults for checking evidence, not evidence of a cure or pesticide retreatment intervals. Expert-support plans default to no automatic follow-up. The automatic check-in is scheduled only after the actions are accounted for and at least one was actually completed, measured from the latest recorded completion. Skipping every action starts no false recovery timer. An extra early check-in does not consume the automatic check after the remaining actions.
+- Follow-up is offered after completing the final action. Three days for leaf/inspection plans and seven days for the focused mealybug plan are editable product suggestions. **Not now** leaves the actions saved without adding a review task. Existing automatic review tasks keep their original scheduling behavior. Skipping all actions requires reassessment and never starts a recovery timer.
 - A progress check shows the original observation/photo and the actions actually recorded, then accepts an outcome, note, and optional comparison photo. Unclear/worse results call for reassessment, with no stronger treatment generated automatically. No visible signs does not resolve an issue until the user explicitly confirms it.
 - Revised plans cancel only the previous plan's open tasks. Other issues and soil reminders stay intact. Stopping/resolving a plan preserves its activity. Plan action/progress notes can be edited; completion/outcome records are corrected with immediate Undo or a new check-in, avoiding a conflicting task state.
 - Plans remain reachable from the original observation and plant details, even if no check-in is scheduled. The plan preserves a copy of the observation as its starting baseline.
 
 ## Native iOS experience
 
-One NavigationStack provides a single Home and pushed detail/search pages. There is no bottom tab bar or separate bell destination. A horizontal plant row sits above a native Tasks/Activity segmented control. Forms, grouped Lists, Pickers, Menus, DatePickers, confirmation dialogs, PhotosPicker, and ShareLink use native behavior. Typography uses system text styles and icons use SF Symbols. Primary buttons are native bordered-prominent buttons tinted in Bloom teal. The Bloom header stays fixed while Home scrolls. Preferences are available from its gear. The collection owns its labelled Add plant action; there is no floating Home button. The full collection also retains a labelled Add plant toolbar action. Empty collections offer Add a plant in their empty state.
+One NavigationStack connects Home, plant details and search. **Your garden** stays fixed while Home scrolls. Four shared content roles cover title, section/emphasis, body and supporting text; native navigation and grouped form headers retain iOS semantics. See **DESIGN_GUIDELINES.md** for the type, color, spacing and action rules. Primary actions use one shared teal style, secondary actions use native bordered controls, and navigational action rows have a full-width 44-point target and chevron. Disabled actions remain visible with neutral system colors. Command buttons are text-first; utility/menu icons retain their useful SF Symbols.
 
-Bloom's colors, plant photography, neutral cards, 16-point corners, and compact blue/yellow care tags are retained. A plant card shows a task tag only when it has a scheduled check. System transitions provide navigation motion; custom press/collection animations respect Reduce Motion.
+Bloom's colors, plant photography, neutral cards, 16-point corners, and compact blue/yellow care tags are retained. The plant-detail hero photo fills its frame edge to edge, cropping overflow without distorting the image. Directly beneath it, the plant name and scientific name share one identity block: the plant name is the heading and the italic scientific name sits immediately below it. Plants without a scientific name show no empty subtitle row. Progress and record pages use tighter section spacing and grouped metadata instead of separate rows for every detail. Progress choices use neutral unselected indicators and a green selected check/background. Completed action records explicitly say **Action completed**, which describes recorded work rather than issue resolution. Related record links share a section; reminder actions use plain icons without a tinted pill. Plant cards size their details to their content without reserving an empty tag row. A scheduled check tag sits at the photo’s upper right. Interface SF Symbols share a scaled 24-point square and semibold weight, with a compact variant for inline indicators; plant illustrations and the brand mark retain their own sizes. System transitions provide navigation motion; custom press/collection animations respect Reduce Motion.
 
 ## Preferences
 
 The Home gear opens a native grouped **Preferences** menu. The main plant, search, observation, and care navigation remain intact.
 
-- **Plant discovery:** Personalized picks on/off; Your growing space with a saved-city/light/type summary; Location access with actual iOS permission status and a link to iOS Settings when applicable. Settings and Search plants edit the same persisted profile. Search reuses a saved city without requesting GPS. Turning picks off retains the profile and makes discovery generic. Locate me is always explicit; there is no automatic or background location refresh. A city can remain saved after device access is revoked.
+Plant discovery controls live in **Search plants → Personalize**, keeping the Settings menu focused. Removing the old discovery section preserves the saved city, light, plant-type choices, and personalized search behavior. The task-notification toggle lives directly in Preferences. The reminder-time editor is labelled **Reminder time**. Permission recovery appears inline when needed.
+
 - **Care notifications:** a global alert switch requests permission only when explicitly enabled. Muting removes pending alerts while preserving tasks, dates, plan-level alert choices, and history. Re-enabling restores only future alerts; overdue tasks never produce a notification burst. System permission is read again when the app becomes active. If iOS denies access, an Open iOS Settings action is available. Notification scheduling errors are separate from storage failures.
-- **Default reminder time:** 09:00 device-local time for new soil/observation reminders, with a native time picker and Save/Cancel. It prefills new explicit reminders and preset day choices. Existing tasks, chosen dates, and treatment-specific automatic review intervals are preserved. DST handling uses the device calendar.
+- **Reminder time:** 09:00 device-local time for new soil/observation reminders, with a native time picker and Save/Cancel. It prefills new explicit reminders and preset day choices. Existing tasks, chosen dates, and treatment-specific automatic review intervals are preserved. DST handling uses the device calendar.
 - **Data & privacy:** clear up to five recent searches with confirmation; read how local data, selected photos, city lookup, approximate regional coordinates, and optional alerts work. Clearing searches leaves plants and preferences untouched.
 - **About Bloom:** updated explanation of the curated care-plan POC, guidance source links, and actual bundle version. The sample-only start-fresh control remains available with its existing confirmation.
 
@@ -75,11 +91,11 @@ See **Verification/Results.txt** for completed build and test results. Run the X
 The standalone verification harness also runs the actual model without a Simulator:
 
 ```sh
-xcrun swiftc Bloom/Models.swift Bloom/CarePlanModels.swift Bloom/CarePlanStore.swift Bloom/PlantSearchModels.swift Bloom/GrowingLocationModels.swift Bloom/AppPreferencesModels.swift Verification/StoreChecks.swift -o /tmp/BloomStoreChecks
+xcrun swiftc Bloom/Models.swift Bloom/CarePlanModels.swift Bloom/LeafCareModels.swift Bloom/CarePlanStore.swift Bloom/PlantSearchModels.swift Bloom/GrowingLocationModels.swift Bloom/AppPreferencesModels.swift Verification/StoreChecks.swift -o /tmp/BloomStoreChecks
 /tmp/BloomStoreChecks
 ```
 
-The focused remedy harness uses the same five model files with `Verification/RemedyChecks.swift`. Both harnesses create and remove only their own temporary fixtures.
+The focused remedy harness uses the same model files with `Verification/RemedyChecks.swift`. Both harnesses create and remove only their own temporary fixtures.
 
 ## Source files
 
@@ -92,7 +108,9 @@ The focused remedy harness uses the same five model files with `Verification/Rem
 - `GardenViews.swift`: onboarding, Home, collection, plant details/editing.
 - `CarePlanModels.swift`: assessment evidence, sourced steps, care plans, independent tasks, and outcomes.
 - `CarePlanStore.swift`: plan acceptance, completion/Undo, follow-up scheduling, reassessment, exact task notifications, and cleanup.
-- `CareGuidanceViews.swift`: saved-observation entry, focused assessment, explained recommendation, and explicit acceptance.
+- `CareGuidanceViews.swift`: saved-observation entry and pest assessment, explained recommendation, and explicit acceptance.
+- `LeafCareModels.swift`: bounded leaf checks, conservative recommendation rules, sourced instructions and compatible progress outcomes.
+- `LeafCareViews.swift`: leaf/pest routing, visual cause cards, immediate first actions, optional resumable refinements and follow-up.
 - `CarePlanViews.swift`: plan progress, baseline, rescheduling, stopping/resolution, and notes.
 - `PlanTaskViews.swift`: action instructions, completion, comparison, Undo, and optional notifications.
 - `CareFeed.swift`: native Tasks/Activity switch, grouped tasks, recent records, and connected record navigation.
@@ -105,7 +123,7 @@ The focused remedy harness uses the same five model files with `Verification/Rem
 - `PlantSearchPersonalizationView.swift`: inline location search, compact light choices, visual multi-select plant forms, and draft Reset.
 - `PlantSetupViews.swift`: room presets.
 - `CareViews.swift`: soil checks, saved state, reminders, history, comparisons.
-- `ObservationViews.swift`: plant-specific observations, optional context, support.
+- `ObservationViews.swift`: plant-specific area/change cards and optional context; successful saves transition directly to guidance and return to the plant without a receipt page.
 
 ## Original Figma references
 
@@ -116,3 +134,9 @@ The focused remedy harness uses the same five model files with `Verification/Rem
 - [Design system](https://www.figma.com/design/n3dPoS2OakACxSrkbu8cfW/Plant-care-app---Bloom?node-id=2340-14608)
 
 Figma files were not modified. Their visual roles are implemented with reusable SwiftUI components.
+
+## Audit refinements
+
+The 24 October audit preserves Bloom’s palette and native behavior. Plant identity appears once in the hero; navigation says Plant. Editing changes nickname, placement, light and drainage, while preserving species, room, starting condition and watering history. Tapping the portrait opens a full-screen viewer with Change photo. Removal uses a centered native alert and named feedback. Care owns Remind me; Recent activity owns See all. Known catalog species have a Wikipedia reference. Generic area illustrations avoid showing another species as the user’s plant.
+
+The audit raised ambiguity between duplicate plants. Duplicates remain allowed, with nickname guidance during setup. This is recorded audit feedback, not evidence from a new user-research study.

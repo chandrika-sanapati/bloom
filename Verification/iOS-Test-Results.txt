@@ -1,6 +1,10 @@
-Native iPhone 17 / iOS 27 verification — 20 October 2026
-Latest outcomes across the complete run and a focused search rerun: 78 passing tests (50 model/integration checks, 28 UI journeys). The search rerun follows a test-scroll correction to bring whole plant-type cards above the fixed footer before tapping.
-Notification access/scheduling and Locate me outcomes use isolated test clients; physical-device GPS/permission presentation and notification delivery are not verified by these tests. Public city and climate lookup are separately exercised by the live integration test.
+Native iPhone 17 / iOS 27 verification — 22 October 2026
+Latest recorded outcomes: 106 passing tests (66 model/integration checks, 40 UI journeys).
+The latest plant-identity change reran the existing collection/detail/See all journey. It passed, including a check that the common and scientific names share one accessible identity block. Native capture 78 was visually reviewed; other outcomes retain their prior passing baseline.
+The heading/text-action update reran four existing native UI journeys: soil-check save/undo; search and complete plant setup; area/change selection through care-plan acceptance and action/undo; and the full custom-change journey at the largest accessibility text size. All four passed in one focused run. Unaffected outcomes retain their preceding passing baseline; this is not a single 106-test invocation.
+Reviewed native Home, observation, care-guidance and disabled-action captures 74–77, plus the large-text capture 68. Workflow page-copy headings use title2, standalone sections use semibold title3, native grouped section headings use increased prominence, and supporting text retains body/subheadline/caption roles. Custom section headings expose the VoiceOver heading trait.
+Text-labelled commands are text-only; utility-only controls, selection indicators and informative visuals retain their symbols. Disabled primary actions use iOS systemGray5 and secondaryLabel colors with no outline; required choices still gate activation. Existing colors, layout flow, data and permissions are unchanged.
+Previous density verification covered two care/check-in/record journeys; earlier settings, card and model results remain recorded below. Physical-device notification/location limitations remain documented in Results.txt.
 
 Success: AppPreferencesTests/testDefaultTimePersistsWithoutChangingExistingReminderOrPlan()
 Success: AppPreferencesTests/testDeniedPermissionStillSavesTaskAndDoesNotRepeatedlyAsk()
@@ -12,8 +16,8 @@ Success: AppPreferencesTests/testPlanNotificationOptInSurvivesGlobalMute()
 Success: AppPreferencesTests/testSchedulingFailureDoesNotLoseTaskOrMisreportStorageFailure()
 Success: AppPreferencesTests/testUnitTestStoresNeverTouchSystemNotificationScheduler()
 Success: AppPreferencesUITests/testDeniedNotificationsKeepToggleOffAndShowRecovery()
-Success: AppPreferencesUITests/testLocationPrivacySourcesAndClearSearchesAreReachable()
 Success: AppPreferencesUITests/testNotificationToggleAndTimeEditorDoNotChangeExistingTasks()
+Success: AppPreferencesUITests/testPrivacySourcesAndClearSearchesAreReachable()
 Success: AppPreferencesUITests/testRemoveAreaUsesDraftSaveAndKeepsLightAndTypes()
 Success: AppPreferencesUITests/testSharedProfileCanBeDisabledRestoredAndUsedBySearch()
 Success: BloomStoreTests/testCareTasksDistinguishOverdueTodayAndUpcoming()
@@ -57,6 +61,34 @@ Success: CarePlanTests/testStartingPlanIsIdempotentAndDoesNotLogTreatment()
 Success: CarePlanTests/testUndoActionPreservesCustomReviewAndOtherReminders()
 Success: CarePlanTests/testWorseResultRequiresReassessmentWithoutStrongerAutomaticTreatment()
 Success: GrowingLocationLiveTests/testPublicCitySearchAndClimateLookup()
+Success: LeafCareTests/testAcceptedPlanPreservesBaselineAndStartsThreeDaysAfterActualAction()
+Success: LeafCareTests/testDryWetAndEnvironmentEvidenceProduceDifferentStartingActions()
+Success: LeafCareTests/testExtraEarlyComparisonPreservesPlannedThreeDayCheckAndRequiresExplicitResolution()
+Success: LeafCareTests/testFailedLeafWritesDoNotCreatePartialPlansOrLoseObservation()
+Success: LeafCareTests/testLeafAndPestObservationsUseAppropriateChecksAndLegacyResume()
+Success: LeafCareTests/testLeafPlanPhotosTasksAndSettingsPersistAndOldPestPlansStillDecode()
+Success: LeafCareTests/testNewPestObservationsOfferVisualInspectionWithoutInventedChecks()
+Success: LeafCareTests/testNoChecksCanStartAnInspectionTaskWithoutInventedAnswers()
+Success: LeafCareTests/testOnlyRelevantEvidenceIsRequiredAndKnownPlacementIsReused()
+Success: LeafCareTests/testPartialPlanFailureDoesNotLoseTheSavedObservation()
+Success: LeafCareTests/testSavingChecksDoesNotStartAPlanOrRecordAnAction()
+Success: LeafCareTests/testSevereSignsTakePriorityOverWaterAndRecentMoves()
+Success: LeafCareTests/testSkippingAndDecliningFollowUpNeverStartAFalseRecoveryClock()
+Success: LeafCareTests/testUnknownSpeciesSpotsOutdoorsNoDrainageAndUncertaintyNeverAssumeWatering()
+Success: LeafCareTests/testWateringNeedsAnExplicitDecisionAndUndoRestoresHistoryAndTimer()
+Success: LeafCareTests/testWorseLeafOutcomeCanBeReassessedWithoutChangingAnotherIssue()
+Success: LeafCareUITests/testAccessibleTextKeepsTheCareActionAvailableWithoutChecks()
+Success: LeafCareUITests/testAreaAndChangeCardsCanBeRevisedAndSavedDirectlyToACarePlan()
+Success: LeafCareUITests/testChecksResumeAndVisiblePestsConnectToTheExistingPestFlow()
+Success: LeafCareUITests/testClearChecksReturnsToInspectionWithoutErasingTheObservation()
+Success: LeafCareUITests/testCustomChangeCardsWorkWithAccessibilityTextWithoutInventingADiagnosis()
+Success: LeafCareUITests/testNewPestChangeCanStartAnInspectionPlanWithoutIdentifyingThePest()
+Success: LeafCareUITests/testNoChecksCanAddCareTaskAndCompleteItBeforeTheOptionalCheckIn()
+Success: LeafCareUITests/testRecordLeafDropChooseActionAndCompareWithExplicitResolution()
+Success: LeafCareUITests/testSavedLeafChangeNextStepsOpensClosesAndReopensFromActivity()
+Success: LeafCareUITests/testSoftStemsOfferHelpWithoutAThreeDayWait()
+Success: LeafCareUITests/testSoggyMixSuggestsDrainageAndActionCanBeUndone()
+Success: LeafCareUITests/testUncertainChecksOfferInspectionAndFollowUpCanBeDeclined()
 Success: PlantSearchTests/testCityParsingDisambiguatesAndStoresOnlyCoarseCoordinates()
 Success: PlantSearchTests/testClimateChangesPicksWithoutInventingTrends()
 Success: PlantSearchTests/testClimateDerivesFromCompleteNormalsAndRejectsMissingData()

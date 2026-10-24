@@ -27,7 +27,7 @@ enum PlantArea: String, Codable, CaseIterable, Identifiable {
     var observations: [String] {
         switch self {
         case .whole: ["No new growth", "Leaning or drooping", "Looks different", "Something else"]
-        case .leaves: ["Yellowing leaves", "Brown edges", "Spots or patches", "Curling or drooping", "Something else"]
+        case .leaves: ["Dropping leaves", "Yellowing leaves", "Brown edges", "Spots or patches", "Curling or drooping", "Something else"]
         case .stems: ["Soft or mushy", "Changed color", "Leaning", "Something else"]
         case .flowers: ["Flowers aren't appearing", "Flowers dropping", "Changed color", "Something else"]
         case .fruits: ["Early fruit drop", "Changed color", "Spots or patches", "Something else"]
@@ -76,6 +76,12 @@ struct Plant: Identifiable, Codable, Hashable {
     var placement: PlantPlacement?
     var initialStatus: InitialPlantStatus?
     var reminderObservationID: UUID?
+
+    var referenceURL: URL? {
+        let known = ["Dracaena trifasciata", "Monstera deliciosa", "Ficus elastica", "Epipremnum aureum"]
+        guard known.contains(species) else { return nil }
+        return URL(string: "https://en.wikipedia.org/wiki/" + species.replacingOccurrences(of: " ", with: "_"))
+    }
 }
 
 struct CareRecord: Identifiable, Codable, Hashable {
@@ -96,6 +102,7 @@ struct CareRecord: Identifiable, Codable, Hashable {
     var parentID: UUID?
     var outcome = ""
     var assessment: PestAssessment?
+    var leafAssessment: LeafAssessment?
     var planID: UUID?
     var planTaskID: UUID?
     var actionTitle: String?
@@ -108,7 +115,7 @@ struct CareRecord: Identifiable, Codable, Hashable {
         case .check: "\(soil?.rawValue ?? "Not sure") · \(action?.rawValue ?? "No action recorded")"
         case .change: "\(area?.rawValue ?? "Whole plant") · First noticed: \(firstNoticed.lowercased())"
         case .followUp: observation
-        case .careAction: outcome
+        case .careAction: action.map { "\(outcome) · \($0.rawValue)" } ?? outcome
         }
     }
 }
@@ -161,6 +168,7 @@ struct CareSaveReceipt {
 final class BloomStore {
     private(set) var garden = Garden()
     var errorMessage: String?
+    var careFeedback: CareFlowFeedback?
     private let fileURL: URL
     private var canSave = true
     private let managesNotifications: Bool
@@ -187,6 +195,11 @@ final class BloomStore {
                 garden.appPreferences = AppPreferences()
                 garden.plantSearchPreferences = PlantSearchPreferences(area: "Berlin", light: .lower, location: .berlin, plantTypes: [.bushy, .trailing])
                 garden.recentPlantSearches = ["Monstera", "Pothos"]
+            }
+            if ProcessInfo.processInfo.arguments.contains("--uitesting-leaf") {
+                garden.plants[0].placement = .indoor
+                let observation = CareRecord(plantID: garden.plants[0].id, kind: .change, area: .leaves, observation: "Dropping leaves", note: "Two leaves since yesterday")
+                garden.records.insert(observation, at: 0)
             }
             if ProcessInfo.processInfo.arguments.contains("--uitesting-pest") || ProcessInfo.processInfo.arguments.contains("--uitesting-plan") || ProcessInfo.processInfo.arguments.contains("--uitesting-plan-review") {
                 let observation = CareRecord(plantID: garden.plants[0].id, kind: .change, area: .pests, observation: "Visible insects")

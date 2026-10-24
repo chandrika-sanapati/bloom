@@ -30,13 +30,14 @@ struct PestAssessment: Codable, Hashable {
     }
 }
 enum CarePlanKind: String, Codable {
-    case mealybugs, inspection, expert
-    var title: String { switch self { case .mealybugs: "Possible mealybugs"; case .inspection: "Look a little closer"; case .expert: "Get help identifying the cause" } }
+    case mealybugs, inspection, expert, leafDry, leafWet, leafEnvironment, leafInspection, leafExpert
+    var title: String { switch self { case .mealybugs: "Possible mealybugs"; case .inspection: "Look a little closer"; case .expert: "Get help identifying the cause"; case .leafDry, .leafWet, .leafEnvironment, .leafInspection, .leafExpert: leafTitle } }
     var explanation: String {
         switch self {
         case .mealybugs: "Cotton-like clusters on indoor leaves or stems can be a sign of mealybugs. Your answers fit this possibility, but this is not a confirmed identification. Start with containment and careful physical removal in the small area you described."
         case .inspection: "These answers don't establish a mealybug problem. A closer inspection can help you choose an appropriate next step. Avoid treating an unidentified problem with a spray."
         case .expert: "You described several affected areas or heavy damage. A small-area removal plan may not be enough. Keep a record and get plant-care help to identify the cause and choose an appropriate treatment."
+        case .leafDry, .leafWet, .leafEnvironment, .leafInspection, .leafExpert: leafExplanation
         }
     }
     var defaultReviewDays: Int { self == .mealybugs ? 7 : 3 }
@@ -45,6 +46,11 @@ enum CarePlanKind: String, Codable {
         case .mealybugs: [.separate, .removeBugs]
         case .inspection: [.inspect]
         case .expert: [.inspect, .askExpert]
+        case .leafDry: [.waterDryRoots]
+        case .leafWet: [.drainExcessWater]
+        case .leafEnvironment: [.steadyConditions]
+        case .leafInspection: [.checkSoilMoisture, .checkGrowingConditions, .checkLeafChanges]
+        case .leafExpert: [.askExpert, .checkSoilMoisture, .checkGrowingConditions, .checkLeafChanges]
         }
     }
     var improvement: String {
@@ -52,13 +58,15 @@ enum CarePlanKind: String, Codable {
         case .mealybugs: "Compare the number of visible clusters, whether new areas are affected, and any new damage. Fewer visible signs are encouraging; one check does not prove the pest is gone."
         case .inspection: "Look for a clearer pattern: where the change appears, whether it spreads, and any visible pests. New evidence can help you reassess the plan."
         case .expert: "Compare any new damage and record the advice you receive. Reassess before starting a treatment that depends on identifying the cause."
+        case .leafDry, .leafWet, .leafEnvironment, .leafInspection, .leafExpert: leafImprovement
         }
     }
 }
 enum CarePlanStep: String, Codable {
-    case separate, removeBugs, inspect, askExpert, review
+    case separate, removeBugs, inspect, askExpert, review, waterDryRoots, drainExcessWater, steadyConditions, inspectGrowingConditions
+    case checkSoilMoisture, checkGrowingConditions, checkLeafChanges
     var title: String {
-        switch self { case .separate: "Keep this plant separate"; case .removeBugs: "Remove visible mealybugs"; case .inspect: "Inspect the affected area"; case .askExpert: "Ask a plant-care specialist"; case .review: "Check the plan's progress" }
+        switch self { case .separate: "Keep this plant separate"; case .removeBugs: "Remove visible mealybugs"; case .inspect: "Inspect the affected area"; case .askExpert: "Ask a plant-care specialist"; case .review: "Check the plan's progress"; case .waterDryRoots: "Check dry roots and water if needed"; case .drainExcessWater: "Drain excess water and check the mix"; case .steadyConditions: "Choose steady growing conditions"; case .inspectGrowingConditions: "Check soil, conditions and leaf changes"; case .checkSoilMoisture: "Check soil moisture"; case .checkGrowingConditions: "Check light and temperature"; case .checkLeafChanges: "Inspect leaf changes" }
     }
     var instructions: [String] {
         switch self {
@@ -66,11 +74,12 @@ enum CarePlanStep: String, Codable {
         case .removeBugs: ["In good light, check that you can see individual cottony insects rather than a mark on the leaf.", "Use tweezers to gently lift off reachable mealybugs. Support the leaf or stem and avoid scraping or tearing plant tissue.", "Stop if insects are difficult to reach, the area is fragile, or damage is extensive. Ask for plant-care help instead.", "This first plan does not include a spray or homemade alcohol/soap mixture."]
         case .inspect: ["Look closely at the same area as your saved observation, under similar light.", "Check leaf undersides, leaf joints, stems, and the pot for visible insects, clusters, or webbing.", "Take a close-up and a whole-plant photo if you can. Note which areas are affected.", "If you find pests, keep the plant away from other plants while you identify them."]
         case .askExpert: ["Bring your original observation, a whole-plant photo, a close-up, and recent care notes to a plant-care specialist or garden centre.", "Ask them to identify the cause before choosing a treatment. Mention any actions you have already taken.", "Record their advice in your task note. Bloom will not automatically recommend a stronger product."]
+        case .waterDryRoots, .drainExcessWater, .steadyConditions, .inspectGrowingConditions, .checkSoilMoisture, .checkGrowingConditions, .checkLeafChanges: leafInstructions
         case .review: ["Compare the original observation with the plant now.", "Look at new damage and visible signs, and consider which actions were actually completed.", "Record a photo or note if helpful. You can reassess the approach if things are unclear or worse."]
         }
     }
     var materials: String {
-        switch self { case .separate: "A suitable place away from other plants"; case .removeBugs: "Tweezers, good light, and a way to collect removed insects"; case .inspect: "Good light; an optional magnifier and camera"; case .askExpert: "Your observation, photos, and care notes"; case .review: "Your original observation and action record" }
+        switch self { case .separate: "A suitable place away from other plants"; case .removeBugs: "Tweezers, good light, and a way to collect removed insects"; case .inspect: "Good light; an optional magnifier and camera"; case .askExpert: "Your observation, photos, and care notes"; case .review: "Your original observation and action record"; case .waterDryRoots: "Water, a freely draining pot, and your plant's watering guidance"; case .drainExcessWater: "A safe place to drain the pot"; case .steadyConditions, .checkGrowingConditions: "Your plant's growing requirements"; case .inspectGrowingConditions: "Good light, your plant's label or guide, and optional photos"; case .checkSoilMoisture: "Your plant's moisture guidance"; case .checkLeafChanges: "Good light and optional comparison photos" }
     }
 }
 enum CarePlanStatus: String, Codable { case active = "In progress", needsReview = "Needs another look", resolved = "Resolved", stopped = "Stopped" }
@@ -80,8 +89,9 @@ struct CarePlan: Identifiable, Codable, Hashable {
     var observationID: UUID
     var createdAt = Date()
     var kind: CarePlanKind
-    var assessment: PestAssessment
+    var assessment: PestAssessment?
     var baseline: CareRecord
+    var leafAssessment: LeafAssessment?
     var status = CarePlanStatus.active
     var reviewAfterDays: Int?
     var guidanceVersion = "2026-10-19.1"

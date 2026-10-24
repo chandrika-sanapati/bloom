@@ -5,69 +5,41 @@ struct PreferencesView: View {
     @Environment(BloomStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
-    @State private var growingSpace = false
     @State private var reminderTime = false
     @State private var clearingSearches = false
     @State private var clearingSample = false
     @State private var notificationAccess = BloomNotificationAccess.notRequested
-    @State private var locationStatus = CLLocationManager().authorizationStatus
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Label {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Care on your terms").font(.headline)
-                            Text("Make Bloom fit your space and your pace.").font(.subheadline).foregroundStyle(.secondary)
-                        }
-                    } icon: { Image(systemName: "leaf.fill").foregroundStyle(BloomTheme.teal) }
-                }
-                Section {
-                    Toggle(isOn: Binding(get: { store.appPreferences.personalizedPicks }, set: { _ = store.setPersonalizedPicks($0) })) {
-                        Label("Personalized picks", systemImage: "sparkles")
-                    }.accessibilityIdentifier("preferences-personalized-picks")
-                    Button { growingSpace = true } label: {
-                        preferenceRow("Your growing space", subtitle: store.growingSpaceSummary, symbol: "house.and.flag", chevron: true)
-                    }.accessibilityIdentifier("preferences-growing-space")
-                    NavigationLink { LocationAccessView() } label: {
-                        preferenceRow("Location access", subtitle: "\(bloomLocationAccessLabel(locationStatus)) · Optional", symbol: "location")
-                    }.accessibilityIdentifier("preferences-location")
-                } header: { Text("Plant discovery") } footer: {
-                    Text("Your city, light, and plant choices are shared with Add plant. Turning picks off keeps those choices.")
-                }
-                Section {
-                    NavigationLink { TaskNotificationPreferencesView() } label: {
-                        preferenceRow("Task notifications", subtitle: store.appPreferences.taskNotifications && notificationAccess == .allowed ? "On for scheduled tasks" : "Off · Tasks stay in Bloom", symbol: "bell")
-                    }.accessibilityIdentifier("preferences-notifications")
+                    TaskNotificationControls()
                     Button { reminderTime = true } label: {
-                        preferenceRow("Default reminder time", subtitle: store.newReminderDate().formatted(date: .omitted, time: .shortened), symbol: "clock", chevron: true)
+                        preferenceRow("Reminder time", subtitle: store.newReminderDate().formatted(date: .omitted, time: .shortened), chevron: true)
                     }.accessibilityIdentifier("preferences-reminder-time")
-                } header: { Text("Care notifications") } footer: {
-                    Text("You choose when to check each plant. Your tasks and care history stay in Bloom when alerts are off.")
-                }
+                } header: { Text("Care notifications") }
                 Section("Data & privacy") {
                     Button { clearingSearches = true } label: {
-                        preferenceRow("Clear recent searches", subtitle: store.recentPlantSearches.isEmpty ? "No recent searches" : "\(store.recentPlantSearches.count) saved on this device", symbol: "clock.arrow.circlepath")
+                        preferenceRow("Clear recent searches", subtitle: store.recentPlantSearches.isEmpty ? "No recent searches" : "\(store.recentPlantSearches.count) recent searches")
                     }.disabled(store.recentPlantSearches.isEmpty).accessibilityIdentifier("preferences-clear-searches")
                     NavigationLink { BloomDataPrivacyView() } label: {
-                        Label("How your data is used", systemImage: "hand.raised")
+                        Text("How your data is used")
                     }.accessibilityIdentifier("preferences-data")
                 }
                 Section("About Bloom") {
                     NavigationLink { BloomGuidanceAboutView() } label: {
-                        Label("Care guidance & sources", systemImage: "book.closed")
+                        Text("Care guidance & sources")
                     }.accessibilityIdentifier("preferences-guidance")
                     LabeledContent("App version", value: "\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"))")
                 }
                 if store.garden.isSample {
                     Section {
                         Button("Start fresh without sample plants", role: .destructive) { clearingSample = true }
-                    } footer: { Text("You are exploring a sample garden.") }
+                    }
                 }
             }.bloomNativeForm().navigationTitle("Preferences").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly).accessibilityIdentifier("close-preferences") } }
-                .sheet(isPresented: $growingSpace) { PlantSearchPersonalizationView() }
                 .sheet(isPresented: $reminderTime) { DefaultReminderTimeView() }
                 .confirmationDialog("Clear recent searches?", isPresented: $clearingSearches, titleVisibility: .visible) {
                     Button("Clear searches", role: .destructive) { store.clearPlantSearches() }
@@ -78,7 +50,6 @@ struct PreferencesView: View {
                 .task { notificationAccess = await store.notificationClient.access() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active {
-                        locationStatus = CLLocationManager().authorizationStatus
                         Task { notificationAccess = await store.notificationClient.access() }
                     }
                 }
@@ -87,14 +58,13 @@ struct PreferencesView: View {
                 }
         }
     }
-    private func preferenceRow(_ title: String, subtitle: String, symbol: String, chevron: Bool = false) -> some View {
+    private func preferenceRow(_ title: String, subtitle: String, chevron: Bool = false) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: symbol).foregroundStyle(BloomTheme.teal).frame(width: 22).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).foregroundStyle(BloomTheme.ink)
-                Text(subtitle).font(.caption).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(subtitle).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
             }.frame(maxWidth: .infinity, alignment: .leading)
-            if chevron { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(BloomTheme.secondary.opacity(0.6)).accessibilityHidden(true) }
+            if chevron { BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.secondary.opacity(0.6)).accessibilityHidden(true) }
         }.padding(.vertical, 3)
     }
 }
@@ -110,17 +80,17 @@ struct LocationAccessView: View {
             Section {
                 LabeledContent("Device location", value: bloomLocationAccessLabel(status)).accessibilityIdentifier("location-access-status")
                 Text("Bloom asks for location only when you tap Locate me. It uses your current city for discovery, without continuous tracking.")
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(BloomType.body).foregroundStyle(.secondary)
                 if status != .notDetermined {
-                    Button("Open iOS Settings", systemImage: "arrow.up.forward.app") { openURL(URL(string: UIApplication.openSettingsURLString)!) }
+                    Button("Open iOS Settings") { openURL(URL(string: UIApplication.openSettingsURLString)!) }
                 }
             }
             Section("Saved area") {
                 Text(store.plantSearchPreferences?.location?.displayName ?? store.plantSearchPreferences?.area.nonEmpty ?? "No city selected")
                     .accessibilityIdentifier("preferences-saved-area")
                 Text("A saved city works even without device-location access. Changing iOS permission doesn't erase it.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                Button("Choose city or use Locate me", systemImage: "magnifyingglass") { editing = true }
+                    .font(BloomType.body).foregroundStyle(.secondary)
+                Button("Choose city or use Locate me") { editing = true }
                     .accessibilityIdentifier("preferences-change-area")
             }
             Section {
@@ -133,7 +103,7 @@ struct LocationAccessView: View {
     }
 }
 
-struct TaskNotificationPreferencesView: View {
+struct TaskNotificationControls: View {
     @Environment(BloomStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
@@ -141,24 +111,16 @@ struct TaskNotificationPreferencesView: View {
     @State private var busy = false
     @State private var message: String?
     var body: some View {
-        Form {
-            Section {
+        Group {
                 Toggle("Task notifications", isOn: Binding(get: { store.appPreferences.taskNotifications && access == .allowed }, set: change))
                     .disabled(busy).accessibilityIdentifier("task-notifications-toggle")
-                LabeledContent("iOS permission", value: access.rawValue).accessibilityIdentifier("notification-permission-status")
                 if busy { ProgressView("Updating notifications…") }
                 if access == .denied {
-                    Button("Open iOS Settings", systemImage: "arrow.up.forward.app") { openURL(URL(string: UIApplication.openSettingsURLString)!) }
+                    Text("Notifications are off in iOS Settings.").font(BloomType.supporting).foregroundStyle(.secondary)
+                    Button("Open iOS Settings") { openURL(URL(string: UIApplication.openSettingsURLString)!) }
                 }
-                if let message { Text(message).font(.subheadline).foregroundStyle(.secondary).accessibilityIdentifier("notification-preference-message") }
-            } footer: { Text("Enabling alerts may ask for iOS permission. Turning them off keeps every task and date in Bloom.") }
-            Section("What you'll receive") {
-                Label("Scheduled soil and observation checks", systemImage: "leaf")
-                Label("Care-plan tasks where Notify me is on", systemImage: "checklist")
-                Text("Alerts arrive at scheduled times. Turning them back on resumes future alerts. Overdue tasks stay in Bloom for you to review.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-            }
-        }.bloomNativeForm().navigationTitle("Task notifications").navigationBarTitleDisplayMode(.inline)
+                if let message { Text(message).font(BloomType.body).foregroundStyle(.secondary).accessibilityIdentifier("notification-preference-message") }
+        }
             .task { await refresh() }
             .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await refresh() } } }
     }
@@ -177,8 +139,7 @@ struct DefaultReminderTimeView: View {
         NavigationStack {
             Form {
                 Section { DatePicker("Reminder time", selection: $time, displayedComponents: .hourAndMinute).datePickerStyle(.wheel).labelsHidden().accessibilityIdentifier("default-reminder-time-picker") }
-                Section { Text("Used for new soil and observation reminders, in your device's local time. Existing tasks and treatment-specific check-in intervals won't change.").foregroundStyle(.secondary) }
-            }.bloomNativeForm().navigationTitle("Default reminder time").navigationBarTitleDisplayMode(.inline)
+            }.bloomNativeForm().navigationTitle("Reminder time").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) {
@@ -217,13 +178,14 @@ struct BloomGuidanceAboutView: View {
     var body: some View {
         Form {
             Section("Observe, act, compare") {
-                Text("Bloom helps you record changes, understand possible next steps, choose a care plan, and compare progress. You decide when to act.")
-                Text("This POC includes curated guidance for possible indoor mealybugs, plus inspection and specialist-support options. It doesn't automatically identify a plant disease from a photo or promise a cure.")
-                Text("Follow-up intervals are editable prompts to inspect progress. They aren't treatment or pesticide instructions.")
+                Text("Record a change, choose a first step and check progress. Bloom suggests possible causes, not a diagnosis. Photos help you compare changes.")
             }
-            Section("Care guidance") {
+            Section("Leaf changes") {
+                Link("Helping a poorly houseplant · RHS", destination: URL(string: "https://www.rhs.org.uk/plants/types/houseplants/how-to-help-a-poorly-houseplant")!)
+                Link("Leaf damage · RHS", destination: URL(string: "https://www.rhs.org.uk/prevention-protection/leaf-damage-on-houseplants")!)
+            }
+            Section("Pest guidance") {
                 Link("Indoor plant insects · University of Minnesota", destination: URL(string: "https://extension.umn.edu/garden-and-home/yard-and-garden/yard-and-garden-insects/insects-on-indoor-plants")!)
-                Link("Mealybugs · University of Maryland", destination: URL(string: "https://extension.umd.edu/resource/mealybugs-indoor-plants")!)
             }
             Section("Plant discovery") {
                 Text("Picks use your indoor light, preferred plant shapes, and optional regional seasonal context. They don't measure local popularity or outdoor suitability.")

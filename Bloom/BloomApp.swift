@@ -15,6 +15,7 @@ struct BloomApp: App {
                 .background(BloomTheme.canvas.ignoresSafeArea())
                 .environment(store)
                 .tint(BloomTheme.teal)
+                .labelStyle(BloomLabelStyle())
                 .preferredColorScheme(.light)
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { store.refreshPlanTaskNotifications() }

@@ -6,13 +6,23 @@ import XCTest
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = name; shot.lifetime = .keepAlways; add(shot)
     }
     private func reveal(_ element: XCUIElement, app: XCUIApplication) {
+        let footer = app.buttons.matching(NSPredicate(format: "identifier IN %@", ["assessment-continue", "start-care-plan", "leaf-start-care-plan", "finish-plan-task"])).allElementsBoundByIndex.last
+        let bottom = footer?.frame.minY ?? app.frame.maxY - 24
+        let top = (app.navigationBars.allElementsBoundByIndex.filter { $0.isHittable }.map { $0.frame.maxY }.max() ?? 132) + 8
         for _ in 0..<6 {
-            if element.exists && element.isHittable { return }
-            app.swipeUp()
+            if element.exists {
+                let frame = element.frame
+                if element.isHittable && frame.minY > top && frame.maxY < bottom - 4 { return }
+                let down = frame.minY < top
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: down ? 0.4 : 0.7)).press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: down ? 0.65 : 0.4)))
+            } else { app.swipeUp() }
         }
     }
     private func choose(_ id: String, _ value: String, app: XCUIApplication) {
-        let picker = app.buttons[id]; reveal(picker, app: app); picker.tap(); app.buttons[value].tap()
+        let picker = app.buttons[id]
+        reveal(picker, app: app)
+        if picker.label.contains(value) { return }
+        picker.tap(); app.buttons[value].tap()
     }
     private func assess(_ app: XCUIApplication, signs: String, extent: String) {
         let sign = app.buttons[signs]; reveal(sign, app: app); sign.tap()
@@ -27,44 +37,61 @@ import XCTest
         app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-")).firstMatch.tap()
         let next = app.buttons["find-next-steps"]; reveal(next, app: app); next.tap()
+        if app.buttons["leaf-check-pests"].waitForExistence(timeout: 2) {
+            let checks = app.buttons["leaf-check-pests"]; reveal(checks, app: app); checks.tap()
+        }
         XCTAssertTrue(app.navigationBars["Understand the change"].waitForExistence(timeout: 5))
     }
+    private func clearBanner(_ app: XCUIApplication) {
+        if app.buttons["dismiss-care-feedback"].exists { app.buttons["dismiss-care-feedback"].tap() }
+    }
+    private func openAcceptedPlan(_ app: XCUIApplication) {
+        clearBanner(app)
+        let plantLink = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "plant-care-plan-")).firstMatch
+        let recordLink = app.buttons["view-care-plan"]
+        let link = recordLink.exists ? recordLink : plantLink
+        reveal(link, app: app); link.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+    }
     private func finishAction(_ id: String, app: XCUIApplication) {
+        clearBanner(app)
         let action = app.buttons[id]; reveal(action, app: app); action.tap()
         XCTAssertTrue(app.navigationBars["Care action"].waitForExistence(timeout: 5))
         app.buttons["finish-plan-task"].tap()
         XCTAssertTrue(app.staticTexts["Action recorded"].waitForExistence(timeout: 5))
+        if app.buttons["schedule-completion-check-in"].exists { app.buttons["schedule-completion-check-in"].tap() }
         capture("17 Native care action saved", app)
-        app.buttons["close-plan-task"].tap()
+
     }
     func testObservationToCarePlanActionsAndExplicitResolution() {
         let app = XCUIApplication(); app.launchArguments = ["--uitesting"]; app.launch()
         app.buttons["plant-Snake Plant"].tap(); app.buttons["start-observation"].tap()
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Area")).firstMatch.tap(); app.buttons["Pests"].tap()
+        app.buttons["observation-area-pests"].tap()
         app.buttons["Visible insects"].tap(); app.buttons["continue-observation"].tap(); app.buttons["save-change"].tap()
-        XCTAssertTrue(app.staticTexts["Change saved"].waitForExistence(timeout: 5))
-        capture("14 Native saved observation next steps", app)
-        app.buttons["find-next-steps"].tap()
+        XCTAssertTrue(app.buttons["leaf-start-care-plan"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Change saved"].exists)
+        capture("53 Native pest causes after saving", app)
+        let checks = app.buttons["leaf-check-pests"]; reveal(checks, app: app); checks.tap()
         assess(app, signs: "White cotton-like clusters", extent: "A small, reachable area")
         XCTAssertTrue(app.staticTexts["Possible mealybugs"].exists)
         capture("15 Native explained care plan", app)
         app.buttons["start-care-plan"].tap()
+        openAcceptedPlan(app)
         XCTAssertTrue(app.navigationBars["Care plan"].waitForExistence(timeout: 5))
         capture("16 Native accepted care plan", app)
         finishAction("plan-step-separate", app: app)
         finishAction("plan-step-removeBugs", app: app)
-        app.buttons["finish-plan-setup"].tap()
-        app.buttons["finish-record"].tap()
-        app.navigationBars["Snake Plant"].buttons.firstMatch.tap()
-        let review = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "care-plan-task-", "Check the plan's progress")).firstMatch
-        reveal(review, app: app); XCTAssertTrue(review.exists); review.tap()
-        let clear = app.buttons["No visible signs now"]; reveal(clear, app: app); clear.tap()
+        clearBanner(app)
+        let review = app.buttons["plan-step-review"]; reveal(review, app: app); XCTAssertTrue(review.exists); review.tap()
+        let better = app.buttons["Better"]; reveal(better, app: app); better.tap()
+        let clear = app.switches["progress-no-new-signs"]; reveal(clear, app: app)
+        if clear.switches.firstMatch.exists { clear.switches.firstMatch.tap() } else { clear.tap() }
+        XCTAssertEqual(clear.value as? String, "1")
         capture("18 Native compare plan progress", app)
         app.buttons["finish-plan-task"].tap()
         XCTAssertTrue(app.staticTexts["Check-in saved"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["resolve-after-check"].exists)
         app.buttons["resolve-after-check"].tap(); app.buttons["Mark resolved"].tap()
-        app.buttons["View care plan"].tap()
+        clearBanner(app)
         XCTAssertTrue(app.staticTexts["Resolved"].waitForExistence(timeout: 5))
         capture("19 Native explicitly resolved plan", app)
     }
@@ -74,8 +101,9 @@ import XCTest
         assess(app, signs: "Fine webbing", extent: "A small, reachable area")
         XCTAssertTrue(app.staticTexts["Look a little closer"].exists)
         XCTAssertFalse(app.staticTexts["Possible mealybugs"].exists)
-        let follow = app.switches["plan-follow-up-toggle"]; reveal(follow, app: app); follow.tap()
+        XCTAssertFalse(app.switches["plan-follow-up-toggle"].exists)
         app.buttons["start-care-plan"].tap()
+        openAcceptedPlan(app)
         XCTAssertTrue(app.navigationBars["Care plan"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["plan-step-inspect"].exists)
         XCTAssertFalse(app.buttons["plan-step-removeBugs"].exists)
@@ -88,6 +116,7 @@ import XCTest
         assess(app, signs: "White cotton-like clusters", extent: "Several areas or heavy damage")
         XCTAssertTrue(app.staticTexts["Get help identifying the cause"].exists)
         app.buttons["start-care-plan"].tap()
+        openAcceptedPlan(app)
         XCTAssertTrue(app.buttons["plan-step-askExpert"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["plan-step-removeBugs"].exists)
     }
@@ -95,6 +124,7 @@ import XCTest
         let app = XCUIApplication(); app.launchArguments = ["--uitesting", "--uitesting-plan"]; app.launch()
         let action = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "care-plan-task-", "Keep this plant separate")).firstMatch
         reveal(action, app: app); action.tap()
+        app.buttons["Add a note or change the date"].tap()
         let schedule = app.buttons["reschedule-plan-task"]; reveal(schedule, app: app); schedule.tap()
         XCTAssertTrue(app.navigationBars["Task schedule"].waitForExistence(timeout: 5))
         app.navigationBars["Task schedule"].buttons["Save"].tap()
@@ -107,12 +137,16 @@ import XCTest
         let app = XCUIApplication(); app.launchArguments = ["--uitesting", "--uitesting-plan-review"]; app.launch()
         let review = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "care-plan-task-", "Check the plan's progress")).firstMatch
         reveal(review, app: app); review.tap()
-        let worse = app.buttons["More signs or new damage"]; reveal(worse, app: app); worse.tap()
+        let worse = app.buttons["Worse"]; reveal(worse, app: app); worse.tap()
         app.buttons["finish-plan-task"].tap()
         XCTAssertTrue(app.staticTexts["Check-in saved"].waitForExistence(timeout: 5))
         app.buttons["reassess-after-check"].tap()
         choose("assessment-extent", "Several areas or heavy damage", app: app)
         app.buttons["assessment-continue"].tap(); app.buttons["start-care-plan"].tap()
+        XCTAssertTrue(app.staticTexts["Care plan added"].waitForExistence(timeout: 5))
+        clearBanner(app)
+        app.buttons["plant-Snake Plant"].tap()
+        openAcceptedPlan(app)
         XCTAssertTrue(app.buttons["plan-step-askExpert"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["plan-step-removeBugs"].exists)
         capture("21 Native reassessed plan", app)

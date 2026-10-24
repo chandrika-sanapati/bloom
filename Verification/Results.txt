@@ -58,3 +58,105 @@ PASS: public city/climate integration; 16 standalone store checks and 10 standal
 The actual iOS permission prompts, physical-device location delivery/reverse geocoding, and notification delivery/tap routing remain a physical-device verification step. New gardens start with alerts off; older saved gardens retain their alert intent, subject to iOS permission. Existing navigation is preserved. Native Preferences screenshots are in Previews (29–33).
 
 Final manual launch: the six saved plants and existing Kitchen Monstera observation task remain intact. The Home gear opens the new native Preferences menu with shared growing-space summary, actual location access, notification status, reminder time, and data controls. It is left open for review. No preference change, location request, permission request, or garden reset was performed during this manual check.
+
+
+Leaf-care next steps verification — 2026-10-21
+
+PASS: all 62 native model/integration checks and 13 affected iPhone UI journeys (75 unique checks), across the main run and focused retries. The latest result index includes 95 passing outcomes; 20 unaffected UI journeys retain their 20 October baseline. This was not one 95-test invocation.
+PASS: fresh leaf-loss observation → condition checks → explained first action → explicit plan acceptance → explicit Watered/Waited decision → dated three-day progress check → extra early comparison → explicit resolution.
+PASS: dry mix, soggy mix and changed conditions use different starting actions. Unknown species, outdoor placement, spots and uncertain evidence stay on inspection routes. Soft/dark stems or rapid decline offer prompt help with follow-up off by default. Visible pests connect to the existing pest checks and return to the accepted plan.
+PASS: Close/resume of saved checks, the saved-record presentation, nested Done, optional follow-up off, action Undo, watering history, skipped actions, exact baseline/photos, independent issues and reminders, reassessment, legacy pest plans, persistence and failed writes.
+PASS: the comparison clock starts from actual action completion; extra early checks preserve automatic and manually chosen future dates. Starting a plan does not record treatment, schedule repeat watering, enable alerts, or automatically resolve an issue.
+PASS: 16 standalone store checks and 10 standalone remedy checks; native build and test build. Native screenshot review includes the explained next steps, actual watering decision, dated check, comparison, resolved state and wet-mix alternative.
+
+Iteration corrected the missing check-in label and clarified confirmation when no follow-up is scheduled. Saved-record guidance now uses a stable presentation host. Primary action content has explicit white text/icons. Native test targeting was corrected for duplicate menu titles, controls under fixed bars, screenshot-only swipe dismissal and Home's custom header. These fixes were verified in focused retries rather than accepting the initial failed runs.
+
+The new guidance is curated offline from RHS and University of Maryland sources, checked 21 October 2026. Specific leaf actions are bounded to the indoor catalog; uncertain cases provide inspection/help. Three days is an editable comparison prompt, not a promised recovery time or another watering date. Sources remain visible in the app. Physical-device notification delivery and location permissions retain the verification limits documented above.
+
+Final manual launch: the six saved plants and 11 existing care records are intact. The saved garden file remains last modified at 15:15 on 21 October, before the implementation backup at 15:21; the tests and manual review did not rewrite it. The current saved garden has no scheduled tasks. The app is left on an unsaved Leaves → Dropping leaves draft, ready for review. No demo observation, care plan, preference or permission was saved. Final native previews 34–41 were visually reviewed; the urgent preview waits for its native push animation to settle before capture. The full test scheme is restored.
+
+
+Saved-observation navigation verification — 2026-10-21
+
+PASS: four focused native iPhone journeys: fresh leaf-loss observation through plan/action/progress/resolution; immediate Save → Find next steps, Close/reopen, Edit/resave without duplication and Activity entry; existing soggy-mix record with action Undo; legacy pest plan through action/review/resolution. A final one-case visual regression also passed after the disabled-action label adjustment. The result index now contains 96 latest passing outcomes (62 model/integration checks and 34 UI journeys); unaffected checks retain their preceding baseline, not a single 96-test invocation.
+PASS: saving produces one confirmation. Find next steps presents Understand the change from the stable ObservationFlow owner using the saved observation ID. Activity uses the same item-based presentation. Saved action updates no longer reset the guidance page. The checks footer explains the remaining count, accepts Not sure, and labels the next action See care steps.
+PASS: native source/test build, focused UI assertions and native screenshot review (42–43); full original test scheme restored; git diff whitespace check clean. The first focused run exposed guidance resetting after actions; presentation ownership was corrected and all four final journeys passed. No storage format, model logic or permission changes were needed for this navigation fix.
+
+The real app was relaunched successfully with its six saved plants. The saved garden currently contains 15 records, including a record saved at 16:57 during the session, after the 14-record baseline at 16:26. No manual test observation, plan or preference was saved during the final review. Native manual coordinate control returned noWindowsAvailable, so the final checks-page navigation is verified by the passing native UI regression and screenshots, not claimed as the screen left open in the real saved garden. Tests use their isolated garden.
+
+
+Visual first-step guidance verification — 2026-10-21
+
+PASS: 65 native model/integration checks and 10 focused native iPhone UI journeys across the main run and two corrected retries. The latest result index has 102 passing outcomes (65 model/integration and 37 UI); 27 unaffected UI outcomes retain their preceding baseline. This is not a single 102-test run.
+PASS: immediate Save → Find next steps, Close/reopen and Edit/resave without duplicate records, Activity entry, no required leaf questionnaire, always-available Add care task, explicit action completion before a dated optional check-in, and follow-up opt-out.
+PASS: optional visual observations persist and Clear my checks returns to inspection without losing the original record. Relevant evidence can refine an action without completing all legacy assessment fields. Unknown facts remain unknown; unsupported species/placement and insufficient evidence do not imply watering. Partial-plan persistence and failed writes preserve the original observation. New plans record guidance version 2026-10-21.2; existing plans keep their version.
+PASS: dry-mix action still requires an explicit watering decision, comparison and explicit resolution; wet-mix action supports Undo; severe signs default to specialist help with automatic follow-up off; saved observations connect to the existing pest checks; the existing pest remedy still reaches action/review/resolution.
+PASS: the largest accessibility text size retains an available, tappable action; cause tiles stack for readable accessibility text. Standard text uses a compact three-card row. Native screenshots 44–48 were reviewed, including enabled action labels and icon-led task instructions. Details, source links and optional observations are collapsed by default.
+
+The first run caught vertically stacked cause tiles and a parent accessibility identifier overriding child picker identifiers. Both were corrected. Test navigation was adjusted to select Tasks before finding a task after entering from Activity, and to tap the visible title of an oversized accessibility Activity row. Those two journeys passed on retry. A short screenshot delay allows native menu dismissal to settle.
+
+The full original test scheme is restored and git diff whitespace checks are clean. Bloom was relaunched on iPhone 17 with the real saved garden: six plants and 16 care records, byte-for-byte identical to the backup taken before this change. No real observation, plan, preference or permission was saved during final review. UI tests use isolated sample gardens. Sources remain curated offline RHS/university guidance, not live diagnosis; physical-device notification/location limitations are unchanged.
+
+
+Observation cards and direct saved guidance — 2026-10-21
+
+PASS: 29 affected model/store checks and six native iPhone UI journeys across the main run and focused retries. The latest outcome index now contains 106 passing outcomes (66 model/integration and 40 UI); other outcomes retain their preceding baseline, not a single 106-test invocation.
+PASS: illustrated area cards replace the Area dropdown; tapping an area opens single-selection visible-change cards. Checkmarks and borders communicate selection. Replacing the selected area clears the old symptom, including shared labels. Custom descriptions remain supported. Two columns adapt to one at accessibility text sizes, with native Back navigation.
+PASS: Save change immediately opens guidance for the saved observation, including Change saved and Add to care plan. Acceptance creates planned work, never performed treatment. Closing guidance keeps the receipt, Edit and Undo; reopening, editing/resaving and Activity entry do not duplicate records. New tasks appear under Home Care → Tasks. Existing accepted plans retain their baseline and remain available from the saved receipt.
+PASS: new pest observations also offer a visual entry and a conservative inspection task without fabricated assessment answers. Optional closer-look checks still support the focused pest-removal journey through actual actions, comparison and explicit resolution. Routing is fixed for the lifetime of the presentation, so saving optional checks does not replace the active flow. Finishing the advanced pest plan closes guidance once.
+PASS: largest accessibility text, custom description entry, direct Save, plan acceptance and scrolling to the created action. Native screenshots 49–55 were visually reviewed. SwiftUI test build and native app launch passed. Full original scheme restored; git diff whitespace checks clean.
+
+Iteration corrected automation taps near the fixed footer: test scrolling now accounts for both the action button and the large-text selection hint. Native activation is used for area-card transitions. The custom field is selected by its actual native text-control type; large-text care-plan assertions reveal the action below its longer header. The optional pest action is revealed fully above the footer before activation. Focused retries passed after these adjustments and the advanced-flow completion fix.
+
+Bloom was relaunched on iPhone 17. The real garden has six plants and 21 records. All 19 records present before this change retain the same saved data, and the plant collection is unchanged; two additional records were saved at 18:47 during the session. No baseline was restored over those newer records. Automated UI tests use isolated sample gardens; no real record, plan, preference or permission was manually saved during final review. Physical-device notification/location limits remain unchanged.
+
+
+21 October 2026 — predictable care and observation flow
+PASS: 29 affected native model/store checks and 18 unique native iPhone UI journeys across the focused runs and corrected retries. The latest index retains 106 passing outcomes (66 model/integration, 40 UI), including unaffected preceding results; this is not a single 106-test run.
+PASS: Save change transitions directly to What could help. Add to care plan returns directly to the plant's next task. Leaving guidance keeps the saved observation, and Activity supports reopening and editing it. Intermediate observation receipts and mandatory plan-setup summaries were removed from this path.
+PASS: completing a plan action or comparison returns to the invoking page with compact feedback, Undo and the next check-in date or an appropriate optional next action. The plant's task and Care plan details use separate native rows so their touch areas do not compete.
+PASS: Better / Same / Worse and Not sure, explicit no-new-signs confirmation before resolution, early comparisons preserving the scheduled check, Same followed by scheduling a new check-in, follow-up opt-out, optional care-check reset/resume, targeted care, uncertain/urgent routes, and revised pest plans.
+PASS: existing Bloom colors, typography, photographs, area cards and component styling retained. Whole-card soil selection is tappable. Native tests account for the active footer in nested presentations and use the actual switch control, including where a parent accessibility identifier previously hid child controls. Largest accessibility text journeys retain the primary action and confirmation dismissal.
+PASS: final focused retry completed nine journeys without failures. All earlier failures are superseded by passing results for those same journeys. Full original Xcode scheme restored, with both test targets enabled and no selection filters.
+PASS: saved garden compared equal before and after the work and final non-test launch (5 plants, 7 records). No test observations, treatments, or plans entered the real garden. Updated Bloom is running on iPhone 17 with the user's garden; Home was visually checked in Device Hub. Package local links verified and Git whitespace checks passed.
+
+
+21 October 2026 — Settings text and section cleanup
+PASS: removed Plant discovery from the main Preferences menu, the decorative introduction, explanatory section footers, notification explanations, and the reminder-time helper paragraph. Kept actual permission/error states, current values, and destructive-action confirmations.
+PASS: What you'll receive now uses Scheduled task and Care plan task, with the existing icons and notification behavior.
+PASS: all five existing native settings journeys pass after moving their discovery-profile entry route to Search plants → Personalize. Saved profile behavior, notifications including denied permission, reminder time, privacy/source links, and clearing searches remain functional. No new model tests were added for this presentation change.
+PASS: current menu, notification and time-picker screenshots inspected; full original test scheme restored, both targets enabled and no test filters. Historical location-access screenshot is marked as superseded in the preview index.
+
+PASS — Normal launch: Xcode reports Running Bloom on iPhone 17; home displays the saved five-plant garden. Saved garden JSON exactly matches the pre-edit backup.
+
+21 October 2026 — Compact cards, consistent symbols, clear disabled actions and filled detail photo
+PASS: removed the fixed minimum detail height and empty tag row from My plants cards; compact name/location details and upper-right photo tags appear in Home and See all. Full-collection cells align at the top.
+PASS: shared scaled SF Symbol squares and semibold weight for interface icons, preserving native system navigation controls, artwork/brand sizing and existing Bloom colors.
+PASS: disabled primary footer actions have a readable muted fill, border and text; required selection gates remain enforced. Continue stays visible in change selection, with a concise hint when needed.
+PASS: plant-detail photographs fill their 230-point frame using aspect fill and clipping, removing fit-mode bands without distorting the image.
+PASS: seven unique existing native UI journeys passed across focused runs, including adding a plant, soil-check undo, search preferences, care-action undo, and the full custom-change flow at the largest accessibility text size. No new model tests were necessary for presentation-only changes.
+Iteration: a large-text synthetic card tap missed its target, then the scroll helper began inside the taller footer. The test now activates the name region and scrolls strictly inside the visible content; the selection hint was shortened. Both final care journeys passed, superseding those intermediate failures. No production interaction bypass was added.
+PASS: native screenshots 64–70 inspected; original full Xcode scheme restored with both test targets enabled and no selection filters.
+PASS: normal launch confirmed Running Bloom on iPhone 17; saved garden matches the pre-edit backup exactly. Updated package links and Git whitespace checks passed.
+
+22 October 2026 — Compact progress/record pages and clearer status/icon meaning
+PASS: grouped task context and starting-observation metadata; removed the duplicated observation title from the review header, extra early-check section and doubled padding on progress choices. The four choices share one compact group, preserving a minimum 44-point hit target and Dynamic Type growth. Section spacing is 16 points and top content margin 12 points on the affected pages.
+PASS: record metadata is one compact block; Original observation and View care plan share a section with matching plain teal action icons. Reminder controls use a plain action rather than a tinted pill.
+PASS: recorded completed actions show Action completed; skipped actions show Action skipped. Care-task display statuses use Completed and the action CTA says Complete action. Persisted raw values and old records are unchanged. Action completion remains separate from resolving the plant issue.
+PASS: progress choices use neutral unselected icons/circles and a green check/background when selected; Worse keeps its amber warning icon. Colored tags continue to identify recorded status.
+PASS: two existing native iPhone journeys pass across focused runs; screenshots 72–73 visually inspected. The first resolution run saved/resolved correctly but its final status assertion was offscreen; the test now reveals it. An intervening retry encountered an iOS legacy picker automation mismatch; a bounded coordinate retry handles that test interaction. The final full resolution journey passed. No production flow workaround was added.
+PASS: original full scheme restored with both targets enabled, no test filters; Git whitespace and local preview links verified.
+PASS: normal launch confirmed Running Bloom on iPhone 17; saved garden exactly matches the pre-edit backup. Automated journeys used isolated sample data.
+
+22 October 2026 — Heading hierarchy, text-only command buttons and neutral disabled actions
+PASS: audited workflow headings across Home, Search/personalization, observation, guidance, care forms and Preferences. Custom primary page copy uses title2; standalone section headings use semibold title3 and a VoiceOver heading trait. Native grouped form headers use increased prominence and title case. Card titles and supporting copy retain subordinate system text styles and Dynamic Type scaling.
+PASS: removed decorative glyphs from primary/secondary text-labelled commands, menu items, photo/share actions and labelled navigation actions. Icon-only utility controls, native chevrons, visual selection cards and informative status/care imagery are retained.
+PASS: the previous disabled treatment was a custom Bloom fill/stroke, not a Figma or native default component. It is replaced with a flat treatment using iOS systemGray5 and secondaryLabel colors, with no outline or command glyph. Shared button hit area and disabled gating remain intact.
+PASS: all four existing native UI journeys passed in a single focused run, including normal and largest accessibility text, selection/enable transitions, save/undo and adding a plant. Native captures 74–77 and 68 inspected. No new model tests were needed for view-only changes.
+PASS: full original Xcode scheme restored with both targets enabled and no selection filters; local delivery links and Git whitespace checked.
+PASS: normal launch confirmed Running Bloom on iPhone 17; saved garden matches the pre-edit backup exactly. Native tests used isolated sample data.
+
+22 October 2026 — Group the common and scientific plant names
+PASS: directly below the full-frame photo, the plant name and scientific name now share a single leading-aligned block with 4-point spacing, primary heading and smaller italic subtitle. The photo/name separator is hidden. Missing scientific names do not reserve a blank line. Native navigation keeps the plant name as scrolling context.
+PASS: the existing collection → detail → See all journey passed with both names verified in one accessible heading group. Native screenshot 78 visually inspected. Full original test scheme restored, links verified and Git whitespace check clean. No data or care-flow changes.
+PASS: normal launch confirmed Running Bloom on iPhone 17; saved garden exactly matches its pre-edit backup.

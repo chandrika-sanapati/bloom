@@ -42,13 +42,19 @@ struct AddPlantFlowView: View {
         Form {
             Section {
                 PlantPortrait(plant: setup.plant, contentMode: .fit).frame(height: 210).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
-                TextField("Plant name", text: $setup.plant.name).textInputAutocapitalization(.words).accessibilityIdentifier("overlay-plant-name")
+                TextField("Plant nickname", text: $setup.plant.name).textInputAutocapitalization(.words).accessibilityIdentifier("overlay-plant-name")
                 if !setup.plant.species.isEmpty { LabeledContent("Species", value: setup.plant.species) }
             } header: { Text("Your new plant · 1 of 3") }
+            if duplicateCount > 0 {
+                Section {
+                    Text("You already have \(duplicateCount == 1 ? "this plant" : "\(duplicateCount) of these plants"). Give this one a nickname to tell them apart.")
+                        .font(BloomType.body).foregroundStyle(BloomTheme.secondary).accessibilityIdentifier("duplicate-plant-hint")
+                }
+            }
             Section("Photo · Optional") {
-                PhotosPicker(selection: $setup.chosenPhoto, matching: .images) { Label("Choose a photo", systemImage: "photo") }.disabled(setup.loading).accessibilityIdentifier("setup-add-photo")
+                PhotosPicker(selection: $setup.chosenPhoto, matching: .images) { Text("Choose a photo") }.disabled(setup.loading).accessibilityIdentifier("setup-add-photo")
                 if setup.loading { ProgressView("Opening photo…") }
-                if let message = setup.photoMessage { Text(message).font(.footnote).foregroundStyle(.secondary) }
+                if let message = setup.photoMessage { Text(message).font(BloomType.supporting).foregroundStyle(.secondary) }
             }
             if let species = PlantSpecies.catalog.first(where: { $0.scientific == setup.plant.species }) {
                 Section("A little about it") {
@@ -56,7 +62,7 @@ struct AddPlantFlowView: View {
                     Label(species.light.rawValue, systemImage: species.light.symbol)
                 }
             }
-        }.bloomNativeForm().navigationTitle("Your plant").bloomAddPage()
+        }.bloomNativeForm().navigationTitle("Add plant").bloomAddPage()
             .onChange(of: setup.chosenPhoto) { _, item in
                 guard let item else { return }; setup.loading = true; setup.photoMessage = nil
                 Task {
@@ -80,10 +86,10 @@ struct AddPlantFlowView: View {
                 TextField("Room or location", text: $setup.plant.location).accessibilityIdentifier("setup-custom-location")
                 Menu {
                     ForEach(setup.placement == .indoor ? PlantRoom.indoor : PlantRoom.outdoor) { room in
-                        Button(room.name, systemImage: room.symbol) { setup.plant.location = room.name; BloomFeedback.selection() }.accessibilityIdentifier("setup-room-\(room.name)")
+                        Button(room.name) { setup.plant.location = room.name; BloomFeedback.selection() }.accessibilityIdentifier("setup-room-\(room.name)")
                     }
-                } label: { Label("Choose a room", systemImage: "mappin.and.ellipse").frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle()) }.buttonStyle(.borderless).accessibilityIdentifier("setup-room-menu")
-            } header: { Text("Location · 2 of 3") } footer: { Text("Where will this plant live? You can change this later.") }
+                } label: { Text("Choose a room").frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle()) }.buttonStyle(.borderless).accessibilityIdentifier("setup-room-menu")
+            } header: { Text("Location · 2 of 3") } footer: { Text("Where will this plant live?") }
             Section { BloomPlantIdentity(plant: setup.plant) }
         }.bloomNativeForm().navigationTitle("A place to grow").bloomAddPage()
             .bloomNativeFooter {
@@ -105,7 +111,7 @@ struct AddPlantFlowView: View {
         }.bloomNativeForm().navigationTitle("How is it doing?").bloomAddPage()
             .bloomNativeFooter {
                 VStack(spacing: 8) {
-                    BloomPrimaryAction(title: "Add plant", symbol: "plus", action: save).disabled(setup.status == nil).accessibilityIdentifier("overlay-save-plant")
+                    BloomPrimaryAction(title: "Add plant", action: save).disabled(setup.status == nil).accessibilityIdentifier("overlay-save-plant")
                     Button("Choose later") { setup.status = .notSure; save() }.frame(minHeight: 36)
                 }
             }
@@ -118,7 +124,15 @@ struct AddPlantFlowView: View {
     private func addCustom(_ name: String) { store.rememberPlantSearch(name); setup.plant = Plant(name: name, species: "", asset: ""); setup.status = nil; setup.placement = .indoor; navigate(.review) }
     private func save() {
         setup.plant.location = setup.plant.location.trimmingCharacters(in: .whitespacesAndNewlines)
-        if store.addPlant(setup.plant, placement: setup.placement, status: setup.status) { BloomFeedback.success(); completed(setup.plant.id) }
+        if store.addPlant(setup.plant, placement: setup.placement, status: setup.status) {
+            store.careFeedback = CareFlowFeedback(plantID: setup.plant.id, title: "\(setup.plant.name) added", detail: "Saved to My plants.")
+            BloomFeedback.success(); completed(setup.plant.id)
+        }
+    }
+    private var duplicateCount: Int {
+        store.garden.plants.filter {
+            !setup.plant.species.isEmpty ? $0.species == setup.plant.species : $0.name.localizedCaseInsensitiveCompare(setup.plant.name) == .orderedSame
+        }.count
     }
 }
 

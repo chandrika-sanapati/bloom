@@ -26,16 +26,16 @@ struct PlantSearchPersonalizationView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     if !store.appPreferences.personalizedPicks {
-                        Text("Saving these choices turns personalized picks on.").font(.footnote).foregroundStyle(BloomTheme.secondary)
+                        Text("Saving these choices turns personalized picks on.").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                     }
                     areaSection
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Where will your plant live?").font(BloomTheme.section)
+                        Text("Where will your plant live?").bloomHeading()
                         VStack(spacing: 0) {
                             ForEach(IndoorSearchLight.allCases) { option in
                                 Button { light = option; BloomFeedback.selection() } label: {
                                     HStack(spacing: 12) {
-                                        Text(option.rawValue).font(.subheadline)
+                                        Text(option.rawValue).font(BloomType.body)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                         selectionMark(light == option, multiple: false)
                                     }.padding(.horizontal, 14).frame(minHeight: 46).contentShape(Rectangle())
@@ -47,7 +47,7 @@ struct PlantSearchPersonalizationView: View {
                             }
                         }.background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                             .overlay(RoundedRectangle(cornerRadius: 16).stroke(BloomTheme.border, lineWidth: 1))
-                        Text("Choose its indoor light. Lower light still needs daylight.").font(.footnote).foregroundStyle(BloomTheme.secondary)
+                        Text("Choose its indoor light. Lower light still needs daylight.").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                     }
                     VStack(alignment: .leading, spacing: 12) {
                         sectionHeading("What plants do you like?", detail: "Choose one or more. None selected means all shapes.")
@@ -62,7 +62,7 @@ struct PlantSearchPersonalizationView: View {
                                             PlantFormArtwork(form: option).frame(height: 60)
                                             selectionMark(types.contains(option), multiple: true)
                                         }
-                                        Text(option.rawValue).font(.subheadline.weight(.semibold))
+                                        Text(option.rawValue).font(BloomType.section)
                                     }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
                                         .background(types.contains(option) ? BloomTheme.selected : BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(types.contains(option) ? BloomTheme.teal : BloomTheme.border, lineWidth: types.contains(option) ? 2 : 1))
@@ -73,7 +73,7 @@ struct PlantSearchPersonalizationView: View {
                                     .accessibilityIdentifier("search-type-\(option.rawValue)")
                             }
                         }
-                        if !types.isEmpty { Text("\(types.count) selected").font(.footnote.weight(.medium)).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("selected-plant-types") }
+                        if !types.isEmpty { Text("\(types.count) selected").font(BloomType.supporting).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("selected-plant-types") }
                     }
                     if store.plantSearchPreferences != nil {
                         Button("Turn off personalized picks") {
@@ -86,8 +86,8 @@ struct PlantSearchPersonalizationView: View {
                     Button {
                         light = .unsure; types.removeAll(); BloomFeedback.selection()
                     } label: {
-                        Label("Reset preferences", systemImage: "arrow.counterclockwise")
-                            .font(.subheadline.weight(.medium)).frame(maxWidth: .infinity, minHeight: 44)
+                        Text("Reset preferences")
+                            .font(BloomType.section).frame(maxWidth: .infinity, minHeight: 44)
                     }.buttonStyle(.plain)
                         .foregroundStyle(light == .unsure && types.isEmpty ? BloomTheme.secondary : BloomTheme.teal)
                         .disabled(light == .unsure && types.isEmpty)
@@ -119,16 +119,16 @@ struct PlantSearchPersonalizationView: View {
     }
     private var areaSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Your area").font(BloomTheme.section)
+            Text("Your area").bloomHeading()
             HStack(spacing: 8) {
-                Image(systemName: editingLocation ? "magnifyingglass" : "mappin.and.ellipse")
+                BloomSymbol(name: editingLocation ? "magnifyingglass" : "mappin.and.ellipse")
                     .foregroundStyle(BloomTheme.secondary).accessibilityHidden(true)
                 if editingLocation {
                     TextField("City or postal code", text: $query).textContentType(.addressCity).autocorrectionDisabled()
                         .submitLabel(.search).onSubmit(searchCity).disabled(busy != nil).accessibilityIdentifier("search-growing-area")
                         .onChange(of: query) { _, _ in cities = []; status = nil }
                     if query.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 {
-                        Button("Find", action: searchCity).font(.subheadline.weight(.medium)).disabled(busy != nil)
+                        Button("Find", action: searchCity).font(BloomType.section).disabled(busy != nil)
                             .frame(minHeight: 44).accessibilityIdentifier("find-search-city")
                     }
                 } else if let location {
@@ -136,15 +136,15 @@ struct PlantSearchPersonalizationView: View {
                         editingLocation = true; query = ""; cities = []; status = nil
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(location.displayName).font(.subheadline.weight(.semibold))
-                            if !location.detail.isEmpty { Text(location.detail).font(.caption).foregroundStyle(BloomTheme.secondary) }
+                            Text(location.displayName).font(BloomType.section)
+                            if !location.detail.isEmpty { Text(location.detail).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary) }
                         }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(Rectangle())
                     }.buttonStyle(.plain).disabled(busy != nil).accessibilityLabel("Change location, \(location.displayName)")
                         .accessibilityIdentifier("change-search-location")
                 }
                 Divider().frame(height: 24)
                 Button(action: locateMe) {
-                    Image(systemName: "location.fill").font(.body).frame(width: 44, height: 44)
+                    BloomSymbol(name: "location.fill").frame(width: 44, height: 44)
                 }.buttonStyle(.plain).foregroundStyle(BloomTheme.teal).disabled(busy != nil)
                     .accessibilityLabel("Locate me").accessibilityHint("Use your current city for seasonal picks")
                     .accessibilityIdentifier("search-locate-me")
@@ -155,44 +155,44 @@ struct PlantSearchPersonalizationView: View {
                 Button("Remove saved area", role: .destructive) {
                     operation?.cancel(); operation = nil; locator.cancel()
                     location = nil; legacyArea = ""; query = ""; cities = []; editingLocation = true; status = nil; busy = nil
-                }.font(.footnote).frame(minHeight: 44).disabled(busy != nil).accessibilityIdentifier("remove-search-area")
+                }.font(BloomType.supporting).frame(minHeight: 44).disabled(busy != nil).accessibilityIdentifier("remove-search-area")
             }
             if editingLocation {
                 if let location {
                     HStack {
-                        Text("Current: \(location.displayName)").font(.footnote).foregroundStyle(BloomTheme.secondary)
+                        Text("Current: \(location.displayName)").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                         Spacer()
-                        Button("Keep current location") { editingLocation = false; query = ""; cities = []; status = nil }.font(.footnote).frame(minHeight: 44)
+                        Button("Keep current location") { editingLocation = false; query = ""; cities = []; status = nil }.font(BloomType.supporting).frame(minHeight: 44)
                     }
                 } else if !legacyArea.isEmpty {
-                    Text("Previously chosen: \(legacyArea). Select a city to update seasonal context.").font(.footnote).foregroundStyle(BloomTheme.secondary)
+                    Text("Previously chosen: \(legacyArea). Select a city to update seasonal context.").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                 }
                 ForEach(cities) { city in
                     Button { choose(city) } label: {
                         HStack {
-                            VStack(alignment: .leading, spacing: 4) { Text(city.displayName).font(.subheadline.weight(.semibold)); Text(city.detail).font(.caption).foregroundStyle(.secondary) }
-                            Spacer(); Image(systemName: "plus.circle").foregroundStyle(BloomTheme.teal)
+                            VStack(alignment: .leading, spacing: 4) { Text(city.displayName).font(BloomType.section); Text(city.detail).font(BloomType.supporting).foregroundStyle(.secondary) }
+                            Spacer(); BloomSymbol(name: "plus.circle").foregroundStyle(BloomTheme.teal)
                         }.padding(12).frame(maxWidth: .infinity, alignment: .leading).background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                     }.buttonStyle(.plain).disabled(busy != nil).accessibilityIdentifier("search-city-\(city.name)")
                 }
             }
-            if let busy { ProgressView(busy).font(.subheadline).accessibilityIdentifier("search-location-progress") }
-            if let status { Text(status).font(.footnote).foregroundStyle(BloomTheme.secondary).accessibilityIdentifier("search-location-status") }
+            if let busy { ProgressView(busy).font(BloomType.body).accessibilityIdentifier("search-location-progress") }
+            if let status { Text(status).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).accessibilityIdentifier("search-location-status") }
             if let location, location.climate == nil && busy == nil {
-                Button("Retry seasonal context") { choose(location) }.font(.subheadline).frame(minHeight: 44)
+                Button("Retry seasonal context") { choose(location) }.font(BloomType.body).frame(minHeight: 44)
             }
             DisclosureGroup("Location is optional") {
                 Text("Your city supplies seasonal context. Locate me requests access only when tapped. City search uses Open-Meteo; approximate regional coordinates are used for NASA POWER climate data.")
-                    .font(.footnote).foregroundStyle(BloomTheme.secondary).padding(.top, 6)
-            }.font(.footnote).foregroundStyle(BloomTheme.secondary)
+                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).padding(.top, 6)
+            }.font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
         }
     }
     private func sectionHeading(_ title: String, detail: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) { Text(title).font(BloomTheme.section); Text(detail).font(.subheadline).foregroundStyle(BloomTheme.secondary) }
+        VStack(alignment: .leading, spacing: 6) { Text(title).bloomHeading(); Text(detail).font(BloomType.body).foregroundStyle(BloomTheme.secondary) }
     }
     private func selectionMark(_ selected: Bool, multiple: Bool) -> some View {
-        Image(systemName: selected ? (multiple ? "checkmark.square.fill" : "checkmark.circle.fill") : (multiple ? "square" : "circle"))
-            .font(.title3).foregroundStyle(selected ? BloomTheme.teal : BloomTheme.secondary.opacity(0.5)).accessibilityHidden(true)
+        BloomSymbol(name: selected ? (multiple ? "checkmark.square.fill" : "checkmark.circle.fill") : (multiple ? "square" : "circle"))
+            .foregroundStyle(selected ? BloomTheme.teal : BloomTheme.secondary.opacity(0.5)).accessibilityHidden(true)
     }
     private func searchCity() {
         guard busy == nil else { return }

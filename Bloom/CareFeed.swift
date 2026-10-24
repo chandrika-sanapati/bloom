@@ -23,7 +23,7 @@ struct HomeCareFeed: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Care").font(BloomTheme.section).accessibilityAddTraits(.isHeader)
+            Text("Care").bloomHeading().accessibilityAddTraits(.isHeader)
             Picker("Care", selection: $selection) {
                 ForEach(CareFeedSelection.allCases) { Text($0.rawValue).tag($0) }
             }.pickerStyle(.segmented).accessibilityIdentifier("home-care-picker")
@@ -41,7 +41,7 @@ struct HomeCareFeed: View {
                             ForEach(CareTaskTiming.allCases) { timing in
                                 let scheduled = tasks.filter { CareTaskTiming.classify($0.due, now: context.date) == timing }
                                 if !scheduled.isEmpty {
-                                    Text(timing.rawValue).font(.subheadline.weight(.medium)).foregroundStyle(BloomTheme.secondary).accessibilityAddTraits(.isHeader)
+                                    Text(timing.rawValue).font(BloomType.section).foregroundStyle(BloomTheme.secondary).accessibilityAddTraits(.isHeader)
                                     ForEach(scheduled) { item in
                                         switch item {
                                         case .reminder(let plant):
@@ -68,12 +68,12 @@ struct HomeCareFeed: View {
                             HStack(spacing: 10) {
                                 RecordRow(record: record, plantName: store.plant(record.plantID)?.name ?? "Plant")
                                 Spacer(minLength: 0)
-                                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
+                                BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
                             }.bloomCard(padding: 16)
                         }.buttonStyle(.plain).accessibilityIdentifier("home-activity-\(record.id.uuidString)")
                     }
                     NavigationLink("See all activity", value: PlantsRoute.activity)
-                        .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                        .font(BloomType.section).frame(minHeight: 44)
                         .accessibilityIdentifier("home-all-activity")
                 }
             }
@@ -89,15 +89,15 @@ struct HomePlanTaskRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(store.plant(task.plantID)?.name ?? "Your plant").font(.subheadline.weight(.semibold))
+                Text(store.plant(task.plantID)?.name ?? "Your plant").font(BloomType.section)
                 Spacer(minLength: 8)
                 StatusTag(text: task.step == .review ? "Review" : "Action", tone: task.step == .review ? .yellow : .blue)
             }
-            Text(task.step.title).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+            Text(task.step.title).font(BloomType.body).fixedSize(horizontal: false, vertical: true)
             HStack {
-                if let date = task.due { Text(date.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary) }
+                if let date = task.due { Text(date.formatted(date: .abbreviated, time: .shortened)).font(BloomType.supporting).foregroundStyle(.secondary) }
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
+                BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
             }
         }.bloomCard(padding: 16).accessibilityElement(children: .combine)
     }
