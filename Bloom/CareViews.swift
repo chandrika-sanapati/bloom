@@ -21,39 +21,38 @@ struct CareCheckView: View {
                 if saved, let draft {
                     SavedRecordView(recordID: draft.id, edit: { saved = false; path = [] }, undo: undo, finish: { dismiss() })
                 } else if let plant = store.plant(plantID) {
-                    Form {
-                        Section { BloomPlantIdentity(plant: plant) }
-                        Section {
-                            Picker("Soil", selection: soil) {
-                                Text("Choose an observation").tag(Soil?.none)
-                                ForEach(Soil.allCases) { Text($0.rawValue).tag(Optional($0)) }
-                            }.pickerStyle(.inline)
-                        } header: { Text("How does the soil feel?") } footer: { EmptyView() }
-                        if let last = store.latestCheck(for: plantID) { Section("Last time") { Text(last.summary).foregroundStyle(.secondary) } }
-                    }.bloomNativeForm().navigationTitle("Check soil").navigationBarTitleDisplayMode(.inline)
+                    BloomContentPage {
+                        BloomPlantIdentity(plant: plant)
+                        Text("How does the soil feel?").bloomHeading()
+                        BloomChoiceList(values: Soil.allCases, selection: soil, title: { $0.rawValue }, identifier: { "soil-choice-\($0.rawValue)" })
+                    }.navigationTitle("Check soil").navigationBarTitleDisplayMode(.inline)
                         .bloomNativeFooter {
-                            BloomPrimaryAction(title: "Continue") { path.append(.decide) }.disabled(draft?.soil == nil).accessibilityIdentifier("continue-check")
+                            VStack(spacing: 8) {
+                                if draft?.soil == nil { BloomSelectionHint() }
+                                BloomPrimaryAction(title: "Continue") { path.append(.decide) }.disabled(draft?.soil == nil).accessibilityIdentifier("continue-check")
+                            }
                         }
                 } else { ContentUnavailableView("Plant unavailable", systemImage: "leaf") }
             }.toolbar { if !saved { ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) } } }
                 .navigationDestination(for: CarePage.self) { _ in
                     if saved, let draft { SavedRecordView(recordID: draft.id, edit: { saved = false }, undo: undo, finish: { dismiss() }) }
                     else {
-                        Form {
-                            Section { LabeledContent("You observed", value: draft?.soil?.rawValue ?? "Not sure") }
-                            Section {
-                                Picker("Decision", selection: action) {
-                                    Text("Choose your decision").tag(CareAction?.none)
-                                    ForEach(CareAction.allCases) { Text($0.rawValue).tag(Optional($0)) }
-                                }.pickerStyle(.inline)
-                            } header: { Text("What did you do?") } footer: { EmptyView() }
-                            Section("Notes · Optional") {
-                                TextField("Anything to remember?", text: Binding(get: { draft?.note ?? "" }, set: { draft?.note = $0 }), axis: .vertical).lineLimit(3...6).accessibilityIdentifier("check-note")
+                        BloomContentPage {
+                            LabeledContent("You observed", value: draft?.soil?.rawValue ?? "Not sure").font(BloomType.body).bloomCard(padding: 16)
+                            Text("What did you do?").bloomHeading()
+                            BloomChoiceList(values: CareAction.allCases, selection: action, title: { $0.rawValue }, identifier: { "care-decision-\($0.rawValue)" })
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Notes · Optional").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                                TextField("Anything to remember?", text: Binding(get: { draft?.note ?? "" }, set: { draft?.note = $0 }), axis: .vertical)
+                                    .lineLimit(3...6).bloomInput().accessibilityIdentifier("check-note")
                             }
-                        }.bloomNativeForm().navigationTitle("Your decision").navigationBarTitleDisplayMode(.inline)
+                        }.navigationTitle("Your decision").navigationBarTitleDisplayMode(.inline)
                             .bloomNativeFooter {
-                                BloomPrimaryAction(title: busy ? "Saving…" : "Save care", action: save)
-                                    .disabled(draft?.action == nil || busy).accessibilityIdentifier("save-check")
+                                VStack(spacing: 8) {
+                                    if draft?.action == nil { BloomSelectionHint() }
+                                    BloomPrimaryAction(title: busy ? "Saving…" : "Save care", action: save)
+                                        .disabled(draft?.action == nil || busy).accessibilityIdentifier("save-check")
+                                }
                             }
                     }
                 }
@@ -90,28 +89,35 @@ struct SavedRecordView: View {
     var body: some View {
         Group {
             if let record = store.record(recordID), let plant = store.plant(record.plantID) {
-                List {
-                    Section {
-                        Label(record.kind == .check ? "Check saved" : record.kind == .change ? "Change saved" : "Follow-up saved", systemImage: "checkmark.circle.fill")
-                            .font(BloomType.title).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("saved-title")
-                        BloomPlantIdentity(plant: plant)
+                BloomContentPage {
+                    Label(record.kind == .check ? "Check saved" : record.kind == .change ? "Change saved" : "Follow-up saved", systemImage: "checkmark.circle.fill")
+                        .font(BloomType.section).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("saved-title")
+                    BloomPlantIdentity(plant: plant)
+                    VStack(alignment: .leading, spacing: 8) {
                         Text(record.kind == .check ? record.summary : record.title).font(BloomType.section)
-                        if !record.note.isEmpty { Text(record.note).foregroundStyle(.secondary) }
-                    }
-                    if record.kind == .change {
-                        Section { CareGuidanceEntry(observationID: recordID, open: {
-                            if let nextSteps { nextSteps() } else { guidance = CareGuidanceDestination(id: recordID) }
-                        }) }
-                    }
-                    else { Section("Next time") { ReminderCard(plantID: plant.id, kind: record.kind == .check ? .soilCheck : .observation, observationID: record.kind == .check ? nil : record.parentID ?? record.id) } }
-                    Section("Your record") {
-                        NavigationLink { RecordDetailView(recordID: recordID) } label: { Text("View activity") }
-                        Button("Edit this record", action: edit)
-                        Button("Undo", action: undo).accessibilityIdentifier("undo-record")
-                        if record.kind != .check { NavigationLink { SupportView(recordID: recordID) } label: { Text("Get support") } }
-                    }
-                }.listStyle(.insetGrouped).bloomNativeForm().navigationTitle("Saved").navigationBarTitleDisplayMode(.inline).navigationBarBackButtonHidden()
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done", action: finish).fontWeight(.semibold).accessibilityIdentifier("finish-record") } }
+                        if !record.note.isEmpty { Text(record.note).font(BloomType.body).foregroundStyle(BloomTheme.secondary) }
+                    }.bloomCard(padding: 16)
+                    Text("Next time").bloomHeading()
+                    VStack(spacing: 0) {
+                        if record.kind == .change {
+                            CareGuidanceEntry(observationID: recordID, open: {
+                                if let nextSteps { nextSteps() } else { guidance = CareGuidanceDestination(id: recordID) }
+                            }).padding(16)
+                        } else {
+                            ReminderCard(plantID: plant.id, kind: record.kind == .check ? .soilCheck : .observation,
+                                         observationID: record.kind == .check ? nil : record.parentID ?? record.id).padding(16)
+                        }
+                        Divider().padding(.leading, 16)
+                        NavigationLink { RecordDetailView(recordID: recordID) } label: { BloomActionRow(title: "View activity") }.padding(16)
+                        Divider().padding(.leading, 16)
+                        Button(action: edit) { BloomActionRow(title: "Edit this record") }.padding(16)
+                        Divider().padding(.leading, 16)
+                        Button(action: undo) { BloomActionRow(title: "Undo") }.padding(16).accessibilityIdentifier("undo-record")
+                    }.buttonStyle(.plain).background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+                }.navigationTitle("Saved").navigationBarTitleDisplayMode(.inline).navigationBarBackButtonHidden()
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Back to plant", systemImage: "chevron.backward", action: finish).labelStyle(.iconOnly) } }
+                    .bloomNativeFooter { BloomPrimaryAction(title: "Done", action: finish).accessibilityIdentifier("finish-record") }
+
             }
         }
         .fullScreenCover(item: $guidance) { destination in CareGuidanceFlow(observationID: destination.id).id(destination.id) }
@@ -124,8 +130,6 @@ struct ReminderCard: View {
     var kind: PlantReminderKind = .soilCheck
     var observationID: UUID? = nil
     var compact = false
-    @State private var busy = false
-    @State private var message: String?
     @State private var editingDate = false
     private var effectiveKind: PlantReminderKind { store.plant(plantID)?.reminderKind ?? kind }
     var body: some View {
@@ -133,21 +137,14 @@ struct ReminderCard: View {
             if !compact { Label(effectiveKind == .soilCheck ? "Check soil again" : "Compare your observation", systemImage: effectiveKind == .soilCheck ? "drop" : "eye").font(BloomType.section) }
             if let date = store.plant(plantID)?.reminder { Text(date.formatted(date: .abbreviated, time: .shortened)).font(BloomType.body).foregroundStyle(.secondary) }
             else if !compact { Text("Choose when you'd like to check in again.").font(BloomType.body).foregroundStyle(.secondary) }
-            Menu {
-                Button("In 3 days") { set(3) }
-                Button("In a week") { set(7) }
-                Button("Choose date and time…") { editingDate = true }
-                if store.plant(plantID)?.reminder != nil { Button("Turn off reminder", role: .destructive) { set(nil) } }
-            } label: { BloomActionRow(title: store.plant(plantID)?.reminder == nil ? "Remind me" : "Change reminder") }
-                .buttonStyle(.borderless).frame(minHeight: 44, alignment: .leading)
-                .disabled(busy).accessibilityIdentifier("reminder-options")
-            if !compact { Text("Saved in Care → Tasks. Alerts follow your notification preferences.").font(BloomType.supporting).foregroundStyle(.secondary) }
-            if busy { ProgressView().controlSize(.small) }
-            if let problem = message ?? store.notificationMessage { Text(problem).font(BloomType.supporting).foregroundStyle(.secondary) }
+            Button { editingDate = true } label: { BloomActionRow(title: store.plant(plantID)?.reminder == nil ? "Remind me" : "Change reminder") }
+                .buttonStyle(.plain).frame(minHeight: 44, alignment: .leading)
+                .accessibilityIdentifier("reminder-options")
+            if let problem = store.notificationMessage { Text(problem).font(BloomType.supporting).foregroundStyle(.secondary) }
         }.padding(.vertical, 5)
-            .sheet(isPresented: $editingDate) { ReminderEditorView(plantID: plantID, kind: effectiveKind, observationID: observationID) }
+            .fullScreenCover(isPresented: $editingDate) { ReminderEditorView(plantID: plantID, kind: effectiveKind, observationID: observationID) }
     }
-    private func set(_ days: Int?) { busy = true; Task { message = await store.setReminder(for: plantID, days: days, kind: effectiveKind, observationID: observationID); busy = false } }
+
 }
 
 struct ReminderEditorView: View {
@@ -156,24 +153,59 @@ struct ReminderEditorView: View {
     let plantID: UUID
     let kind: PlantReminderKind
     var observationID: UUID? = nil
+    @State private var selectedKind = PlantReminderKind.soilCheck
     @State private var date = Date().addingTimeInterval(259200)
+    @State private var notify = false
     @State private var busy = false
     @State private var message: String?
+    private var concernID: UUID? { observationID ?? store.plant(plantID)?.reminderObservationID ?? store.records(for: plantID).first { $0.kind == .change }?.id }
     var body: some View {
         NavigationStack {
-            Form {
-                Section { Text(store.plant(plantID)?.name ?? "Your plant").font(BloomType.section) }
-                Section("Next check") { DatePicker("Remind me", selection: $date, in: Date()..., displayedComponents: [.date, .hourAndMinute]).datePickerStyle(.graphical) }
-                Section { Text("This saves a task even when notifications are off. New reminders use the time in Preferences; existing dates stay as you chose them.").foregroundStyle(.secondary) }
-                if let message { Section { Text(message).foregroundStyle(.red) } }
-            }.bloomNativeForm().navigationTitle("Set reminder").navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") { busy = true; Task { message = await store.setReminder(for: plantID, date: date, kind: kind, observationID: observationID); busy = false; if message == nil { dismiss() } } }.disabled(busy)
-                    }
+            BloomContentPage {
+                if let plant = store.plant(plantID) { BloomPlantIdentity(plant: plant) }
+                VStack(alignment: .leading, spacing: 14) {
+                    Picker("Task", selection: $selectedKind) {
+                        Text("Check soil").tag(PlantReminderKind.soilCheck)
+                        Text("Compare observation").tag(PlantReminderKind.observation)
+                    }.accessibilityIdentifier("reminder-kind")
+                    DatePicker("Date and time", selection: $date, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                        .accessibilityIdentifier("reminder-date")
+                }.bloomCard(padding: 16)
+                HStack(spacing: 12) {
+                    Button("In 3 days") { date = store.newReminderDate(days: 3) }.accessibilityIdentifier("reminder-three-days")
+                    Button("In a week") { date = store.newReminderDate(days: 7) }
+                }.buttonStyle(.bordered).controlSize(.large)
+                Toggle("Notify me", isOn: $notify).disabled(!store.appPreferences.taskNotifications)
+                    .padding(16).background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+                    .accessibilityIdentifier("reminder-notification")
+                if !store.appPreferences.taskNotifications {
+                    Text("Task notifications are off in Preferences. Your task will still appear in Care.")
+                        .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                 }
-        }.onAppear { date = store.plant(plantID)?.reminder.flatMap { $0 > Date() ? $0 : nil } ?? store.newReminderDate() }
+                if store.plant(plantID)?.reminder != nil {
+                    Button("Turn off reminder", role: .destructive) {
+                        busy = true
+                        Task { message = await store.setReminder(for: plantID, date: nil); busy = false; if message == nil { dismiss() } }
+                    }.frame(minHeight: 44).disabled(busy)
+                }
+                if let message { Text(message).font(BloomType.supporting).foregroundStyle(.red) }
+            }.navigationTitle("Reminder").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) } }
+                .bloomNativeFooter {
+                    BloomPrimaryAction(title: busy ? "Saving…" : "Save reminder") {
+                        if selectedKind == .observation && concernID == nil { message = "Record an observation before adding a comparison reminder."; return }
+                        busy = true
+                        Task {
+                            message = await store.setReminder(for: plantID, date: date, kind: selectedKind, observationID: concernID, notify: notify)
+                            busy = false; if message == nil { dismiss() }
+                        }
+                    }.disabled(busy).accessibilityIdentifier("save-reminder")
+                }
+        }.onAppear {
+            selectedKind = kind
+            date = store.plant(plantID)?.reminder.flatMap { $0 > Date() ? $0 : nil } ?? store.newReminderDate()
+            notify = store.plant(plantID)?.reminderNotifications ?? store.appPreferences.taskNotifications
+        }
     }
 }
 
@@ -215,7 +247,6 @@ struct HistoryView: View {
     var initialPlantID: UUID? = nil
     @State private var filter = HistoryFilter.all
     @State private var plantID: UUID?
-    @State private var showingAll = false
     @State private var initialized = false
     @State private var query = ""
     private var records: [CareRecord] {
@@ -236,12 +267,11 @@ struct HistoryView: View {
             }
             if records.isEmpty { Section { ContentUnavailableView("No activity yet", systemImage: "clock", description: Text("Your saved checks and observations appear here.")) } }
             else {
-                Section(showingAll ? "All activity" : "Recent activity · \(min(5, records.count))") {
-                    ForEach(showingAll ? records : Array(records.prefix(5))) { record in
+                Section("All activity") {
+                    ForEach(records) { record in
                         NavigationLink { RecordDetailView(recordID: record.id) } label: { RecordRow(record: record, plantName: store.plant(record.plantID)?.name ?? "Plant") }
                             .accessibilityIdentifier("history-activity-\(record.id.uuidString)")
                     }
-                    if !showingAll && records.count > 5 { Button("Show all activity") { showingAll = true } }
                 }
             }
             if store.garden.isSample { Section { Text("Sample activity").font(BloomType.supporting).foregroundStyle(.secondary) } }
@@ -314,13 +344,13 @@ struct RecordDetailView: View {
                     }
                 }.listStyle(.insetGrouped).bloomNativeForm().listSectionSpacing(16)
                     .contentMargins(.top, 12, for: .scrollContent).navigationTitle("Your record").navigationBarTitleDisplayMode(.inline)
-                    .sheet(isPresented: $editing) {
+                    .fullScreenCover(isPresented: $editing) {
                         if record.planID != nil { PlanRecordNoteEditor(recordID: recordID) }
                         else if record.kind == .check { CareCheckView(plantID: record.plantID, original: record) }
                         else if record.kind == .change { ObservationFlowView(plantID: record.plantID, original: record) }
                         else { FollowUpView(original: store.record(record.parentID ?? UUID()), editing: record) }
                     }
-                    .sheet(isPresented: $followingUp) { FollowUpView(original: record) }
+                    .fullScreenCover(isPresented: $followingUp) { FollowUpView(original: record) }
                     .confirmationDialog("Delete this record?", isPresented: $deleting, titleVisibility: .visible) {
                         Button("Delete record", role: .destructive) { if store.deleteRecord(recordID) { dismiss() } }
                     } message: { Text("Linked follow-ups, care plans, and their tasks are also removed.") }
@@ -357,10 +387,9 @@ struct FollowUpView: View {
                 Form {
                     if let original { Section("Earlier observation") { Text(original.title).font(BloomType.section); Text(original.date, format: .dateTime.month().day()).foregroundStyle(.secondary) } }
                     Section("What do you notice now?") {
-                        Picker("Observation", selection: $outcome) {
-                            Text("Choose an observation").tag("")
-                            ForEach(["Looks better", "About the same", "Looks worse", "Something different", "Not sure"], id: \.self) { Text($0) }
-                        }.pickerStyle(.inline)
+                        BloomChoiceList(values: ["Looks better", "About the same", "Looks worse", "Something different", "Not sure"],
+                                        selection: Binding(get: { outcome.isEmpty ? nil : outcome }, set: { outcome = $0 ?? "" }), title: { $0 })
+                            .listRowInsets(EdgeInsets())
                     }
                     Section("Notes · Optional") { TextField("What changed?", text: $note, axis: .vertical).lineLimit(3...6) }
                 }.bloomNativeForm().navigationTitle("Check in again").navigationBarTitleDisplayMode(.inline)

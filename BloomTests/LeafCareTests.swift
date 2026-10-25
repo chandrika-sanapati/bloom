@@ -40,7 +40,7 @@ import XCTest
         XCTAssertEqual(s.garden.records.count, 1)
         XCTAssertNil(s.startPestInspectionPlan(observationID: original.id, reviewDays: 0))
         record.assessment = PestAssessment(signs: .webbing)
-        XCTAssertFalse(ObservationGuidanceRoute.usesVisualEntry(record))
+        XCTAssertTrue(ObservationGuidanceRoute.usesVisualEntry(record))
     }
     func testDryWetAndEnvironmentEvidenceProduceDifferentStartingActions() {
         let (_, plant, record) = fixture()

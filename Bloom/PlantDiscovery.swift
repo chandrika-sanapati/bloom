@@ -139,20 +139,18 @@ struct PlantDiscoveryView: View {
                 Button { addCustom(search) } label: { Text("Add \"\(search)\" by name").frame(maxWidth: .infinity, minHeight: 32) }
                     .buttonStyle(.bordered).accessibilityIdentifier("add-custom-search")
             }
-        }.sheet(isPresented: $personalizing) { PlantSearchPersonalizationView() }
+        }.fullScreenCover(isPresented: $personalizing) { PlantSearchPersonalizationView() }
     }
     private var areaCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 12) {
-                BloomIconTile(symbol: profile.map { PlantSearchEngine.season(for: $0, date: .now).symbol } ?? "leaf", tone: .yellow)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(profile.map { "\($0.displayArea) · \(PlantSearchEngine.season(for: $0, date: .now).rawValue)" } ?? "Your growing space").font(BloomType.section)
-                }
-            }
-            Button(profile == nil ? "Personalize picks" : "Edit area & preferences") { personalizing = true }
-                .font(BloomType.section).frame(minHeight: 44).accessibilityIdentifier("personalize-plant-search")
-        }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .background(BloomTone.yellow.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius))
+        Button { personalizing = true } label: {
+            HStack(spacing: 12) {
+                Text(profile.map { $0.location == nil ? "Your growing space" : "\($0.displayArea) · \(PlantSearchEngine.season(for: $0, date: .now).rawValue)" } ?? "Personalize your picks")
+                    .font(BloomType.section).foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+            }.padding(16).frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+                .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+        }.buttonStyle(.plain).accessibilityIdentifier("personalize-plant-search")
     }
     private func plantGrid(_ items: [PlantSearchSuggestion]) -> some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: typeSize.isAccessibilitySize ? 1 : 2), alignment: .leading, spacing: 16) {

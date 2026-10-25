@@ -23,10 +23,10 @@ extension EnvironmentValues {
 }
 
 enum BloomTone: Equatable {
-    case teal, blue, yellow
-    var surface: Color { switch self { case .teal: BloomTheme.selected; case .blue: Color("BlueSurface"); case .yellow: Color("YellowSurface") } }
-    var ink: Color { switch self { case .teal: BloomTheme.teal; case .blue: Color("BlueInk"); case .yellow: Color("YellowInk") } }
-    var accent: Color { switch self { case .teal: BloomTheme.teal; case .blue: Color("BlueAccent"); case .yellow: Color("YellowAccent") } }
+    case teal, blue, yellow, neutral
+    var surface: Color { switch self { case .teal: BloomTheme.selected; case .blue: Color("BlueSurface"); case .yellow: Color("YellowSurface"); case .neutral: Color(uiColor: .secondarySystemFill) } }
+    var ink: Color { switch self { case .teal: BloomTheme.teal; case .blue: Color("BlueInk"); case .yellow: Color("YellowInk"); case .neutral: BloomTheme.secondary } }
+    var accent: Color { switch self { case .teal: BloomTheme.teal; case .blue: Color("BlueAccent"); case .yellow: Color("YellowAccent"); case .neutral: BloomTheme.secondary } }
 }
 
 enum BloomTheme {
@@ -42,7 +42,7 @@ enum BloomTheme {
     static let cardRadius: CGFloat = 16
     static let tagRadius: CGFloat = 8
     static let spring = Animation.spring(response: 0.34, dampingFraction: 0.86)
-    static let heading = Font.system(.title2, design: .rounded).weight(.bold)
+    static let heading = Font.system(.title2).weight(.bold)
     static let section = Font.system(.body).weight(.semibold)
 }
 
@@ -236,13 +236,7 @@ struct BloomPlantCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             PlantPortrait(plant: plant, contentMode: typeSize.isAccessibilitySize ? .fit : .fill)
-                .frame(height: typeSize.isAccessibilitySize ? 220 : 108)
-                .overlay(alignment: .topTrailing) {
-                    if plant.reminder != nil {
-                        StatusTag(text: plant.reminderKind == .observation ? "Observe" : "Check soil", tone: tagTone)
-                            .padding(8)
-                    }
-                }
+                .frame(height: typeSize.isAccessibilitySize ? 220 : 130)
             VStack(alignment: .leading, spacing: 4) {
                 Text(plant.name).font(BloomType.section).foregroundStyle(BloomTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
@@ -255,45 +249,25 @@ struct BloomPlantCard: View {
             .accessibilityElement(children: .combine)
             .accessibilityValue(status == "Not checked yet" ? "No soil check recorded" : "Last soil check: \(status)")
     }
-    private var tagTone: BloomTone { plant.reminderKind == .observation ? .yellow : .blue }
 }
 
 struct RecordRow: View {
     let record: CareRecord
     let plantName: String
     @Environment(\.dynamicTypeSize) private var typeSize
-    private var tone: BloomTone { record.kind == .check && record.action == .watered ? .blue : (record.kind == .followUp || record.kind == .careAction) ? .teal : .yellow }
-    private var symbol: String { record.kind == .check ? (record.action == .watered ? "drop.fill" : record.action == .waited ? "pause" : "clock") : record.kind == .change ? "eye" : record.kind == .careAction ? (record.outcome == "Skipped" ? "forward" : "checkmark") : "arrow.clockwise" }
-    private var activity: String {
-        switch record.kind {
-        case .check:
-            switch record.action {
-            case .watered: "Watered \(plantName)"
-            case .waited: "Checked \(plantName) · waited"
-            case .postponed: "Left \(plantName) for later"
-            case nil: "Checked \(plantName)"
-            }
-        case .change: "Noticed a change · \(plantName)"
-        case .followUp: "Checked back on \(plantName)"
-        case .careAction: "\(record.outcome == "Skipped" ? "Skipped · " : "")\(record.actionTitle ?? "Care action") · \(plantName)"
-        }
-    }
+    private var tone: BloomTone { record.kind == .check ? .blue : record.kind == .change ? .yellow : .teal }
     private var tag: String {
-        switch record.kind { case .check: record.action == .watered ? "Water" : "Check soil"; case .change: "Observe"; case .followUp: "Review"; case .careAction: "Action" }
+        switch record.kind { case .check: "Soil check"; case .change: "Observation"; case .followUp: "Check-in"; case .careAction: "Care action" }
     }
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            BloomIconTile(symbol: symbol, tone: tone)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(activity).font(BloomType.section).foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
-                Text(record.kind == .check ? "Soil · \(record.soil?.rawValue ?? "Not sure")" : (record.kind == .followUp || record.kind == .careAction) ? record.outcome : record.observation)
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(record.title).font(BloomType.section).foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
+                Text("\(plantName) · \(record.date.formatted(date: .abbreviated, time: .omitted))")
                     .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-                HStack(spacing: 8) {
-                    StatusTag(text: tag, tone: tone)
-                    Text(record.date, format: .dateTime.month(.abbreviated).day().hour().minute()).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-                }
             }.frame(maxWidth: .infinity, alignment: .leading)
-        }.padding(.vertical, 3)
+            StatusTag(text: tag, tone: tone)
+        }.padding(.vertical, 3).accessibilityElement(children: .combine)
     }
 }
 
@@ -302,19 +276,16 @@ struct BloomReminderRow: View {
     private var kind: PlantReminderKind { plant.reminderKind ?? .soilCheck }
     private var tone: BloomTone { kind == .soilCheck ? .blue : .yellow }
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(plant.name).font(BloomType.section)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-                StatusTag(text: kind == .soilCheck ? "Check soil" : "Observe", tone: tone)
-            }
-            HStack {
-                if let date = plant.reminder { Text(date, format: .dateTime.month(.abbreviated).day().hour().minute()).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary) }
-                Spacer(minLength: 8)
-                BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
-            }
-        }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(kind == .soilCheck ? "Check soil" : "Look again").font(BloomType.section)
+                Text(plant.name + (plant.reminder.map { " · " + $0.formatted(date: .abbreviated, time: .omitted) } ?? ""))
+                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            StatusTag(text: "Scheduled task", tone: tone)
+            BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+        }.padding(16).frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+            .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius))
+
     }
 }

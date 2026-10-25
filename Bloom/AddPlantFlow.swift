@@ -39,30 +39,38 @@ struct AddPlantFlowView: View {
             }
     }
     private var review: some View {
-        Form {
-            Section {
-                PlantPortrait(plant: setup.plant, contentMode: .fit).frame(height: 210).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
-                TextField("Plant nickname", text: $setup.plant.name).textInputAutocapitalization(.words).accessibilityIdentifier("overlay-plant-name")
-                if !setup.plant.species.isEmpty { LabeledContent("Species", value: setup.plant.species) }
-            } header: { Text("Your new plant · 1 of 3") }
+        BloomContentPage {
+            Text("Your new plant · 1 of 3").bloomHeading()
+            PlantPortrait(plant: setup.plant, contentMode: .fit).frame(height: 210)
+                .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Plant nickname").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                TextField("Plant nickname", text: $setup.plant.name).textInputAutocapitalization(.words)
+                    .bloomInput().accessibilityIdentifier("overlay-plant-name")
+                if !setup.plant.species.isEmpty { LabeledContent("Species", value: setup.plant.species).font(BloomType.body).padding(.vertical, 8) }
+            }
             if duplicateCount > 0 {
-                Section {
-                    Text("You already have \(duplicateCount == 1 ? "this plant" : "\(duplicateCount) of these plants"). Give this one a nickname to tell them apart.")
-                        .font(BloomType.body).foregroundStyle(BloomTheme.secondary).accessibilityIdentifier("duplicate-plant-hint")
-                }
+                Text("You already have this plant. Give this one a nickname to tell them apart.")
+                    .font(BloomType.supporting).foregroundStyle(BloomTone.yellow.ink)
+                    .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(BloomTone.yellow.surface, in: RoundedRectangle(cornerRadius: 16))
+                    .accessibilityIdentifier("duplicate-plant-hint")
             }
-            Section("Photo · Optional") {
-                PhotosPicker(selection: $setup.chosenPhoto, matching: .images) { Text("Choose a photo") }.disabled(setup.loading).accessibilityIdentifier("setup-add-photo")
-                if setup.loading { ProgressView("Opening photo…") }
-                if let message = setup.photoMessage { Text(message).font(BloomType.supporting).foregroundStyle(.secondary) }
-            }
+            Text("Photo · Optional").bloomHeading()
+            PhotosPicker(selection: $setup.chosenPhoto, matching: .images) {
+                Text("Choose a photo").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            }.buttonStyle(.bordered).disabled(setup.loading).accessibilityIdentifier("setup-add-photo")
+            if setup.loading { ProgressView("Opening photo…") }
+            if let message = setup.photoMessage { Text(message).font(BloomType.supporting).foregroundStyle(.secondary) }
             if let species = PlantSpecies.catalog.first(where: { $0.scientific == setup.plant.species }) {
-                Section("A little about it") {
-                    LabeledContent("Care", value: species.care.rawValue)
-                    Label(species.light.rawValue, systemImage: species.light.symbol)
-                }
+                Text("A little about it").bloomHeading()
+                VStack(spacing: 0) {
+                    HStack { Text("Care"); Spacer(); StatusTag(text: "\(species.care.rawValue) care", tone: species.care == .easy ? .teal : .yellow) }.padding(16)
+                    Divider().padding(.leading, 16)
+                    LabeledContent("Light", value: species.light.rawValue).padding(16)
+                }.font(BloomType.body).background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
             }
-        }.bloomNativeForm().navigationTitle("Add plant").bloomAddPage()
+        }.navigationTitle("Add plant").bloomAddPage()
             .onChange(of: setup.chosenPhoto) { _, item in
                 guard let item else { return }; setup.loading = true; setup.photoMessage = nil
                 Task {
@@ -80,39 +88,49 @@ struct AddPlantFlowView: View {
             }
     }
     private var location: some View {
-        Form {
-            Section {
-                Picker("Placement", selection: $setup.placement) { ForEach(PlantPlacement.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
-                TextField("Room or location", text: $setup.plant.location).accessibilityIdentifier("setup-custom-location")
-                Menu {
-                    ForEach(setup.placement == .indoor ? PlantRoom.indoor : PlantRoom.outdoor) { room in
-                        Button(room.name) { setup.plant.location = room.name; BloomFeedback.selection() }.accessibilityIdentifier("setup-room-\(room.name)")
-                    }
-                } label: { Text("Choose a room").frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle()) }.buttonStyle(.borderless).accessibilityIdentifier("setup-room-menu")
-            } header: { Text("Location · 2 of 3") }
-            Section { BloomPlantIdentity(plant: setup.plant) }
-        }.bloomNativeForm().navigationTitle("A place to grow").bloomAddPage()
+        BloomContentPage {
+            Text("Location · 2 of 3").bloomHeading()
+            Picker("Placement", selection: $setup.placement) {
+                ForEach(PlantPlacement.allCases) { Text($0.rawValue).tag($0) }
+            }.pickerStyle(.segmented).accessibilityIdentifier("setup-placement")
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Room or location").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                TextField("Room or location", text: $setup.plant.location).bloomInput().accessibilityIdentifier("setup-custom-location")
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10)], spacing: 10) {
+                ForEach(setup.placement == .indoor ? PlantRoom.indoor : PlantRoom.outdoor) { room in
+                    let selected = setup.plant.location == room.name
+                    Button { setup.plant.location = room.name; BloomFeedback.selection() } label: {
+                        Text(room.name).font(BloomType.supporting).foregroundStyle(BloomTheme.teal)
+                            .frame(maxWidth: .infinity, minHeight: 44).padding(.horizontal, 10)
+                            .background(selected ? BloomTheme.selected : BloomTheme.surface, in: RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? BloomTheme.teal : BloomTheme.border))
+                    }.buttonStyle(.plain).accessibilityIdentifier("setup-room-\(room.name)")
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }.accessibilityIdentifier("setup-room-choices")
+            BloomPlantIdentity(plant: setup.plant)
+        }.navigationTitle("A place to grow").bloomAddPage()
             .bloomNativeFooter {
                 VStack(spacing: 8) {
+                    if setup.plant.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { BloomSelectionHint() }
                     BloomPrimaryAction(title: "Continue") { navigate(.status) }.disabled(setup.plant.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("setup-continue-location")
-                    Button("Choose later") { setup.plant.location = ""; navigate(.status) }.frame(minHeight: 36)
+                    Button("Choose later") { setup.plant.location = ""; navigate(.status) }.frame(minHeight: 44)
                 }
             }
     }
     private var currentStatus: some View {
-        Form {
-            Section {
-                Picker("Current status", selection: $setup.status) {
-                    Text("Choose a status").tag(InitialPlantStatus?.none)
-                    ForEach(InitialPlantStatus.allCases) { item in Text(item.rawValue).tag(Optional(item)).accessibilityIdentifier("setup-status-\(item.rawValue)") }
-                }.pickerStyle(.inline)
-            } header: { Text("A first impression · 3 of 3") }
-            Section { BloomPlantIdentity(plant: setup.plant) }
-        }.bloomNativeForm().navigationTitle("How is it doing?").bloomAddPage()
+        BloomContentPage {
+            Text("A first impression · 3 of 3").bloomHeading()
+            BloomChoiceList(values: InitialPlantStatus.allCases, selection: $setup.status,
+                            title: { $0.rawValue }, identifier: { "setup-status-\($0.rawValue)" })
+            BloomPlantIdentity(plant: setup.plant)
+        }.navigationTitle("How is it doing?").bloomAddPage()
             .bloomNativeFooter {
                 VStack(spacing: 8) {
+                    if setup.status == nil { BloomSelectionHint() }
                     BloomPrimaryAction(title: "Add plant", action: save).disabled(setup.status == nil).accessibilityIdentifier("overlay-save-plant")
-                    Button("Choose later") { setup.status = .notSure; save() }.frame(minHeight: 36)
+                    Button("Choose later") { setup.status = .notSure; save() }.frame(minHeight: 44)
                 }
             }
     }
@@ -138,7 +156,7 @@ struct AddPlantFlowView: View {
 
 private extension View {
     func bloomAddPage() -> some View {
-        navigationBarTitleDisplayMode(.inline).toolbarRole(.editor)
+        navigationBarTitleDisplayMode(.inline)
             .toolbar(.visible, for: .navigationBar)
             .toolbar(.hidden, for: .tabBar)
     }

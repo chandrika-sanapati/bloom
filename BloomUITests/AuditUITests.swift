@@ -108,7 +108,10 @@ import XCTest
         capture("Audit progress choices", app)
         tap("Same", app); tap("finish-plan-task", app)
         XCTAssertTrue(app.staticTexts["care-feedback-title"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts.matching(identifier: "care-feedback-title").count, 1)
         XCTAssertEqual(app.staticTexts["care-feedback-title"].label, "Check-in saved")
+        XCTAssertFalse(app.buttons["dismiss-care-feedback"].exists)
+        capture("Parity native check-in saved", app)
     }
     func testLastSoilCheckIsDatedHistoryOutsideCareActions() {
         let app = launch(); tap("See all", app); tap("all-plant-Rubber Plant", app)

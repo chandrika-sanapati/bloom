@@ -93,8 +93,8 @@ final class BloomUITests: XCTestCase {
         XCTAssertFalse(app.buttons["setup-continue-location"].isEnabled)
         capture("66 Native visible disabled plant setup", app)
         capture("07 Native location", app)
-        app.buttons["setup-room-menu"].tap()
-        app.buttons["Living room"].tap()
+        XCTAssertTrue(app.buttons["setup-room-Living room"].isHittable)
+        app.buttons["setup-room-Living room"].tap()
         app.buttons["setup-continue-location"].tap()
         app.buttons["setup-status-Looking good"].tap()
         capture("08 Native current status", app)
@@ -115,7 +115,7 @@ final class BloomUITests: XCTestCase {
         XCTAssertFalse(app.tabBars.firstMatch.exists)
         XCTAssertFalse(app.buttons["home-care-tasks"].exists)
         XCTAssertFalse(app.buttons["plant-Snake Plant"].label.contains("Check soil"))
-        XCTAssertTrue(app.buttons["plant-Monstera"].label.contains("Check soil"))
+        XCTAssertFalse(app.buttons["plant-Monstera"].label.contains("Check soil"))
         capture("01 Native home", app)
         capture("64 Native compact plant collection", app)
         XCTAssertFalse(app.scrollViews["home-plant-carousel"].exists)
@@ -200,11 +200,12 @@ final class BloomUITests: XCTestCase {
         XCTAssertFalse(task.exists)
         picker.buttons["Activity"].tap()
         let latest = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-")).firstMatch
-        XCTAssertTrue(latest.label.contains("Checked Monstera"))
-        XCTAssertTrue(latest.label.contains("waited"))
+        XCTAssertTrue(latest.label.contains("Soil check"))
+        XCTAssertTrue(latest.label.contains("Monstera"))
         capture("12 Native task saved to activity", app)
         latest.tap()
         XCTAssertTrue(app.navigationBars["Your record"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Damp · Didn't water"].exists)
     }
 
     @MainActor
@@ -261,6 +262,33 @@ final class BloomUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Follow-up saved"].waitForExistence(timeout: 5))
         app.buttons["finish-record"].tap()
         XCTAssertFalse(reminder.exists)
+    }
+
+    @MainActor
+    func testReminderPresetsStayInDraftUntilSavedAndCancelLeavesNoTask() {
+        let app = XCUIApplication(); app.launchArguments = ["--uitesting", "--uitesting-no-tasks"]; app.launch()
+        app.buttons["plant-Snake Plant"].tap()
+        let reminder = app.buttons["reminder-options"]
+        for _ in 0..<4 { if reminder.isHittable { break }; app.swipeUp() }
+        reminder.tap()
+        XCTAssertTrue(app.navigationBars["Reminder"].waitForExistence(timeout: 5))
+        app.buttons["reminder-three-days"].tap()
+        app.navigationBars["Reminder"].buttons["Cancel"].tap()
+        XCTAssertTrue(reminder.waitForExistence(timeout: 5))
+        XCTAssertTrue(reminder.label.contains("Remind me"))
+        reminder.tap(); app.buttons["reminder-three-days"].tap()
+        let notify = app.switches["reminder-notification"]
+        if notify.value as? String == "1" {
+            if notify.switches.firstMatch.exists { notify.switches.firstMatch.tap() } else { notify.tap() }
+        }
+        XCTAssertEqual(notify.value as? String, "0")
+        app.buttons["save-reminder"].tap()
+        XCTAssertTrue(reminder.waitForExistence(timeout: 5))
+        XCTAssertTrue(reminder.label.contains("Change reminder"))
+        app.navigationBars["Plant"].buttons.firstMatch.tap()
+        let task = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "reminder-task-", "Snake Plant")).firstMatch
+        XCTAssertTrue(task.waitForExistence(timeout: 5))
+        capture("Parity saved reminder stays in Care", app)
     }
 
 }

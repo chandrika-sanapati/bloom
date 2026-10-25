@@ -8,7 +8,7 @@ final class PlantSearchUITests: XCTestCase {
     @MainActor private func tap(_ id: String, in app: XCUIApplication) {
         let button = app.buttons[id]
         for _ in 0..<5 {
-            let footer = app.buttons["reset-search-choices"]
+            let footer = app.buttons["save-search-personalization"]
             if button.isHittable && (!footer.exists || button.frame.maxY < footer.frame.minY - 4) { break }
             app.swipeUp()
         }
@@ -37,7 +37,7 @@ final class PlantSearchUITests: XCTestCase {
         capture("26 Native visual plant preferences", app)
         app.buttons["save-search-personalization"].tap()
         XCTAssertTrue(app.staticTexts["Seasonal picks"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Berlin ·")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["personalize-plant-search"].label.contains("Berlin ·"))
         XCTAssertTrue(app.buttons["select-species-Pothos"].exists)
         XCTAssertTrue(app.staticTexts["Bushy · Trailing"].exists)
         capture("23 Native personalized seasonal picks", app)
@@ -51,7 +51,7 @@ final class PlantSearchUITests: XCTestCase {
         app.textFields["search-growing-area"].tap(); app.textFields["search-growing-area"].typeText("London")
         XCTAssertFalse(app.buttons["save-search-personalization"].isEnabled)
         app.navigationBars["Your growing space"].buttons["Cancel"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Berlin ·")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["personalize-plant-search"].label.contains("Berlin ·"))
         app.buttons["personalize-plant-search"].tap()
         tap("reset-plant-personalization", in: app)
         XCTAssertTrue(app.staticTexts["Choose a plant"].waitForExistence(timeout: 5))
@@ -65,9 +65,9 @@ final class PlantSearchUITests: XCTestCase {
         app.buttons["save-search-personalization"].tap()
         app.buttons["personalize-plant-search"].tap()
         let reset = app.buttons["reset-search-choices"]
+        tap("reset-search-choices", in: app)
         XCTAssertTrue(reset.isHittable)
         capture("26 Native visual plant preferences", app)
-        reset.tap()
         XCTAssertTrue(reset.isHittable)
         XCTAssertFalse(reset.isEnabled)
         XCTAssertEqual(app.buttons["search-light-Not sure yet"].value as? String, "Selected")
@@ -79,10 +79,10 @@ final class PlantSearchUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Bushy · Trailing"].exists)
         app.buttons["personalize-plant-search"].tap()
         XCTAssertEqual(app.buttons["search-light-Lower natural light"].value as? String, "Selected")
-        app.buttons["reset-search-choices"].tap()
+        tap("reset-search-choices", in: app)
         app.buttons["save-search-personalization"].tap()
         XCTAssertFalse(app.staticTexts["Bushy · Trailing"].exists)
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Berlin ·")).firstMatch.exists)
+        XCTAssertTrue(app.buttons["personalize-plant-search"].label.contains("Berlin ·"))
     }
     @MainActor
     func testLocateMeDenialKeepsSavedCityAndManualSearchAvailable() {
@@ -95,7 +95,7 @@ final class PlantSearchUITests: XCTestCase {
         XCTAssertTrue(app.textFields["search-growing-area"].exists)
         capture("27 Native location access fallback", app)
         app.buttons["Keep current location"].tap(); app.buttons["save-search-personalization"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Berlin ·")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["personalize-plant-search"].waitForExistence(timeout: 5) && app.buttons["personalize-plant-search"].label.contains("Berlin ·"))
     }
     @MainActor
     func testLocateMeSuccessStillSavesWhenClimateIsUnavailable() {

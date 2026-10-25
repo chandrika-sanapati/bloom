@@ -99,9 +99,9 @@ import XCTest
         app.buttons["plant-Snake Plant"].tap(); app.buttons["start-observation"].tap()
         capture("76 Native observation heading hierarchy", app)
         app.buttons["observation-area-leaves"].tap(); app.buttons["Brown edges"].tap()
-        app.navigationBars["What do you notice?"].buttons.firstMatch.tap(); app.buttons["observation-area-stems"].tap()
+        app.navigationBars["What looks different?"].buttons.firstMatch.tap(); app.buttons["observation-area-stems"].tap()
         XCTAssertTrue(app.buttons["continue-observation"].exists); XCTAssertFalse(app.buttons["continue-observation"].isEnabled); app.buttons["Changed color"].tap()
-        app.navigationBars["What do you notice?"].buttons.firstMatch.tap(); app.buttons["observation-area-leaves"].tap()
+        app.navigationBars["What looks different?"].buttons.firstMatch.tap(); app.buttons["observation-area-leaves"].tap()
         XCTAssertTrue(app.buttons["continue-observation"].exists); XCTAssertFalse(app.buttons["continue-observation"].isEnabled)
         capture("69 Native visible disabled observation action", app)
         app.buttons["Dropping leaves"].tap(); app.buttons["continue-observation"].tap(); app.buttons["save-change"].tap()
@@ -154,7 +154,7 @@ import XCTest
     func testRecordLeafDropChooseActionAndCompareWithExplicitResolution() {
         let app = startSaved(); assess(app); acceptFromRecord(app)
         tap("plan-step-waterDryRoots", app); XCTAssertFalse(app.buttons["finish-plan-task"].isEnabled)
-        tap("I watered after checking", app); app.buttons["finish-plan-task"].tap()
+        tap("Watered it", app); app.buttons["finish-plan-task"].tap()
         XCTAssertTrue(app.buttons["schedule-completion-check-in"].waitForExistence(timeout: 5))
         app.buttons["schedule-completion-check-in"].tap()
         XCTAssertTrue(app.staticTexts["Action recorded"].waitForExistence(timeout: 5)); clearBanner(app)
@@ -198,7 +198,7 @@ import XCTest
     }
     func testClearChecksReturnsToInspectionWithoutErasingTheObservation() {
         let app = startSaved(); assess(app); tap("leaf-reset-checks", app)
-        let title = app.staticTexts["leaf-recommendation-title"]; reveal(title, app); XCTAssertEqual(title.label, "Take a closer look")
+        let title = app.staticTexts["leaf-recommendation-title"]; reveal(title, app); XCTAssertEqual(title.label, "Check the cause before treating")
         app.buttons["close-guidance"].tap(); XCTAssertTrue(app.staticTexts["Dropping leaves"].exists)
     }
     func testAccessibleTextKeepsTheCareActionAvailableWithoutChecks() {
@@ -222,7 +222,7 @@ import XCTest
     }
     func testSoftStemsOfferHelpWithoutAThreeDayWait() {
         let app = startSaved(); assess(app, warning: "Soft or blackened stems/base")
-        let title = app.staticTexts["leaf-recommendation-title"]; reveal(title, app); XCTAssertEqual(title.label, "Ask for a closer assessment")
+        let title = app.staticTexts["leaf-recommendation-title"]; reveal(title, app); XCTAssertEqual(title.label, "Get help before waiting")
         acceptFromRecord(app); XCTAssertTrue(app.buttons["plan-step-askExpert"].exists)
         XCTAssertFalse(app.buttons["plan-step-waterDryRoots"].exists); XCTAssertFalse(app.buttons["plan-step-review"].exists)
     }
@@ -230,10 +230,27 @@ import XCTest
         let app = startSaved(); tap("I've checked my plant", app); tap("leaf-soil-dry", app); app.buttons["close-guidance"].tap()
         tap("find-next-steps", app); tap("I've checked my plant", app); XCTAssertTrue(app.buttons["leaf-soil-dry"].isSelected)
         choose("leaf-assessment-warning", "Insects, clusters, or webbing", app); tap("leaf-check-pests", app)
-        tap("White cotton-like clusters", app); choose("assessment-location", "Where leaves join stems", app)
+        choose("assessment-signs", "White cotton-like clusters", app); choose("assessment-location", "Where leaves join stems", app)
         choose("assessment-extent", "A small, reachable area", app); choose("assessment-placement", "Indoors", app)
         app.buttons["assessment-continue"].tap(); app.buttons["start-care-plan"].tap()
         XCTAssertTrue(app.navigationBars["Your record"].waitForExistence(timeout: 5)); clearBanner(app); tap("view-care-plan", app)
         XCTAssertTrue(app.buttons["plan-step-removeBugs"].waitForExistence(timeout: 5))
     }
+    func testOptionalPestChecksCanContinueWithoutAnswersAndStillOfferInspection() {
+        let app = XCUIApplication(); app.launchArguments = ["--uitesting"]; app.launch()
+        newChange(app, area: "pests", symptom: "Visible insects")
+        tap("leaf-check-pests", app)
+        XCTAssertTrue(app.navigationBars["Take a closer look"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["assessment-continue"].isEnabled)
+        XCTAssertTrue(app.buttons["assessment-signs"].label.contains("Not checked"))
+        app.buttons["assessment-continue"].tap()
+        XCTAssertTrue(app.staticTexts["Look a little closer"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Possible mealybugs"].exists)
+        app.buttons["start-care-plan"].tap()
+        XCTAssertTrue(app.navigationBars["Plant"].waitForExistence(timeout: 5))
+        clearBanner(app)
+        XCTAssertTrue(app.buttons["plant-next-care-task"].label.contains("Inspect the affected area"))
+        capture("Parity optional pest checks preserve inspection", app)
+    }
+
 }

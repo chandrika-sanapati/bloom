@@ -163,4 +163,18 @@ import XCTest
         XCTAssertFalse(try XCTUnwrap(receipt).completedReminder)
         XCTAssertEqual(store.plant(plant.id)?.reminder, plant.reminder)
     }
+    func testOptionalPestChecksStillCreateConservativeTasksAndPrioritizeHeavyDamage() throws {
+        let (store, plant, _, _) = try fixture()
+        let observation = CareRecord(plantID: plant.id, kind: .change, area: .pests, observation: "Visible insects")
+        XCTAssertTrue(store.saveRecord(observation))
+        let unknown = PestAssessment()
+        let id = try XCTUnwrap(store.startCarePlan(observationID: observation.id, answers: unknown, reviewDays: nil))
+        XCTAssertEqual(store.carePlan(id)?.kind, .inspection)
+        XCTAssertEqual(store.carePlan(id)?.assessment, unknown)
+        XCTAssertEqual(store.tasks(for: id).map(\.step), [.inspect])
+        XCTAssertTrue(store.garden.records.allSatisfy { $0.kind == .change })
+        XCTAssertEqual(PestAssessment(extent: .widespread).recommendation, .expert)
+        XCTAssertEqual(PestAssessment(signs: .cotton).recommendation, .inspection)
+    }
+
 }

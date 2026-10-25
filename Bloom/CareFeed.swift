@@ -78,8 +78,8 @@ struct HomeCareFeed: View {
                 }
             }
         }
-        .sheet(item: $task) { PlantReminderTaskView(plantID: $0.plantID) }
-        .sheet(item: $planTask) { PlanTaskFlowView(taskID: $0.id) }
+        .fullScreenCover(item: $task) { PlantReminderTaskView(plantID: $0.plantID) }
+        .fullScreenCover(item: $planTask) { PlanTaskFlowView(taskID: $0.id) }
     }
 }
 
@@ -87,18 +87,14 @@ struct HomePlanTaskRow: View {
     @Environment(BloomStore.self) private var store
     let task: PlanTask
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(store.plant(task.plantID)?.name ?? "Your plant").font(BloomType.section)
-                Spacer(minLength: 8)
-                StatusTag(text: task.step == .review ? "Review" : "Action", tone: task.step == .review ? .yellow : .blue)
-            }
-            Text(task.step.title).font(BloomType.body).fixedSize(horizontal: false, vertical: true)
-            HStack {
-                if let date = task.due { Text(date.formatted(date: .abbreviated, time: .shortened)).font(BloomType.supporting).foregroundStyle(.secondary) }
-                Spacer()
-                BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
-            }
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(task.step.title).font(BloomType.section).fixedSize(horizontal: false, vertical: true)
+                Text((store.plant(task.plantID)?.name ?? "Your plant") + (task.due.map { " · " + $0.formatted(date: .abbreviated, time: .omitted) } ?? ""))
+                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            StatusTag(text: task.step == .review ? "Review" : "Care plan", tone: task.step == .review ? .yellow : .blue)
+            BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
         }.bloomCard(padding: 16).accessibilityElement(children: .combine)
     }
 }

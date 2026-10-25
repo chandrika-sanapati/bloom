@@ -17,7 +17,7 @@ struct CarePlanDetailView: View {
                 List {
                     Section {
                         BloomPlantIdentity(plant: plant)
-                        StatusTag(text: plan.status.rawValue, tone: plan.status == .needsReview ? .yellow : .teal)
+                        StatusTag(text: plan.status.rawValue, tone: plan.status == .active || plan.status == .needsReview ? .yellow : plan.status == .resolved ? .teal : .neutral)
                         Text(plan.kind.title).font(BloomType.title)
                         Text(plan.kind.explanation(for: plan.baseline.area)).font(BloomType.body).foregroundStyle(.secondary)
                     }
@@ -74,8 +74,8 @@ struct CarePlanDetailView: View {
             } else { ContentUnavailableView("Plan unavailable", systemImage: "leaf") }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { CareFeedbackBanner(plantID: plan?.plantID) }
-        .sheet(item: $task) { PlanTaskFlowView(taskID: $0.id) }
-        .sheet(isPresented: $reassessing) { if let plan { CareGuidanceFlow(observationID: plan.observationID, replacing: plan.id) } }
+        .fullScreenCover(item: $task) { PlanTaskFlowView(taskID: $0.id) }
+        .fullScreenCover(isPresented: $reassessing) { if let plan { CareGuidanceFlow(observationID: plan.observationID, replacing: plan.id) } }
         .sheet(isPresented: $scheduling) { PlanReviewScheduleView(planID: planID) }
         .confirmationDialog("Stop this plan?", isPresented: $stopping, titleVisibility: .visible) {
             Button("Stop plan", role: .destructive) { _ = store.closePlan(planID, resolved: false) }
@@ -90,7 +90,7 @@ struct CarePlanDetailView: View {
                 HStack {
                     Text(task.step.title).foregroundStyle(BloomTheme.ink)
                     Spacer(minLength: 8)
-                    StatusTag(text: task.status.displayTitle, tone: task.status == .completed ? .teal : task.step == .review ? .yellow : .blue)
+                    StatusTag(text: task.status.displayTitle, tone: task.status == .completed ? .teal : task.status == .skipped || task.status == .cancelled ? .neutral : task.step == .review ? .yellow : .blue)
                     BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
                 }
                 if let date = task.completedAt ?? task.due { Text(date.formatted(date: .abbreviated, time: .shortened)).font(BloomType.supporting).foregroundStyle(.secondary) }
@@ -104,6 +104,7 @@ struct PlanReviewScheduleView: View {
     @Environment(BloomStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let planID: UUID
+    var saved: (() -> Void)? = nil
     @State private var date = Date().addingTimeInterval(604800)
     @State private var message: String?
     var body: some View {
@@ -118,7 +119,7 @@ struct PlanReviewScheduleView: View {
                     ToolbarItem(placement: .confirmationAction) { Button("Save") {
                         if store.schedulePlanReview(planID, date: date), let plan = store.carePlan(planID) {
                             store.careFeedback = CareFlowFeedback(plantID: plan.plantID, title: "Next check-in set", detail: "Check again \(date.formatted(date: .abbreviated, time: .omitted)).", planID: planID)
-                            dismiss()
+                            saved?(); dismiss()
                         }
                         else { message = "Choose a future date after recording an action. Your plan is unchanged." }
                     } }

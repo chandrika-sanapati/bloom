@@ -41,9 +41,11 @@ struct LeafCareGuidanceFlow: View {
     @State private var refining = false
     private var observation: CareRecord? { store.record(observationID) }
     private var plant: Plant? { observation.flatMap { store.plant($0.plantID) } }
-    private var isPest: Bool { observation?.area == .pests }
+    private var isPest: Bool {
+        observation?.area == .pests || answers.warning == .pests || (observation?.assessment != nil && observation?.leafAssessment == nil)
+    }
     private var kind: CarePlanKind {
-        if isPest { return .inspection }
+        if isPest { return observation?.assessment?.recommendation ?? .inspection }
         guard let observation, let plant else { return .leafInspection }
         return answers.recommendation(for: observation, plant: plant)
     }
@@ -52,7 +54,7 @@ struct LeafCareGuidanceFlow: View {
             Group {
                 if let observation, let plant {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 24) {
+                        VStack(alignment: .leading, spacing: 20) {
                             if justSaved { Label("Change saved", systemImage: "checkmark.circle.fill").font(BloomType.section).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("observation-saved-notice") }
                             HStack(alignment: .center, spacing: 16) {
                                 PlantPortrait(plant: plant, contentMode: .fit).frame(width: 64, height: 76)
@@ -79,7 +81,7 @@ struct LeafCareGuidanceFlow: View {
                                 VStack(alignment: .leading, spacing: 14) {
                                     Text("Similar changes can have different causes. Start with a close look before choosing a treatment.").font(BloomType.body).foregroundStyle(.secondary)
                                     Text("Possible causes, not a confirmed diagnosis.").font(BloomType.supporting)
-                                    ForEach((isPest ? CareGuidanceSources.sources : LeafCareSources.sources).filter { !$0.1.contains("umd.edu") }, id: \.1) { source in
+                                    ForEach((isPest ? CareGuidanceSources.sources : LeafCareSources.sources), id: \.1) { source in
                                         Link(source.0, destination: URL(string: source.1)!).font(BloomType.body)
                                     }
                                 }.padding(.top, 12)
@@ -94,19 +96,38 @@ struct LeafCareGuidanceFlow: View {
                                         .font(BloomType.body).foregroundStyle(BloomTone.yellow.ink)
                                 }.accessibilityIdentifier("leaf-help-sooner")
                             }
+                            if !observation.note.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Your note").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                                    Text(observation.note).font(BloomType.body)
+                                }.bloomCard(padding: 16)
+                            }
                             if let message { Text(message).font(BloomType.body).foregroundStyle(.red).accessibilityIdentifier("leaf-save-error") }
                         }.padding(20).frame(maxWidth: 620).frame(maxWidth: .infinity)
                     }.background(BloomTheme.canvas).navigationTitle("What could help").navigationBarTitleDisplayMode(.inline)
                         .bloomNativeFooter {
+                            if replacing == nil, let existing = store.plan(for: observationID), store.planIsOpen(existing.id) {
+                                NavigationLink { CarePlanDetailView(planID: existing.id) } label: {
+                                    Text("View care plan").frame(maxWidth: .infinity)
+                                }.buttonStyle(BloomPrimaryButtonStyle()).accessibilityIdentifier("leaf-view-care-plan")
+                            } else {
                             BloomPrimaryAction(title: replacing == nil ? "Add to care plan" : "Update care plan") {
-                                let id = isPest
-                                    ? store.startPestInspectionPlan(observationID: observationID, reviewDays: nil, replacing: replacing)
-                                    : store.startLeafCarePlan(observationID: observationID, answers: answers, reviewDays: nil, replacing: replacing)
+                                let id: UUID?
+                                if isPest, let assessment = observation.assessment {
+                                    id = store.startCarePlan(observationID: observationID, answers: assessment, reviewDays: nil, replacing: replacing)
+                                } else if isPest, observation.area == .pests {
+                                    id = store.startPestInspectionPlan(observationID: observationID, reviewDays: nil, replacing: replacing)
+                                } else if isPest {
+                                    id = store.startCarePlan(observationID: observationID, answers: PestAssessment(), reviewDays: nil, replacing: replacing)
+                                } else {
+                                    id = store.startLeafCarePlan(observationID: observationID, answers: answers, reviewDays: nil, replacing: replacing)
+                                }
                                 if let id {
                                     store.announceCarePlan(id)
                                     BloomFeedback.success(); finishFlow()
                                 } else { message = "Your task couldn't be saved. Please try again; your observation is still here." }
                             }.accessibilityIdentifier("leaf-start-care-plan")
+                            }
                         }
                 } else { ContentUnavailableView("Observation unavailable", systemImage: "leaf") }
             }
@@ -126,7 +147,7 @@ struct LeafCareGuidanceFlow: View {
                 if plant?.drainage == "No" { answers.drainage = .no }
             }
         }
-        .sheet(isPresented: $checkingPests) { PestCareGuidanceFlow(observationID: observationID, replacing: replacing) }
+        .fullScreenCover(isPresented: $checkingPests) { PestCareGuidanceFlow(observationID: observationID, replacing: replacing) }
         .onChange(of: checkingPests) { _, open in
             if !open, let active = store.plan(for: observationID), store.planIsOpen(active.id), active.id != replacing {
                 finishFlow()
@@ -171,8 +192,9 @@ struct LeafCareGuidanceFlow: View {
         VStack(alignment: .leading, spacing: 16) {
             Label(kind.needsSpecialist ? "Get help sooner" : careSteps.count > 1 ? "Your care steps" : "Your first step", systemImage: kind.needsSpecialist ? "exclamationmark.bubble.fill" : "hand.point.up.left.fill")
                 .font(BloomType.section).foregroundStyle(kind.needsSpecialist ? BloomTone.yellow.ink : BloomTheme.teal)
-            Text(kind.quickTitle).bloomHeading().accessibilityIdentifier("leaf-recommendation-title")
-            ForEach(careSteps, id: \.self) { step in LeafVisualSteps(step: step) }
+            Text(kind.title).bloomHeading().accessibilityIdentifier("leaf-recommendation-title")
+            Text(kind.explanation(for: observation?.area)).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+            ForEach(careSteps, id: \.self) { step in BloomCareStepSummary(step: step) }
             DisclosureGroup("How to do this") {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(careSteps, id: \.self) { step in

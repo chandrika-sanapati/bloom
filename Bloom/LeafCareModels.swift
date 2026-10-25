@@ -141,7 +141,8 @@ enum LeafCareSources {
 
 enum ObservationGuidanceRoute {
     static func usesVisualEntry(_ observation: CareRecord, replacing plan: CarePlan? = nil) -> Bool {
-        isLeaf(observation, replacing: plan) || (observation.area == .pests && observation.assessment == nil && plan?.assessment == nil)
+        // Reopening a saved assessment starts with guidance, never another questionnaire.
+        observation.kind == .change
     }
     static func isLeaf(_ observation: CareRecord, replacing plan: CarePlan? = nil) -> Bool {
         if let plan { return plan.kind.isLeafGuidance }

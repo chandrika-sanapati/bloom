@@ -43,7 +43,7 @@ struct ObservationFlowView: View {
                         VStack(alignment: .leading, spacing: 20) {
                             if let plant = store.plant(plantID) { BloomPlantIdentity(plant: plant) }
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Where do you notice it?").bloomHeading(BloomTheme.heading)
+                                Text("Where do you notice it?").bloomHeading()
                                 Text("Choose the part of your plant. If you're unsure, choose Whole plant.").font(BloomType.body).foregroundStyle(.secondary)
                             }
                             LazyVGrid(columns: cardColumns, spacing: 12) {
@@ -77,31 +77,8 @@ struct ObservationFlowView: View {
             }.toolbar { if savedID == nil { ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) } } }
                 .navigationDestination(for: ObservationPage.self) { page in
                     if page == .symptoms { symptomCards }
-                    else { Form {
-                        Section { Text(observation == "Something else" ? customObservation : observation).font(BloomType.section) }
-                            footer: { Text("After saving, see what could help.") }
-                        Section("Notes · Optional") {
-                            TextField("Add a note", text: $note, axis: .vertical).lineLimit(2...4)
-                            DisclosureGroup("Add care details") {
-                                Picker("First noticed", selection: $firstNoticed) { ForEach(["Not sure", "Recently", "A while ago"], id: \.self) { Text($0) } }
-                                Picker("Last watered", selection: $wateringContext) { ForEach(["I don't know", "Today", "Within a week", "More than a week ago"], id: \.self) { Text($0) } }
-                                Picker("Light or location changed?", selection: $lightChanged) { ForEach(["Not sure", "Yes", "No"], id: \.self) { Text($0) } }
-                            }
-                        }
-                        Section("Photo · Optional") {
-                            PhotosPicker(selection: $selectedPhoto, matching: .images) { Text(photoLoading ? "Opening photo…" : "Add a photo") }.disabled(photoLoading)
-                            if let photoData, let image = UIImage(data: photoData) {
-                                Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 200)
-                                Button("Remove photo", role: .destructive) { self.photoData = nil; selectedPhoto = nil }
-                            }
-                            if let photoError { Text(photoError).font(BloomType.supporting).foregroundStyle(.red) }
-                        }
-                        if let saveError { Section { Text(saveError).foregroundStyle(.red) } }
-                    }.bloomNativeForm().navigationTitle("Photo and note").navigationBarTitleDisplayMode(.inline)
-                        .bloomNativeFooter {
-                            BloomPrimaryAction(title: busy ? "Saving…" : "Save change", action: save).disabled(!validObservation || photoLoading || busy).accessibilityIdentifier("save-change")
-                        }
-                    }
+                    else { contextPage }
+
                 }
         }.onAppear {
             guard !initialized else { return }; initialized = true
@@ -122,6 +99,36 @@ struct ObservationFlowView: View {
                 photoLoading = false
             }
         }
+    }
+    private var contextPage: some View {
+        BloomContentPage {
+            Text(observation == "Something else" ? customObservation : observation).font(BloomType.section).bloomCard(padding: 16)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Notes · Optional").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                TextField("Add a note", text: $note, axis: .vertical).lineLimit(3...6).bloomInput().accessibilityIdentifier("observation-note")
+            }
+            DisclosureGroup("Add care details") {
+                VStack(spacing: 14) {
+                    Picker("First noticed", selection: $firstNoticed) { ForEach(["Not sure", "Recently", "A while ago"], id: \.self) { Text($0) } }
+                    Picker("Last watered", selection: $wateringContext) { ForEach(["I don't know", "Today", "Within a week", "More than a week ago"], id: \.self) { Text($0) } }
+                    Picker("Light or location changed?", selection: $lightChanged) { ForEach(["Not sure", "Yes", "No"], id: \.self) { Text($0) } }
+                }.padding(.top, 12)
+            }
+            Text("Photo · Optional").bloomHeading()
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                Text(photoLoading ? "Opening photo…" : "Add a photo").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            }.buttonStyle(.bordered).disabled(photoLoading)
+            if let photoData, let image = UIImage(data: photoData) {
+                Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 200)
+                Button("Remove photo", role: .destructive) { self.photoData = nil; selectedPhoto = nil }
+            }
+            if let photoError { Text(photoError).font(BloomType.supporting).foregroundStyle(.red) }
+            if let saveError { Text(saveError).foregroundStyle(.red) }
+        }.navigationTitle("Photo and note").navigationBarTitleDisplayMode(.inline)
+            .bloomNativeFooter {
+                BloomPrimaryAction(title: busy ? "Saving…" : "Save change", action: save)
+                    .disabled(!validObservation || photoLoading || busy).accessibilityIdentifier("save-change")
+            }
     }
     private var cardColumns: [GridItem] {
         Array(repeating: GridItem(.flexible(), alignment: .top), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2)
@@ -166,7 +173,7 @@ struct ObservationFlowView: View {
                     }
                 }
             }.padding(20).frame(maxWidth: 620).frame(maxWidth: .infinity)
-        }.background(BloomTheme.canvas).navigationTitle("What do you notice?").navigationBarTitleDisplayMode(.inline)
+        }.background(BloomTheme.canvas).navigationTitle("What looks different?").navigationBarTitleDisplayMode(.inline)
             .bloomNativeFooter {
                 VStack(spacing: 8) {
                     if !validObservation {

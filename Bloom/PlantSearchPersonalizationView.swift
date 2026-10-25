@@ -37,7 +37,7 @@ struct PlantSearchPersonalizationView: View {
                                     HStack(spacing: 12) {
                                         Text(option.rawValue).font(BloomType.body)
                                             .frame(maxWidth: .infinity, alignment: .leading)
-                                        selectionMark(light == option, multiple: false)
+                                        selectionMark(light == option)
                                     }.padding(.horizontal, 14).frame(minHeight: 46).contentShape(Rectangle())
                                 }.buttonStyle(.plain).accessibilityElement(children: .ignore).accessibilityAddTraits(.isButton)
                                     .accessibilityLabel(option.rawValue).accessibilityValue(light == option ? "Selected" : "Not selected")
@@ -59,7 +59,7 @@ struct PlantSearchPersonalizationView: View {
                                     VStack(alignment: .leading, spacing: 8) {
                                         PlantFormArtwork(form: option).frame(height: 96)
                                             .overlay(alignment: .topTrailing) {
-                                                selectionMark(types.contains(option), multiple: true)
+                                                selectionMark(types.contains(option))
                                                     .padding(4).background(.white, in: RoundedRectangle(cornerRadius: 6)).padding(6)
                                             }
                                         Text(option.rawValue).font(BloomType.section)
@@ -75,6 +75,12 @@ struct PlantSearchPersonalizationView: View {
                         }
                         if !types.isEmpty { Text("\(types.count) selected").font(BloomType.supporting).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("selected-plant-types") }
                     }
+                    Button("Reset preferences") {
+                        light = .unsure; types.removeAll(); BloomFeedback.selection()
+                    }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .disabled(light == .unsure && types.isEmpty)
+                        .accessibilityHint("Clears light and plant-type choices. Keeps your city. Save applies the reset.")
+                        .accessibilityIdentifier("reset-search-choices")
                     if store.plantSearchPreferences != nil {
                         Button("Turn off personalized picks") {
                             if store.setPersonalizedPicks(false) { dismiss() }
@@ -82,30 +88,15 @@ struct PlantSearchPersonalizationView: View {
                     }
                 }.padding(20)
             }.background(BloomTheme.canvas).scrollDismissesKeyboard(.interactively)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    Button {
-                        light = .unsure; types.removeAll(); BloomFeedback.selection()
-                    } label: {
-                        Text("Reset preferences")
-                            .font(BloomType.section).frame(maxWidth: .infinity, minHeight: 44)
-                    }.buttonStyle(.plain)
-                        .foregroundStyle(light == .unsure && types.isEmpty ? BloomTheme.secondary : BloomTheme.teal)
-                        .disabled(light == .unsure && types.isEmpty)
-                        .accessibilityHint("Clears light and plant-type choices. Keeps your city. Tap Save to apply.")
-                        .accessibilityIdentifier("reset-search-choices")
-                        .padding(.horizontal, 20).padding(.vertical, 6)
-                        .background(.bar)
-                        .overlay(alignment: .top) { Rectangle().fill(BloomTheme.border).frame(height: 0.5) }
-                }
                 .navigationTitle("Your growing space").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
-                            let preferences = PlantSearchPreferences(area: location?.displayName ?? legacyArea, light: light, location: location, plantTypes: PlantFormPreference.allCases.filter { types.contains($0) })
-                            if store.savePlantSearchPreferences(preferences) { dismiss() }
-                        }.disabled(busy != nil || hasUnselectedCity).accessibilityIdentifier("save-search-personalization")
-                    }
+                }
+                .bloomNativeFooter {
+                    BloomPrimaryAction(title: "Save") {
+                        let preferences = PlantSearchPreferences(area: location?.displayName ?? legacyArea, light: light, location: location, plantTypes: PlantFormPreference.allCases.filter { types.contains($0) })
+                        if store.savePlantSearchPreferences(preferences) { dismiss() }
+                    }.disabled(busy != nil || hasUnselectedCity).accessibilityIdentifier("save-search-personalization")
                 }
                 .onAppear {
                     guard !initialized else { return }; initialized = true
@@ -190,8 +181,8 @@ struct PlantSearchPersonalizationView: View {
     private func sectionHeading(_ title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 6) { Text(title).bloomHeading(); Text(detail).font(BloomType.body).foregroundStyle(BloomTheme.secondary) }
     }
-    private func selectionMark(_ selected: Bool, multiple: Bool) -> some View {
-        BloomSymbol(name: selected ? (multiple ? "checkmark.square.fill" : "checkmark.circle.fill") : (multiple ? "square" : "circle"))
+    private func selectionMark(_ selected: Bool) -> some View {
+        BloomSymbol(name: selected ? "checkmark.circle.fill" : "circle")
             .foregroundStyle(selected ? BloomTheme.teal : BloomTheme.secondary.opacity(0.5)).accessibilityHidden(true)
     }
     private func searchCity() {

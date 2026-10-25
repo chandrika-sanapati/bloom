@@ -32,10 +32,10 @@ struct BloomActionRow: View {
     let title: String
     var body: some View {
         HStack(spacing: 12) {
-            Text(title).font(BloomType.section)
+            Text(title).font(BloomType.section).foregroundStyle(BloomTheme.ink)
             Spacer(minLength: 8)
-            BloomSymbol(name: "chevron.right", compact: true)
-        }.foregroundStyle(BloomTheme.teal)
+            BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+        }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
     }
@@ -45,9 +45,67 @@ extension View {
     func bloomNativeForm() -> some View {
         scrollContentBackground(.hidden).background(BloomTheme.canvas)
             .headerProminence(.increased).textCase(nil)
+            .listSectionSpacing(16).contentMargins(.top, 12, for: .scrollContent)
     }
     func bloomNativeFooter<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         safeAreaInset(edge: .bottom) { content().padding(.horizontal, 20).padding(.vertical, 12).background(.bar) }
+    }
+}
+
+/// Shared page and selection treatment mirrors the interactive demo while retaining native controls.
+struct BloomContentPage<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20, content: content)
+                .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
+                .frame(maxWidth: 620).frame(maxWidth: .infinity)
+        }.background(BloomTheme.canvas).scrollDismissesKeyboard(.interactively)
+    }
+}
+
+struct BloomChoiceList<Value: Hashable>: View {
+    let values: [Value]
+    @Binding var selection: Value?
+    var title: (Value) -> String
+    var identifier: (Value) -> String = { _ in "" }
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(values, id: \.self) { value in
+                let selected = selection == value
+                Button { selection = value; BloomFeedback.selection() } label: {
+                    HStack(spacing: 12) {
+                        Text(title(value)).font(selected ? BloomType.section : BloomType.body)
+                            .foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 8)
+                        BloomSymbol(name: selected ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(selected ? BloomTheme.teal : BloomTheme.secondary)
+                    }.padding(.horizontal, 16).padding(.vertical, 14)
+                        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                        .background(selected ? BloomTheme.selected : BloomTheme.surface)
+                        .contentShape(Rectangle())
+                }.buttonStyle(.plain)
+                    .accessibilityLabel(title(value)).accessibilityValue(selected ? "Selected" : "Not selected")
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                    .accessibilityIdentifier(identifier(value))
+                if value != values.last { Divider().padding(.leading, 16) }
+            }
+        }.clipShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius))
+    }
+}
+
+struct BloomSelectionHint: View {
+    var body: some View {
+        Text("Choose an option above to continue.").font(BloomType.supporting)
+            .foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity)
+            .accessibilityIdentifier("selection-hint")
+    }
+}
+
+extension View {
+    func bloomInput() -> some View {
+        padding(12).background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(BloomTheme.border))
     }
 }
 
@@ -130,7 +188,7 @@ struct CareFeedbackBanner: View {
                 .sheet(isPresented: $scheduling) {
                     if let id = feedback.planID { PlanReviewScheduleView(planID: id) }
                 }
-                .sheet(item: $guidance) { destination in
+                .fullScreenCover(item: $guidance) { destination in
                     CareGuidanceFlow(observationID: destination.id, replacing: feedback.planID)
                 }
                 .confirmationDialog("Mark this issue as resolved?", isPresented: $resolving, titleVisibility: .visible) {
@@ -147,4 +205,23 @@ struct CareFeedbackBanner: View {
 // Display copy is separate from the persisted status raw values.
 extension PlanTaskStatus {
     var displayTitle: String { self == .completed ? "Completed" : rawValue }
+}
+
+struct BloomCareStepSummary: View {
+    let step: CarePlanStep
+    private var tone: BloomTone {
+        switch step { case .checkSoilMoisture, .waterDryRoots, .drainExcessWater: .blue; case .checkGrowingConditions, .steadyConditions: .yellow; default: .teal }
+    }
+    private var symbol: String {
+        switch step { case .checkSoilMoisture, .waterDryRoots, .drainExcessWater: "drop"; case .checkGrowingConditions, .steadyConditions: "sun.max"; case .checkLeafChanges: "leaf"; case .separate: "arrow.left.and.right"; case .removeBugs, .inspect: "magnifyingglass"; case .askExpert: "person.crop.circle.badge.questionmark"; default: "eye" }
+    }
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            BloomIconTile(symbol: symbol, tone: tone)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(step.title).font(BloomType.section)
+                if let instruction = step.instructions.first { Text(instruction).font(BloomType.body).foregroundStyle(BloomTheme.secondary) }
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }.accessibilityElement(children: .combine)
+    }
 }

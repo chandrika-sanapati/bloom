@@ -28,7 +28,6 @@ extension BloomStore {
 
     /// Accepting advice creates planned work, never a performed-care record.
     func startCarePlan(observationID: UUID, answers: PestAssessment, reviewDays: Int?, replacing: UUID? = nil, now: Date = .now) -> UUID? {
-        guard answers.complete else { return nil }
         return createCarePlan(observationID: observationID, kind: answers.recommendation, pest: answers, leaf: nil, reviewDays: reviewDays, replacing: replacing, now: now)
     }
     func startLeafCarePlan(observationID: UUID, answers: LeafAssessment, reviewDays: Int?, replacing: UUID? = nil, now: Date = .now) -> UUID? {
@@ -46,7 +45,7 @@ extension BloomStore {
         let existing = carePlans.first { $0.observationID == observationID && planIsOpen($0.id) }
         if let existing, replacing == nil { return existing.id }
         if let replacing { guard existing?.id == replacing else { return nil } }
-        let plan = CarePlan(plantID: baseline.plantID, observationID: observationID, createdAt: now, kind: kind, assessment: pest, baseline: baseline, leafAssessment: leaf, reviewAfterDays: reviewDays, guidanceVersion: kind.isLeafGuidance ? "2026-10-24.1" : "2026-10-19.1")
+        let plan = CarePlan(plantID: baseline.plantID, observationID: observationID, createdAt: now, kind: kind, assessment: pest, baseline: baseline, leafAssessment: leaf, reviewAfterDays: reviewDays, guidanceVersion: kind.isLeafGuidance ? "2026-10-24.1" : "2026-10-25.1")
         let actionDate = (Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now)) ?? now.addingTimeInterval(86400)).addingTimeInterval(-1)
         var work = plan.kind.actionSteps(for: baseline.area).enumerated().map { index, step in
             PlanTask(plantID: plan.plantID, planID: plan.id, step: step, position: index, due: actionDate)
@@ -183,7 +182,7 @@ extension BloomStore {
         var desired: [UNNotificationRequest] = []
         if canNotify {
             for plant in garden.plants {
-                guard let due = plant.reminder, due > Date() else { continue }
+                guard let due = plant.reminder, due > Date(), plant.reminderNotifications != false else { continue }
                 let soil = (plant.reminderKind ?? .soilCheck) == .soilCheck
                 let content = UNMutableNotificationContent()
                 content.title = "\(soil ? "Check soil" : "Look again") · \(plant.name)"
@@ -236,7 +235,7 @@ extension Garden {
         }
         let plans = Set((carePlans ?? []).filter { ids.contains($0.observationID) }.map(\.id))
         for i in self.plants.indices where self.plants[i].reminderObservationID.map(ids.contains) == true {
-            self.plants[i].reminder = nil; self.plants[i].reminderKind = nil; self.plants[i].reminderObservationID = nil
+            self.plants[i].reminder = nil; self.plants[i].reminderKind = nil; self.plants[i].reminderObservationID = nil; self.plants[i].reminderNotifications = nil
         }
         records.removeAll { ids.contains($0.id) || $0.planID.map(plans.contains) == true }
         carePlans?.removeAll { plans.contains($0.id) }; careTasks?.removeAll { plans.contains($0.planID) }

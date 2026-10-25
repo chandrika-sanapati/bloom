@@ -23,8 +23,8 @@ struct PestAssessment: Codable, Hashable {
     var placement: AssessmentPlacement?
     var complete: Bool { signs != nil && location != nil && extent != nil && placement != nil }
     var recommendation: CarePlanKind {
-        guard complete else { return .inspection }
         if extent == .widespread { return .expert }
+        guard complete else { return .inspection }
         if placement == .indoor && signs == .cotton && (location == .joints || location == .leaves) && extent == .few { return .mealybugs }
         return .inspection
     }
@@ -35,7 +35,7 @@ enum CarePlanKind: String, Codable {
     var explanation: String {
         switch self {
         case .mealybugs: "Cotton-like clusters on indoor leaves or stems can be a sign of mealybugs. Your answers fit this possibility, but this is not a confirmed identification. Start with containment and careful physical removal in the small area you described."
-        case .inspection: "These answers don't establish a mealybug problem. A closer inspection can help you choose an appropriate next step. Avoid treating an unidentified problem with a spray."
+        case .inspection: "These signs don't establish a pest identification. Inspect before choosing a treatment; avoid spraying an unidentified problem."
         case .expert: "You described several affected areas or heavy damage. A small-area removal plan may not be enough. Keep a record and get plant-care help to identify the cause and choose an appropriate treatment."
         case .leafDry, .leafWet, .leafEnvironment, .leafInspection, .leafExpert: leafExplanation
         }

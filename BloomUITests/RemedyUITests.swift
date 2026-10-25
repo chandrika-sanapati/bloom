@@ -25,13 +25,13 @@ import XCTest
         picker.tap(); app.buttons[value].tap()
     }
     private func assess(_ app: XCUIApplication, signs: String, extent: String) {
-        let sign = app.buttons[signs]; reveal(sign, app: app); sign.tap()
+        choose("assessment-signs", signs, app: app)
         choose("assessment-location", "Where leaves join stems", app: app)
         choose("assessment-extent", extent, app: app)
         choose("assessment-placement", "Indoors", app: app)
         capture("14 Native assessment", app)
         app.buttons["assessment-continue"].tap()
-        XCTAssertTrue(app.navigationBars["Your next steps"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["What could help"].waitForExistence(timeout: 5))
     }
     private func openSavedObservation(_ app: XCUIApplication) {
         app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
@@ -40,7 +40,7 @@ import XCTest
         if app.buttons["leaf-check-pests"].waitForExistence(timeout: 2) {
             let checks = app.buttons["leaf-check-pests"]; reveal(checks, app: app); checks.tap()
         }
-        XCTAssertTrue(app.navigationBars["Understand the change"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Take a closer look"].waitForExistence(timeout: 5))
     }
     private func clearBanner(_ app: XCUIApplication) {
         if app.buttons["dismiss-care-feedback"].exists { app.buttons["dismiss-care-feedback"].tap() }
@@ -124,7 +124,7 @@ import XCTest
         let app = XCUIApplication(); app.launchArguments = ["--uitesting", "--uitesting-plan"]; app.launch()
         let action = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "care-plan-task-", "Keep this plant separate")).firstMatch
         reveal(action, app: app); action.tap()
-        app.buttons["Add a note or change the date"].tap()
+        app.buttons["Change the date or task"].tap()
         let schedule = app.buttons["reschedule-plan-task"]; reveal(schedule, app: app); schedule.tap()
         XCTAssertTrue(app.navigationBars["Task schedule"].waitForExistence(timeout: 5))
         app.navigationBars["Task schedule"].buttons["Save"].tap()
@@ -141,6 +141,8 @@ import XCTest
         app.buttons["finish-plan-task"].tap()
         XCTAssertTrue(app.staticTexts["Check-in saved"].waitForExistence(timeout: 5))
         app.buttons["reassess-after-check"].tap()
+        XCTAssertTrue(app.buttons["leaf-check-pests"].waitForExistence(timeout: 5))
+        let checks = app.buttons["leaf-check-pests"]; reveal(checks, app: app); checks.tap()
         choose("assessment-extent", "Several areas or heavy damage", app: app)
         app.buttons["assessment-continue"].tap(); app.buttons["start-care-plan"].tap()
         XCTAssertTrue(app.staticTexts["Care plan added"].waitForExistence(timeout: 5))

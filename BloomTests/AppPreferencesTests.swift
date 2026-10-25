@@ -128,4 +128,26 @@ import UserNotifications
         XCTAssertNil(saved); XCTAssertEqual(s.plant(p.id)?.reminder, due)
         XCTAssertNil(s.errorMessage); XCTAssertNotNil(s.notificationMessage)
     }
+    func testMutingOneReminderKeepsItsTaskAndOtherAlertsThroughGlobalMuteAndRelaunch() async throws {
+        let notifications = TestNotifications(), s = store(notifications)
+        XCTAssertTrue(s.start(sample: true))
+        let first = s.garden.plants[0], second = s.garden.plants[1]
+        let due = Date().addingTimeInterval(86400)
+        let result = await s.setReminder(for: first.id, date: due, notify: false)
+        XCTAssertNil(result)
+        let enabled = await s.setTaskNotifications(true); XCTAssertNil(enabled)
+        XCTAssertEqual(s.plant(first.id)?.reminder, due)
+        XCTAssertNil(notifications.requests[first.id.uuidString])
+        XCTAssertNotNil(notifications.requests[second.id.uuidString])
+        let loaded = store(notifications)
+        XCTAssertEqual(loaded.plant(first.id)?.reminderNotifications, false)
+        _ = await loaded.setTaskNotifications(false)
+        _ = await loaded.setTaskNotifications(true)
+        XCTAssertNil(notifications.requests[first.id.uuidString])
+        XCTAssertNotNil(notifications.requests[second.id.uuidString])
+        let updated = await loaded.setReminder(for: first.id, date: due, notify: true)
+        XCTAssertNil(updated)
+        XCTAssertNotNil(notifications.requests[first.id.uuidString])
+    }
+
 }

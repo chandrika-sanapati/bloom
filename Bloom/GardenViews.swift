@@ -27,13 +27,13 @@ struct RootView: View {
                             })
                         }
                     }
-                }.toolbarRole(.editor)
+                }
             } else { WelcomeView(addFirstPlant: openPlantSearch) }
         }
             .environment(\.returnToPlants, { plantsPath = NavigationPath() })
             .environment(\.presentPlantAdd, openPlantSearch)
-            .sheet(item: $task) { PlantReminderTaskView(plantID: $0.plantID) }
-            .sheet(item: $planTask) { PlanTaskFlowView(taskID: $0.id) }
+            .fullScreenCover(item: $task) { PlantReminderTaskView(plantID: $0.plantID) }
+            .fullScreenCover(item: $planTask) { PlanTaskFlowView(taskID: $0.id) }
             .onChange(of: notifications.planTaskID) { _, _ in openNotification() }
             .onChange(of: notifications.plantID) { _, _ in openNotification() }
             .onAppear { openNotification(); store.refreshPlanTaskNotifications() }
@@ -127,7 +127,7 @@ struct GardenView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) { brandHeader }
-            .sheet(isPresented: $settings) { PreferencesView() }
+            .fullScreenCover(isPresented: $settings) { PreferencesView() }
             .safeAreaInset(edge: .bottom, spacing: 0) { CareFeedbackBanner() }
     }
     private var brandHeader: some View {
@@ -180,9 +180,11 @@ struct AllPlantsView: View {
                         .buttonStyle(.plain).accessibilityIdentifier("all-plant-\(plant.name)")
                 }
             }.padding(20)
+            Button("Add plant", action: addPlant).font(BloomType.section)
+                .frame(maxWidth: .infinity, minHeight: 44).background(BloomTheme.selected, in: Capsule())
+                .padding(.horizontal, 20).padding(.bottom, 24).accessibilityIdentifier("collection-add-plant")
         }.background(BloomTheme.canvas).toolbar(.visible, for: .navigationBar).navigationTitle("My plants").navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search your plants")
-            .toolbar { ToolbarItem(placement: .primaryAction) { Button("Add plant", action: addPlant) } }
     }
 }
 
@@ -258,8 +260,8 @@ struct PlantDetailView: View {
                             .accessibilityElement(children: .ignore).accessibilityLabel("Location")
                             .accessibilityValue(plant.location.isEmpty ? "Not set" : plant.location)
                             .accessibilityIdentifier("plant-detail-location")
-                        if let placement = plant.placement { LabeledContent("Placement", value: placement.rawValue) }
-                        if let status = plant.initialStatus { LabeledContent("Initial condition", value: status.rawValue) }
+                        LabeledContent("Placement", value: plant.placement?.rawValue ?? "Not set")
+                        LabeledContent("Initial condition", value: plant.initialStatus?.rawValue ?? "Not set")
                         LabeledContent("Light", value: plant.light)
                         LabeledContent("Drainage holes", value: plant.drainage)
                         LabeledContent("Last watered", value: store.wateredDate(for: plant).map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "Not sure")
@@ -301,12 +303,12 @@ struct PlantDetailView: View {
                             } label: { BloomSymbol(name: "ellipsis") }.accessibilityLabel("Plant options")
                         }
                     }
-                    .sheet(isPresented: $checking) { CareCheckView(plantID: plantID) }
-                    .sheet(isPresented: $observing) { ObservationFlowView(plantID: plantID) }
-                    .sheet(item: $careTask) { PlanTaskFlowView(taskID: $0.id) }
-                    .sheet(item: $careGuidance) { item in CareGuidanceFlow(observationID: item.id, replacing: store.plan(for: item.id)?.id) }
+                    .fullScreenCover(isPresented: $checking) { CareCheckView(plantID: plantID) }
+                    .fullScreenCover(isPresented: $observing) { ObservationFlowView(plantID: plantID) }
+                    .fullScreenCover(item: $careTask) { PlanTaskFlowView(taskID: $0.id) }
+                    .fullScreenCover(item: $careGuidance) { item in CareGuidanceFlow(observationID: item.id, replacing: store.plan(for: item.id)?.id) }
                     .safeAreaInset(edge: .bottom, spacing: 0) { CareFeedbackBanner(plantID: plantID) }
-                    .sheet(isPresented: $editing) { PlantEditorView(plant: plant, isNew: false) }
+                    .fullScreenCover(isPresented: $editing) { PlantEditorView(plant: plant, isNew: false) }
                     .alert("Remove \(plant.name)?", isPresented: $deleting) {
                         Button("Cancel", role: .cancel) { }
                         Button("Remove", role: .destructive) {

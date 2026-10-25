@@ -76,6 +76,7 @@ struct Plant: Identifiable, Codable, Hashable {
     var placement: PlantPlacement?
     var initialStatus: InitialPlantStatus?
     var reminderObservationID: UUID?
+    var reminderNotifications: Bool?
 
     var referenceURL: URL? {
         let known = ["Dracaena trifasciata", "Monstera deliciosa", "Ficus elastica", "Epipremnum aureum"]
@@ -324,7 +325,7 @@ final class BloomStore {
             else { garden.records.insert(record, at: 0) }
             if let index = garden.plants.firstIndex(where: { $0.id == record.plantID }) {
                 if record.kind == .change && garden.plants[index].reminderKind == .observation && garden.plants[index].reminderObservationID == nil { garden.plants[index].reminderObservationID = priorConcern }
-                if completes { garden.plants[index].reminder = nil; garden.plants[index].reminderKind = nil; garden.plants[index].reminderObservationID = nil }
+                if completes { garden.plants[index].reminder = nil; garden.plants[index].reminderKind = nil; garden.plants[index].reminderObservationID = nil; garden.plants[index].reminderNotifications = nil }
             }
         }) else { return nil }
         if completes && managesNotifications { notificationClient.remove([record.plantID.uuidString]) }
@@ -343,20 +344,22 @@ final class BloomStore {
                 garden.plants[index].reminder = receipt.previousPlant.reminder
                 garden.plants[index].reminderKind = receipt.previousPlant.reminderKind
                 garden.plants[index].reminderObservationID = receipt.previousPlant.reminderObservationID
+                garden.plants[index].reminderNotifications = receipt.previousPlant.reminderNotifications
             }
         }) else { return false }
 
         return true
     }
 
-    func setReminder(for plantID: UUID, days: Int?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil) async -> String? {
-        await setReminder(for: plantID, date: days.map { newReminderDate(days: $0) }, kind: kind, observationID: observationID)
+    func setReminder(for plantID: UUID, days: Int?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil, notify: Bool? = nil) async -> String? {
+        await setReminder(for: plantID, date: days.map { newReminderDate(days: $0) }, kind: kind, observationID: observationID, notify: notify)
     }
 
-    func setReminder(for plantID: UUID, date: Date?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil) async -> String? {
+    func setReminder(for plantID: UUID, date: Date?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil, notify: Bool? = nil) async -> String? {
         guard var plant = plant(plantID) else { return "This plant is no longer in your garden." }
         if let date, date <= Date() { return "Choose a future date and time." }
         plant.reminder = date; plant.reminderKind = date == nil ? nil : kind
+        plant.reminderNotifications = date == nil ? nil : notify ?? plant.reminderNotifications
         plant.reminderObservationID = date == nil || kind != .observation ? nil : (observationID ?? plant.reminderObservationID ?? records(for: plantID).first { $0.kind == .change }?.id)
         guard savePlant(plant) else { return "The reminder couldn't be saved. Please try again." }
         // Dates belong to tasks. Alerts are a separate, optional app preference.

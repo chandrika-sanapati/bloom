@@ -6,7 +6,7 @@ Use the system font and four semantic roles. All roles scale with Dynamic Type.
 
 | Role | Default size | Weight | Use |
 | --- | --- | --- | --- |
-| Title | 22 pt | Bold, rounded | One main content heading per screen |
+| Title | 22 pt | Bold, system | One main content heading per screen |
 | Section | 17 pt | Semibold | Section headings, card titles, action labels |
 | Body | 17 pt | Regular | Questions, field values, instructions |
 | Supporting | 13 pt | Regular | Dates, status metadata, short supporting text |
@@ -39,3 +39,10 @@ Maintain 44 pt interactive targets, readable text contrast, VoiceOver names and 
 ## Home and history
 
 The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The last soil check is a dated, non-interactive summary below the Care actions, without a divider or action-row styling.
+
+
+## Demo-aligned flows
+
+Use the shared white selection group with 52 pt rows, a neutral unselected circle, and a teal selected check/background. Keep required choices separate from optional photo/note fields; show a concise selection hint beside a disabled fixed primary action. Room shortcuts are visible rather than hidden in a menu. Save belongs at the bottom of growing-space preferences; reset belongs with the choices.
+
+Primary care and observation journeys use the full screen. Present numbered action instructions and optional notes directly. Saving a progress comparison shows a dedicated result with a next step; it never implies that completing treatment resolved the issue. Keep platform date/permission controls native. Use yellow for open/review care states, green for completed/resolved states, and neutral for stopped/skipped states. Collection cards carry identity; Care rows carry task tags.
