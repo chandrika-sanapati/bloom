@@ -19,7 +19,7 @@ struct CarePlanDetailView: View {
                         BloomPlantIdentity(plant: plant)
                         StatusTag(text: plan.status.rawValue, tone: plan.status == .needsReview ? .yellow : .teal)
                         Text(plan.kind.title).font(BloomType.title)
-                        Text(plan.kind.explanation).font(BloomType.body).foregroundStyle(.secondary)
+                        Text(plan.kind.explanation(for: plan.baseline.area)).font(BloomType.body).foregroundStyle(.secondary)
                     }
                     if plan.status == .needsReview {
                         Section { InfoCard(title: "Let's take another look", message: "The result is unclear, worse, or no actions were completed. Review the evidence before choosing further treatment.", icon: "magnifyingglass") }
@@ -114,7 +114,7 @@ struct PlanReviewScheduleView: View {
                 if let message { Text(message).foregroundStyle(.red) }
             }.bloomNativeForm().navigationTitle("Next check-in").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
                     ToolbarItem(placement: .confirmationAction) { Button("Save") {
                         if store.schedulePlanReview(planID, date: date), let plan = store.carePlan(planID) {
                             store.careFeedback = CareFlowFeedback(plantID: plan.plantID, title: "Next check-in set", detail: "Check again \(date.formatted(date: .abbreviated, time: .omitted)).", planID: planID)
@@ -140,7 +140,7 @@ struct PlanRecordNoteEditor: View {
             Form { TextField("What would you like to remember?", text: $note, axis: .vertical).lineLimit(4...10) }
                 .bloomNativeForm().navigationTitle("Edit note").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
                     ToolbarItem(placement: .confirmationAction) { Button("Save") {
                         if var record = store.record(recordID) { record.note = note; if store.saveRecord(record) { dismiss() } }
                     } }

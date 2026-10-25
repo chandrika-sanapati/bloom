@@ -223,4 +223,15 @@ import XCTest
         XCTAssertTrue(s.carePlans.isEmpty); XCTAssertTrue(s.careTasks.isEmpty)
         XCTAssertEqual(s.record(record.id), record)
     }
+    func testFlowerAndFruitConcernsCreateAffectedAreaInspectionTasks() throws {
+        for area in [PlantArea.flowers, .fruits] {
+            let (store, plant, _) = fixture()
+            let observation = CareRecord(plantID: plant.id, kind: .change, area: area, observation: "Changed color")
+            XCTAssertTrue(store.saveRecord(observation))
+            let id = try XCTUnwrap(store.startLeafCarePlan(observationID: observation.id, answers: LeafAssessment(), reviewDays: nil))
+            XCTAssertEqual(store.tasks(for: id).map(\.step), [.checkSoilMoisture, .checkGrowingConditions, .inspect])
+            XCTAssertFalse(store.carePlan(id)!.kind.explanation(for: area).contains("older-leaf"))
+        }
+    }
+
 }

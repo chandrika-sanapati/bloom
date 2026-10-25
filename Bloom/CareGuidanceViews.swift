@@ -15,7 +15,6 @@ struct CareGuidanceEntry: View {
             } else {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Understand what to do next").font(BloomType.section)
-                    Text("See possible causes, a first care step, and an optional check-in.").font(BloomType.body).foregroundStyle(.secondary)
                     Button("Find next steps", action: open)
                         .buttonStyle(BloomPrimaryButtonStyle()).accessibilityIdentifier("find-next-steps")
                 }.padding(.vertical, 6)
@@ -79,7 +78,7 @@ struct PestCareGuidanceFlow: View {
                         }
                 } else { ContentUnavailableView("Observation unavailable", systemImage: "leaf") }
             }
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { if let finish { finish() } else { dismiss() } } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close", systemImage: "xmark") { if let finish { finish() } else { dismiss() } }.labelStyle(.iconOnly) } }
             .navigationDestination(for: GuidancePage.self) { _ in
                 recommendation
             }

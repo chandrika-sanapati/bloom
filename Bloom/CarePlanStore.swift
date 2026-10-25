@@ -48,7 +48,7 @@ extension BloomStore {
         if let replacing { guard existing?.id == replacing else { return nil } }
         let plan = CarePlan(plantID: baseline.plantID, observationID: observationID, createdAt: now, kind: kind, assessment: pest, baseline: baseline, leafAssessment: leaf, reviewAfterDays: reviewDays, guidanceVersion: kind.isLeafGuidance ? "2026-10-24.1" : "2026-10-19.1")
         let actionDate = (Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now)) ?? now.addingTimeInterval(86400)).addingTimeInterval(-1)
-        var work = plan.kind.actionSteps.enumerated().map { index, step in
+        var work = plan.kind.actionSteps(for: baseline.area).enumerated().map { index, step in
             PlanTask(plantID: plan.plantID, planID: plan.id, step: step, position: index, due: actionDate)
         }
         if reviewDays != nil { work.append(PlanTask(plantID: plan.plantID, planID: plan.id, step: .review, position: work.count, status: .waiting)) }
@@ -247,7 +247,7 @@ extension Garden {
 extension BloomStore {
     func announceCarePlan(_ id: UUID) {
         guard let plan = carePlan(id) else { return }
-        careFeedback = CareFlowFeedback(plantID: plan.plantID, title: "Care plan added", detail: "Next: \(plan.kind.actionSteps.first?.title ?? "Check your plant").", planID: id)
+        careFeedback = CareFlowFeedback(plantID: plan.plantID, title: "Care plan added", detail: "Next: \(tasks(for: id).first(where: { $0.step != .review })?.step.title ?? "Check your plant").", planID: id)
     }
 
     func announceCareTask(_ receipt: PlanTaskReceipt) {

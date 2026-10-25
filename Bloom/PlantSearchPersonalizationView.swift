@@ -47,10 +47,9 @@ struct PlantSearchPersonalizationView: View {
                             }
                         }.background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                             .overlay(RoundedRectangle(cornerRadius: 16).stroke(BloomTheme.border, lineWidth: 1))
-                        Text("Choose its indoor light. Lower light still needs daylight.").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                     }
                     VStack(alignment: .leading, spacing: 12) {
-                        sectionHeading("What plants do you like?", detail: "Choose one or more. None selected means all shapes.")
+                        sectionHeading("What plants do you like?", detail: "Choose one or more.")
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .top), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
                             ForEach(PlantFormPreference.allCases) { option in
                                 Button {
@@ -58,10 +57,11 @@ struct PlantSearchPersonalizationView: View {
                                     BloomFeedback.selection()
                                 } label: {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        HStack {
-                                            PlantFormArtwork(form: option).frame(height: 60)
-                                            selectionMark(types.contains(option), multiple: true)
-                                        }
+                                        PlantFormArtwork(form: option).frame(height: 96)
+                                            .overlay(alignment: .topTrailing) {
+                                                selectionMark(types.contains(option), multiple: true)
+                                                    .padding(4).background(.white, in: RoundedRectangle(cornerRadius: 6)).padding(6)
+                                            }
                                         Text(option.rawValue).font(BloomType.section)
                                     }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
                                         .background(types.contains(option) ? BloomTheme.selected : BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
@@ -99,7 +99,7 @@ struct PlantSearchPersonalizationView: View {
                 }
                 .navigationTitle("Your growing space").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
                             let preferences = PlantSearchPreferences(area: location?.displayName ?? legacyArea, light: light, location: location, plantTypes: PlantFormPreference.allCases.filter { types.contains($0) })

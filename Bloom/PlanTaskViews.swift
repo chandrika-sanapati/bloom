@@ -126,7 +126,7 @@ struct PlanTaskFlowView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }.accessibilityIdentifier("close-plan-task")
+                    Button("Close", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly).accessibilityIdentifier("close-plan-task")
                 }
             }
         }
@@ -242,7 +242,7 @@ struct PlanTaskScheduleView: View {
                 if let message { Section { Text(message).foregroundStyle(.secondary) } }
             }.bloomNativeForm().navigationTitle("Task schedule").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
                     ToolbarItem(placement: .confirmationAction) { Button(saved ? "Done" : "Save") {
                         if saved { dismiss(); return }
                         guard store.reschedulePlanTask(taskID, date: date) else { message = "Choose a future date for an open task."; return }

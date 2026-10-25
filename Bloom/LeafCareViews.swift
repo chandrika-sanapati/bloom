@@ -110,7 +110,7 @@ struct LeafCareGuidanceFlow: View {
                         }
                 } else { ContentUnavailableView("Observation unavailable", systemImage: "leaf") }
             }
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button(justSaved ? returnLabel : "Close", action: finishFlow).accessibilityIdentifier("close-guidance") } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button(justSaved ? returnLabel : "Close", systemImage: justSaved ? "chevron.backward" : "xmark", action: finishFlow).labelStyle(.iconOnly).accessibilityIdentifier("close-guidance") } }
         }
         .onAppear {
             guard !initialized else { return }; initialized = true
@@ -166,15 +166,16 @@ struct LeafCareGuidanceFlow: View {
             .padding(12).background(tone.surface, in: RoundedRectangle(cornerRadius: 16))
             .accessibilityElement(children: .combine)
     }
+    private var careSteps: [CarePlanStep] { kind.actionSteps(for: observation?.area) }
     private var firstAction: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label(kind.needsSpecialist ? "Get help sooner" : kind.actionSteps.count > 1 ? "Your care steps" : "Your first step", systemImage: kind.needsSpecialist ? "exclamationmark.bubble.fill" : "hand.point.up.left.fill")
+            Label(kind.needsSpecialist ? "Get help sooner" : careSteps.count > 1 ? "Your care steps" : "Your first step", systemImage: kind.needsSpecialist ? "exclamationmark.bubble.fill" : "hand.point.up.left.fill")
                 .font(BloomType.section).foregroundStyle(kind.needsSpecialist ? BloomTone.yellow.ink : BloomTheme.teal)
             Text(kind.quickTitle).bloomHeading().accessibilityIdentifier("leaf-recommendation-title")
-            ForEach(kind.actionSteps, id: \.self) { step in LeafVisualSteps(step: step) }
+            ForEach(careSteps, id: \.self) { step in LeafVisualSteps(step: step) }
             DisclosureGroup("How to do this") {
                 VStack(alignment: .leading, spacing: 12) {
-                    ForEach(kind.actionSteps, id: \.self) { step in
+                    ForEach(careSteps, id: \.self) { step in
                         ForEach(step.instructions, id: \.self) { Text($0).font(BloomType.body).foregroundStyle(.secondary) }
                     }
                 }.padding(.top, 8)

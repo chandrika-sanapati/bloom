@@ -28,14 +28,14 @@ struct CareCheckView: View {
                                 Text("Choose an observation").tag(Soil?.none)
                                 ForEach(Soil.allCases) { Text($0.rawValue).tag(Optional($0)) }
                             }.pickerStyle(.inline)
-                        } header: { Text("How does the soil feel?") } footer: { Text("Choose what you notice now. Not sure is a valid observation.") }
+                        } header: { Text("How does the soil feel?") } footer: { EmptyView() }
                         if let last = store.latestCheck(for: plantID) { Section("Last time") { Text(last.summary).foregroundStyle(.secondary) } }
                     }.bloomNativeForm().navigationTitle("Check soil").navigationBarTitleDisplayMode(.inline)
                         .bloomNativeFooter {
                             BloomPrimaryAction(title: "Continue") { path.append(.decide) }.disabled(draft?.soil == nil).accessibilityIdentifier("continue-check")
                         }
                 } else { ContentUnavailableView("Plant unavailable", systemImage: "leaf") }
-            }.toolbar { if !saved { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } } }
+            }.toolbar { if !saved { ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) } } }
                 .navigationDestination(for: CarePage.self) { _ in
                     if saved, let draft { SavedRecordView(recordID: draft.id, edit: { saved = false }, undo: undo, finish: { dismiss() }) }
                     else {
@@ -46,7 +46,7 @@ struct CareCheckView: View {
                                     Text("Choose your decision").tag(CareAction?.none)
                                     ForEach(CareAction.allCases) { Text($0.rawValue).tag(Optional($0)) }
                                 }.pickerStyle(.inline)
-                            } header: { Text("What did you do?") } footer: { Text("This records your choice. Waiting counts, too.") }
+                            } header: { Text("What did you do?") } footer: { EmptyView() }
                             Section("Notes · Optional") {
                                 TextField("Anything to remember?", text: Binding(get: { draft?.note ?? "" }, set: { draft?.note = $0 }), axis: .vertical).lineLimit(3...6).accessibilityIdentifier("check-note")
                             }
@@ -168,7 +168,7 @@ struct ReminderEditorView: View {
                 if let message { Section { Text(message).foregroundStyle(.red) } }
             }.bloomNativeForm().navigationTitle("Set reminder").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") { busy = true; Task { message = await store.setReminder(for: plantID, date: date, kind: kind, observationID: observationID); busy = false; if message == nil { dismiss() } } }.disabled(busy)
                     }
@@ -364,7 +364,7 @@ struct FollowUpView: View {
                     }
                     Section("Notes · Optional") { TextField("What changed?", text: $note, axis: .vertical).lineLimit(3...6) }
                 }.bloomNativeForm().navigationTitle("Check in again").navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) } }
                     .bloomNativeFooter {
                         BloomPrimaryAction(title: busy ? "Saving…" : "Save follow-up", action: save).disabled(outcome.isEmpty || busy)
                     }

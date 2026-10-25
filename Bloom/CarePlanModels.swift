@@ -53,6 +53,16 @@ enum CarePlanKind: String, Codable {
         case .leafExpert: [.askExpert, .checkSoilMoisture, .checkGrowingConditions, .checkLeafChanges]
         }
     }
+    func actionSteps(for area: PlantArea?) -> [CarePlanStep] {
+        guard area == .flowers || area == .fruits || area == .stems else { return actionSteps }
+        return actionSteps.map { $0 == .checkLeafChanges ? .inspect : $0 }
+    }
+    func explanation(for area: PlantArea?) -> String {
+        if self == .leafInspection, area == .flowers || area == .fruits || area == .stems {
+            return "Water balance, growing conditions and pests can cause similar changes. Inspect the affected area before choosing a treatment."
+        }
+        return explanation
+    }
     var improvement: String {
         switch self {
         case .mealybugs: "Compare the number of visible clusters, whether new areas are affected, and any new damage. Fewer visible signs are encouraging; one check does not prove the pest is gone."

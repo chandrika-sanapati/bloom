@@ -141,7 +141,7 @@ struct DefaultReminderTimeView: View {
                 Section { DatePicker("Reminder time", selection: $time, displayedComponents: .hourAndMinute).datePickerStyle(.wheel).labelsHidden().accessibilityIdentifier("default-reminder-time-picker") }
             }.bloomNativeForm().navigationTitle("Reminder time").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
                             let parts = Calendar.current.dateComponents([.hour, .minute], from: time)
@@ -191,6 +191,10 @@ struct BloomGuidanceAboutView: View {
                 Text("Picks use your indoor light, preferred plant shapes, and optional regional seasonal context. They don't measure local popularity or outdoor suitability.")
                 Link("Indoor light · University of Minnesota", destination: URL(string: "https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/lighting-for-indoor-plants")!)
                 Link("Houseplants · RHS", destination: URL(string: "https://www.rhs.org.uk/plants/types/houseplants/winter-interest-houseplants-care")!)
+            }
+            Section("Photography") {
+                Link("Pothos · Cindy Christian / NC State Extension", destination: URL(string: "https://plants.ces.ncsu.edu/plants/epipremnum-aureum/")!)
+                Link("CC BY 4.0 · Cropped to fit the cards", destination: URL(string: "https://creativecommons.org/licenses/by/4.0/")!)
             }
         }.bloomNativeForm().navigationTitle("Care guidance & sources").navigationBarTitleDisplayMode(.inline)
     }

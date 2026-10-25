@@ -153,7 +153,7 @@ struct PlantSpecies: Identifiable {
         PlantSpecies(name: "Snake Plant", scientific: "Dracaena trifasciata", asset: "snake", care: .easy, light: .low),
         PlantSpecies(name: "Monstera", scientific: "Monstera deliciosa", asset: "monstera", care: .moderate, light: .indirect),
         PlantSpecies(name: "Rubber Plant", scientific: "Ficus elastica", asset: "rubber", care: .moderate, light: .indirect),
-        PlantSpecies(name: "Pothos", scientific: "Epipremnum aureum", asset: "", care: .easy, light: .indirect)
+        PlantSpecies(name: "Pothos", scientific: "Epipremnum aureum", asset: "pothos", care: .easy, light: .indirect)
     ]
 }
 

@@ -7,7 +7,7 @@ struct BloomPlantSearchField: View {
     var body: some View {
         HStack(spacing: 8) {
             BloomSymbol(name: "magnifyingglass").foregroundStyle(BloomTheme.secondary).accessibilityHidden(true)
-            TextField("Search plants", text: $query).font(BloomType.body)
+            TextField("Search plant", text: $query).accessibilityLabel("Search plants").font(BloomType.body)
                 .autocorrectionDisabled().textInputAutocapitalization(.never).submitLabel(.search)
                 .focused($focused).onSubmit { submitted(); focused = false }
                 .accessibilityIdentifier("plant-search-field")
@@ -27,19 +27,12 @@ struct BloomPlantSearchField: View {
 
 struct BloomDiscoveryCard: View {
     let species: PlantSpecies
-    var reason: String? = nil
     var ownedCount = 0
     @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Group {
-                if species.asset.isEmpty {
-                    ZStack {
-                        BloomTone.blue.surface
-                        PlantFormArtwork(form: species.forms.first ?? .upright).padding(24)
-                        Text("Illustration").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(10)
-                    }
-                } else { PlantPortrait(plant: Plant(name: species.name, species: species.scientific, asset: species.asset)) }
+                PlantPortrait(plant: Plant(name: species.name, species: species.scientific, asset: species.asset))
             }.frame(height: typeSize.isAccessibilitySize ? 280 : 196)
                 .overlay(alignment: .bottomLeading) {
                     ZStack(alignment: .bottomLeading) {
@@ -56,7 +49,6 @@ struct BloomDiscoveryCard: View {
                 StatusTag(text: "\(species.care.rawValue) care", tone: species.care == .easy ? .teal : .yellow)
                 Label(species.light.rawValue, systemImage: species.light.symbol)
                     .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
-                if let reason { Text(reason).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true) }
             }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
         }.background(BloomTheme.surface)
             .clipShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
@@ -104,8 +96,6 @@ struct PlantDiscoveryView: View {
                 }
                 VStack(alignment: .leading, spacing: 5) {
                     Text(profile == nil ? "Choose a plant" : (profile?.location == nil ? "For your space" : "Seasonal picks")).bloomHeading()
-                    Text(profile == nil ? "Start with a familiar face, or search to add your own." : "Ideas for your indoor space. Tap a plant to make it yours.")
-                        .font(BloomType.body).foregroundStyle(BloomTheme.secondary)
                 }
                 if hasTypes {
                     HStack(spacing: 8) {
@@ -120,8 +110,6 @@ struct PlantDiscoveryView: View {
                     }
                 } else { plantGrid(suggestions) }
                 if profile != nil {
-                    Text("Curated indoor picks for your light, plant shapes, and location. Local popularity and live weather aren't measured.")
-                        .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                     DisclosureGroup("How these picks work") {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Your light and selected plant shapes guide these picks. A chosen city supplies coordinates for the season; NASA POWER monthly climate data adds regional context. These are indoor ideas, not outdoor hardiness or availability advice.")
@@ -139,7 +127,6 @@ struct PlantDiscoveryView: View {
                     Spacer()
                     Text("\(results.count)").foregroundStyle(.secondary)
                 }
-                Text("Searching all catalog plants, regardless of your area settings.").font(BloomType.body).foregroundStyle(BloomTheme.secondary)
                 if results.isEmpty {
                     VStack(spacing: 10) {
                         Image(systemName: "leaf").font(.largeTitle).foregroundStyle(BloomTheme.teal)
@@ -152,7 +139,6 @@ struct PlantDiscoveryView: View {
                 Button { addCustom(search) } label: { Text("Add \"\(search)\" by name").frame(maxWidth: .infinity, minHeight: 32) }
                     .buttonStyle(.bordered).accessibilityIdentifier("add-custom-search")
             }
-            Text("Can't find it? Enter any plant name to add your own.").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
         }.sheet(isPresented: $personalizing) { PlantSearchPersonalizationView() }
     }
     private var areaCard: some View {
@@ -160,9 +146,7 @@ struct PlantDiscoveryView: View {
             HStack(alignment: .top, spacing: 12) {
                 BloomIconTile(symbol: profile.map { PlantSearchEngine.season(for: $0, date: .now).symbol } ?? "leaf", tone: .yellow)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(profile.map { "\($0.displayArea) · \(PlantSearchEngine.season(for: $0, date: .now).rawValue)" } ?? "Find a plant for your space").font(BloomType.section)
-                    Text(profile.map { PlantSearchEngine.seasonalNote($0) } ?? "Find your city, choose your light, and pick the plant shapes you love.")
-                        .font(BloomType.body).foregroundStyle(BloomTheme.secondary)
+                    Text(profile.map { "\($0.displayArea) · \(PlantSearchEngine.season(for: $0, date: .now).rawValue)" } ?? "Your growing space").font(BloomType.section)
                 }
             }
             Button(profile == nil ? "Personalize picks" : "Edit area & preferences") { personalizing = true }
@@ -174,9 +158,9 @@ struct PlantDiscoveryView: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: typeSize.isAccessibilitySize ? 1 : 2), alignment: .leading, spacing: 16) {
             ForEach(items) { item in
                 Button { select(item.species) } label: {
-                    BloomDiscoveryCard(species: item.species, reason: search.isEmpty && profile != nil ? item.reason : nil, ownedCount: item.ownedCount)
+                    BloomDiscoveryCard(species: item.species, ownedCount: item.ownedCount)
                 }.buttonStyle(BloomPressStyle()).accessibilityElement(children: .ignore).accessibilityAddTraits(.isButton)
-                    .accessibilityLabel("\(item.species.name), \(item.species.care.rawValue) care, \(item.species.light.rawValue)" + (item.ownedCount > 0 ? ", \(item.ownedCount) in My plants" : "") + (search.isEmpty && profile != nil ? ", \(item.reason)" : ""))
+                    .accessibilityLabel("\(item.species.name), \(item.species.care.rawValue) care, \(item.species.light.rawValue)" + (item.ownedCount > 0 ? ", \(item.ownedCount) in My plants" : ""))
                     .accessibilityHint(item.ownedCount > 0 ? "Review and add another of this plant" : "Review and add this plant")
                     .accessibilityIdentifier("select-species-\(item.species.name)")
             }

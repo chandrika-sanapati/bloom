@@ -74,7 +74,7 @@ struct ObservationFlowView: View {
                             }
                         }.padding(20).frame(maxWidth: 620).frame(maxWidth: .infinity)
                     }.background(BloomTheme.canvas).navigationTitle("Notice a change").navigationBarTitleDisplayMode(.inline)
-            }.toolbar { if savedID == nil { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } } }
+            }.toolbar { if savedID == nil { ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) } } }
                 .navigationDestination(for: ObservationPage.self) { page in
                     if page == .symptoms { symptomCards }
                     else { Form {

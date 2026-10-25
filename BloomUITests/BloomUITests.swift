@@ -63,17 +63,19 @@ final class BloomUITests: XCTestCase {
         let add = app.buttons["home-add-plant"]
         if !add.isHittable { app.swipeDown() }
         XCTAssertEqual(add.label, "Add plant")
-        XCTAssertGreaterThan(add.frame.minY, app.scrollViews["home-plant-carousel"].frame.minY)
-        XCTAssertLessThan(add.frame.maxY, app.segmentedControls["home-care-picker"].frame.minY)
+        XCTAssertTrue(add.isHittable)
+        XCTAssertEqual(add.frame.minY, header.frame.minY, accuracy: 1)
+        XCTAssertGreaterThan(add.frame.minX, header.frame.maxX)
+        XCTAssertFalse(app.scrollViews["home-plant-carousel"].exists)
         XCTAssertFalse(app.buttons["floating-add-plant"].exists)
         add.tap()
-        XCTAssertTrue(app.navigationBars["Search plants"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Add plant"].waitForExistence(timeout: 5))
         let field = app.textFields["plant-search-field"]
         XCTAssertTrue(field.isHittable)
         XCTAssertFalse(app.buttons["plant-search-scanner"].exists)
         XCTAssertFalse(app.buttons["Sheet Grabber"].exists)
         XCTAssertFalse(app.buttons["overlay-search-plant"].exists)
-        app.navigationBars["Search plants"].buttons.firstMatch.tap()
+        app.navigationBars["Add plant"].buttons.firstMatch.tap()
         XCTAssertTrue(app.buttons["home-add-plant"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["My plants (5)"].exists)
     }
@@ -107,7 +109,7 @@ final class BloomUITests: XCTestCase {
         XCTAssertTrue(app.buttons["all-plant-Fern"].waitForExistence(timeout: 5))
     }
     @MainActor
-    func testMyPlantsCarouselOpensDetailsAndPreservesSeeAll() {
+    func testTwoCompleteCardsOpenDetailsAndPreserveSeeAll() {
         let app = XCUIApplication(); app.launchArguments = ["--uitesting"]; app.launch()
         XCTAssertTrue(app.staticTexts["My plants (5)"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.tabBars.firstMatch.exists)
@@ -116,11 +118,20 @@ final class BloomUITests: XCTestCase {
         XCTAssertTrue(app.buttons["plant-Monstera"].label.contains("Check soil"))
         capture("01 Native home", app)
         capture("64 Native compact plant collection", app)
-        let carousel = app.scrollViews["home-plant-carousel"]
-        carousel.swipeLeft(); carousel.swipeLeft()
-        let lastPlant = app.buttons["plant-Office Snake"]
+        XCTAssertFalse(app.scrollViews["home-plant-carousel"].exists)
+        XCTAssertFalse(app.staticTexts["Swipe for more plants"].exists)
+        let cards = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "plant-"))
+        XCTAssertEqual(cards.count, 2)
+        let home = app.scrollViews["home-scroll"]
+        for card in cards.allElementsBoundByIndex {
+            XCTAssertTrue(card.isHittable)
+            XCTAssertGreaterThanOrEqual(card.frame.minX, home.frame.minX)
+            XCTAssertLessThanOrEqual(card.frame.maxX, home.frame.maxX)
+        }
+        app.buttons["See all"].tap()
+        let lastPlant = app.buttons["all-plant-Office Snake"]
+        for _ in 0..<3 { if !lastPlant.isHittable { app.swipeUp() } }
         XCTAssertTrue(lastPlant.waitForExistence(timeout: 5))
-        capture("11 Native horizontal plants", app)
         lastPlant.tap()
         XCTAssertTrue(app.navigationBars["Plant"].waitForExistence(timeout: 5))
         let identity = app.descendants(matching: .any).matching(identifier: "plant-detail-identity").firstMatch
@@ -130,7 +141,6 @@ final class BloomUITests: XCTestCase {
         capture("78 Native grouped plant name and scientific name", app)
         capture("70 Native edge to edge plant detail photo", app)
         app.navigationBars["Plant"].buttons.firstMatch.tap()
-        app.buttons["See all"].tap()
         XCTAssertTrue(app.navigationBars["My plants"].waitForExistence(timeout: 5))
         capture("67 Native compact all plants", app)
         let search = app.searchFields.firstMatch; search.tap(); search.typeText("Kitchen")
@@ -170,8 +180,8 @@ final class BloomUITests: XCTestCase {
         XCTAssertTrue(add.isHittable)
         capture("10 Native home without tasks", app)
         add.tap()
-        XCTAssertTrue(app.navigationBars["Search plants"].waitForExistence(timeout: 5))
-        app.navigationBars["Search plants"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Add plant"].waitForExistence(timeout: 5))
+        app.navigationBars["Add plant"].buttons.firstMatch.tap()
         app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-")).firstMatch.exists)
     }

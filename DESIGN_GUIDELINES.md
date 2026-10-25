@@ -34,4 +34,8 @@ Success names the object: “Snake Plant added” or “Snake Plant removed”. 
 
 ## Accessibility
 
-Maintain 44 pt interactive targets, readable text contrast, VoiceOver names and selected state, and Dynamic Type reflow. Horizontal collections show a partial next card and a scroll indicator. Custom animations respect Reduce Motion. Body text and action labels must not be truncated to fit.
+Maintain 44 pt interactive targets, readable text contrast, VoiceOver names and selected state, and Dynamic Type reflow. Home shows two complete cards with the remaining plants under See all. At accessibility text sizes, the two cards stack vertically. Avoid horizontal carousels and swipe instructions on Home. Custom animations respect Reduce Motion. Body text and action labels must not be truncated to fit.
+
+## Home and history
+
+The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The last soil check is a dated, non-interactive summary below the Care actions, without a divider or action-row styling.

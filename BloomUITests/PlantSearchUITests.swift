@@ -127,7 +127,7 @@ final class PlantSearchUITests: XCTestCase {
         app.buttons["plant-search-clear"].tap()
         app.buttons["clear-recent-searches"].tap()
         XCTAssertFalse(app.buttons["recent-search-Swiss cheese"].exists)
-        app.navigationBars["Search plants"].buttons.firstMatch.tap()
+        app.navigationBars["Add plant"].buttons.firstMatch.tap()
         XCTAssertTrue(app.staticTexts["My plants (5)"].waitForExistence(timeout: 5))
     }
     @MainActor

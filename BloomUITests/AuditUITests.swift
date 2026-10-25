@@ -110,4 +110,16 @@ import XCTest
         XCTAssertTrue(app.staticTexts["care-feedback-title"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["care-feedback-title"].label, "Check-in saved")
     }
+    func testLastSoilCheckIsDatedHistoryOutsideCareActions() {
+        let app = launch(); tap("See all", app); tap("all-plant-Rubber Plant", app)
+        let summary = app.descendants(matching: .any).matching(identifier: "plant-last-care-summary").firstMatch
+        for _ in 0..<4 { if !summary.isHittable { app.swipeUp() } }
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        XCTAssertTrue(summary.label.contains("Last soil check"))
+        XCTAssertTrue(summary.label.contains("Not sure"))
+        XCTAssertTrue(summary.label.contains("Will check later"))
+        XCTAssertFalse(app.buttons["plant-last-care-summary"].exists)
+        capture("Native dated care history", app)
+    }
+
 }

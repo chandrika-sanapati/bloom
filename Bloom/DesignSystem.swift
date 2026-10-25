@@ -185,9 +185,17 @@ struct PlantPortrait: View {
                 } else if !plant.asset.isEmpty {
                     Image(plant.asset).resizable().aspectRatio(contentMode: contentMode)
                 } else if plant.species == "Epipremnum aureum" {
-                    ZStack { BloomTone.blue.surface; PlantFormArtwork(form: .trailing).padding(22) }
+                    Image("pothos").resizable().aspectRatio(contentMode: contentMode)
                 } else {
-                    ZStack { BloomTheme.selected; Image(systemName: "leaf").font(.largeTitle).foregroundStyle(BloomTheme.teal) }
+                    ZStack {
+                        BloomTheme.selected
+                        VStack(spacing: 8) {
+                            BloomSymbol(name: "camera").foregroundStyle(BloomTheme.secondary)
+                            if geometry.size.width >= 120 && geometry.size.height >= 100 {
+                                Text("Add a plant photo").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                            }
+                        }.padding(12)
+                    }
                 }
             }.frame(width: geometry.size.width, height: geometry.size.height).clipped()
         }.contentShape(Rectangle()).accessibilityHidden(true)

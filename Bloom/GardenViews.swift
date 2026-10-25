@@ -27,7 +27,7 @@ struct RootView: View {
                             })
                         }
                     }
-                }
+                }.toolbarRole(.editor)
             } else { WelcomeView(addFirstPlant: openPlantSearch) }
         }
             .environment(\.returnToPlants, { plantsPath = NavigationPath() })
@@ -111,36 +111,16 @@ struct GardenView: View {
                             Spacer(minLength: 8)
                             NavigationLink("See all", value: PlantsRoute.all).font(BloomType.section)
                         }.padding(.horizontal, 20)
-                        ScrollView(.horizontal) {
-                            LazyHStack(alignment: .top, spacing: 13) {
-                                ForEach(store.garden.plants) { plant in
-                                    NavigationLink(value: PlantsRoute.plant(plant.id)) {
-                                        BloomPlantCard(plant: plant, status: store.latestCheck(for: plant.id)?.soil?.rawValue ?? "Not checked yet")
-                                            .containerRelativeFrame(.horizontal) { width, _ in
-                                                min(width * (dynamicTypeSize.isAccessibilitySize ? 0.82 : 0.56), dynamicTypeSize.isAccessibilitySize ? 360 : 250)
-                                            }
-                                    }.buttonStyle(BloomPressStyle()).accessibilityIdentifier("plant-\(plant.name)")
-                                }
-                            }.scrollTargetLayout()
-                        }.contentMargins(.horizontal, 20, for: .scrollContent)
-                            .scrollTargetBehavior(.viewAligned).scrollIndicators(.visible)
-                            .accessibilityIdentifier("home-plant-carousel")
-                        if store.garden.plants.count > 1 {
-                            Text("Swipe for more plants").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-                                .padding(.horizontal, 20)
-                        }
-                        Button(action: presentPlantAdd) {
-                            Text("Add plant").frame(maxWidth: .infinity, minHeight: 28)
-                        }.buttonStyle(.bordered).controlSize(.regular).tint(BloomTheme.teal)
-                            .accessibilityHint("Search for a plant to add to your collection")
-                            .accessibilityIdentifier("home-add-plant").padding(.horizontal, 20)
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 13, alignment: .top), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), alignment: .leading, spacing: 13) {
+                            ForEach(Array(store.garden.plants.prefix(2))) { plant in
+                                NavigationLink(value: PlantsRoute.plant(plant.id)) {
+                                    BloomPlantCard(plant: plant, status: store.latestCheck(for: plant.id)?.soil?.rawValue ?? "Not checked yet")
+                                }.buttonStyle(BloomPressStyle()).accessibilityIdentifier("plant-\(plant.name)")
+                            }
+                        }.padding(.horizontal, 20).accessibilityIdentifier("home-plant-grid")
                     }
                 }
                 HomeCareFeed(selection: $care).padding(.horizontal, 20)
-                if store.garden.isSample {
-                    Text("Sample garden · Tasks and activities are examples. Notifications start only when you set a reminder.")
-                        .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).padding(.horizontal, 20)
-                }
             }.padding(.top, 16).padding(.bottom, 28)
                 .animation(reduceMotion ? nil : BloomTheme.spring, value: store.garden.plants.count)
         }.background(BloomTheme.canvas).accessibilityIdentifier("home-scroll")
@@ -152,13 +132,22 @@ struct GardenView: View {
     }
     private var brandHeader: some View {
         HStack(spacing: 11) {
-            Text("Your garden").font(BloomType.title).accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 8)
-            if store.garden.isSample { StatusTag(text: "Sample", tone: .yellow) }
             Button { settings = true } label: {
-                BloomSymbol(name: "gearshape").frame(width: 44, height: 44).background(.white, in: Circle())
-            }.buttonStyle(BloomPressStyle()).accessibilityLabel("Preferences")
+                HStack(spacing: 10) {
+                    BloomMark()
+                    Text("Bloom").font(BloomType.title).foregroundStyle(BloomTheme.ink)
+                }.frame(minHeight: 44).contentShape(Rectangle())
+            }.buttonStyle(BloomPressStyle()).accessibilityElement(children: .ignore)
+                .accessibilityLabel("Bloom, preferences and settings").accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier("home-preferences")
+            Spacer(minLength: 8)
+            Button(action: presentPlantAdd) {
+                BloomSymbol(name: "plus").foregroundStyle(BloomTheme.teal)
+                    .frame(width: 44, height: 44).background(.white, in: Circle())
+                    .overlay(Circle().strokeBorder(BloomTheme.border, lineWidth: 1))
+            }.buttonStyle(BloomPressStyle()).accessibilityLabel("Add plant")
+                .accessibilityHint("Search for a plant to add to My plants")
+                .accessibilityIdentifier("home-add-plant")
         }.padding(.horizontal, 20).padding(.vertical, 12)
             .background(.regularMaterial)
             .overlay(alignment: .bottom) { Rectangle().fill(BloomTheme.border.opacity(0.55)).frame(height: 0.5) }
@@ -167,11 +156,11 @@ struct GardenView: View {
     }
     private var emptyGarden: some View {
         VStack(spacing: 20) {
-            BloomIconTile(symbol: "leaf", emphasized: true).scaleEffect(1.3).padding(12)
+            Image("area-whole").resizable().scaledToFill().frame(width: 140, height: 140).clipShape(RoundedRectangle(cornerRadius: 20)).accessibilityHidden(true)
             Text("A little room to grow.").font(BloomType.title).multilineTextAlignment(.center)
             Text("Bring your first plant into Bloom.\nWe'll take it one check at a time.")
                 .font(BloomType.body).foregroundStyle(BloomTheme.secondary).multilineTextAlignment(.center)
-            Button(action: presentPlantAdd) { BloomActionLabel(title: "Add a plant") }.buttonStyle(BloomPrimaryButtonStyle()).accessibilityIdentifier("home-add-plant")
+            Button(action: presentPlantAdd) { BloomActionLabel(title: "Add a plant") }.buttonStyle(BloomPrimaryButtonStyle()).accessibilityIdentifier("empty-add-plant")
         }.padding(24).frame(maxWidth: .infinity).background(.white, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 }
@@ -225,7 +214,7 @@ struct PlantDetailView: View {
                             .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
                             .accessibilityIdentifier("plant-detail-identity")
                     }
-                    Section("Care") {
+                    Section {
                         ForEach(store.plans(for: plantID).filter { store.planIsOpen($0.id) }) { plan in
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(plan.baseline.observation).font(BloomType.body).foregroundStyle(.secondary)
@@ -255,7 +244,14 @@ struct PlantDetailView: View {
                         Button { checking = true } label: { BloomActionRow(title: "Check soil") }.accessibilityIdentifier("start-check")
                         Button { observing = true } label: { BloomActionRow(title: "Record a change") }.accessibilityIdentifier("start-observation")
                         ReminderCard(plantID: plantID, compact: true)
-                        if let check = store.latestCheck(for: plantID) { LabeledContent("Last check", value: check.summary).font(BloomType.body) }
+                    } header: { Text("Care") } footer: {
+                        if let check = store.latestCheck(for: plantID) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Last soil check · \(check.date.formatted(date: .abbreviated, time: .shortened))").font(BloomType.supporting)
+                                Text(check.summary).font(BloomType.body)
+                            }.foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityElement(children: .combine).accessibilityIdentifier("plant-last-care-summary")
+                        }
                     }
                     Section("Additional details") {
                         LabeledContent("Location", value: plant.location.isEmpty ? "Not set" : plant.location)
@@ -365,7 +361,7 @@ struct PlantEditorView: View {
         }.scrollContentBackground(.hidden).background(BloomTheme.canvas)
             .navigationTitle(isNew ? "Make it yours" : "Edit plant").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if !isNew { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+                if !isNew { ToolbarItem(placement: .cancellationAction) { Button("Cancel", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly) } }
             }
             .bloomNativeFooter { BloomPrimaryAction(title: isNew ? "Add plant" : "Save changes", action: save).disabled(!valid).accessibilityIdentifier("save-plant") }
             .fullScreenCover(isPresented: $viewingPhoto) {

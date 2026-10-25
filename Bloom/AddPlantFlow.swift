@@ -29,7 +29,7 @@ struct AddPlantFlowView: View {
                 BloomPlantSearchField(query: $query, submitted: { store.rememberPlantSearch(query) })
                     .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 16).background(BloomTheme.canvas)
             }
-            .navigationTitle("Search plants").bloomAddPage()
+            .navigationTitle("Add plant").bloomAddPage()
             .navigationDestination(for: PlantAddStep.self) { step in
                 switch step {
                 case .review: review
@@ -89,7 +89,7 @@ struct AddPlantFlowView: View {
                         Button(room.name) { setup.plant.location = room.name; BloomFeedback.selection() }.accessibilityIdentifier("setup-room-\(room.name)")
                     }
                 } label: { Text("Choose a room").frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle()) }.buttonStyle(.borderless).accessibilityIdentifier("setup-room-menu")
-            } header: { Text("Location · 2 of 3") } footer: { Text("Where will this plant live?") }
+            } header: { Text("Location · 2 of 3") }
             Section { BloomPlantIdentity(plant: setup.plant) }
         }.bloomNativeForm().navigationTitle("A place to grow").bloomAddPage()
             .bloomNativeFooter {
@@ -106,7 +106,7 @@ struct AddPlantFlowView: View {
                     Text("Choose a status").tag(InitialPlantStatus?.none)
                     ForEach(InitialPlantStatus.allCases) { item in Text(item.rawValue).tag(Optional(item)).accessibilityIdentifier("setup-status-\(item.rawValue)") }
                 }.pickerStyle(.inline)
-            } header: { Text("A first impression · 3 of 3") } footer: { Text("What have you noticed? Not sure is a useful starting point.") }
+            } header: { Text("A first impression · 3 of 3") }
             Section { BloomPlantIdentity(plant: setup.plant) }
         }.bloomNativeForm().navigationTitle("How is it doing?").bloomAddPage()
             .bloomNativeFooter {
@@ -138,7 +138,7 @@ struct AddPlantFlowView: View {
 
 private extension View {
     func bloomAddPage() -> some View {
-        navigationBarTitleDisplayMode(.inline)
+        navigationBarTitleDisplayMode(.inline).toolbarRole(.editor)
             .toolbar(.visible, for: .navigationBar)
             .toolbar(.hidden, for: .tabBar)
     }
