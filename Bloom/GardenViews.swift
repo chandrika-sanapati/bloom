@@ -403,7 +403,11 @@ struct PlantEditorView: View {
                         }
                     }.padding(20).background(BloomTheme.canvas)
                         .navigationTitle("Plant photo").navigationBarTitleDisplayMode(.inline)
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Close photo") { viewingPhoto = false } } }
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close photo", systemImage: "xmark") { viewingPhoto = false }.labelStyle(.iconOnly)
+                            }
+                        }
                 }
             }
             .onChange(of: selectedPhoto) { _, photo in
