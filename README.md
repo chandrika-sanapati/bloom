@@ -130,7 +130,7 @@ Figma files were not modified. Their visual roles are implemented with reusable 
 
 ## Audit refinements
 
-The 24 October audit preserves Bloom’s palette and native behavior. Plant identity appears once in the hero; navigation says Plant. Editing changes nickname, placement, light and drainage, while preserving species, room, starting condition and watering history. Tapping the portrait opens a full-screen viewer with Change photo. Removal uses a centered native alert and named feedback. Care owns Remind me; Recent activity owns See all. Known catalog species have a Wikipedia reference. Area cards use real plant-part photography. Unknown custom plants invite an actual photo rather than showing an invented species.
+The 24 October audit preserves Bloom’s palette and native behavior. Plant identity appears once in the hero; navigation says Plant. Editing shows a read-only Plant type and a separate Nickname field. It changes nickname, photo, placement, light and drainage through a restricted update that preserves type, species, reference asset, room, starting condition, watering history and current reminders. Tapping the portrait opens a full-screen viewer with Change photo. Removal uses a centered native alert and named feedback. Care owns Remind me; Recent activity owns See all. Known catalog species have a Wikipedia reference. Area cards use real plant-part photography. Unknown custom plants invite an actual photo rather than showing an invented species.
 
 The audit raised ambiguity between duplicate plants. Duplicates remain allowed, with nickname guidance during setup. This is recorded audit feedback, not evidence from a new user-research study.
 
@@ -161,3 +161,5 @@ The portfolio's Home / care-journey / reset and simulated-time controls are pres
 Unanswered pest checks now allow a conservative inspection plan; heavy reported damage prioritizes specialist help without requiring every answer. Evidence required for physical mealybug removal remains unchanged. New pest plans use guidance version `2026-10-25.1`; older plans keep their evidence, tasks and recorded guidance version. No action or recovery is logged merely by accepting guidance.
 
 The optional `Plant.reminderNotifications` field preserves legacy alerts when absent. Muting one reminder preserves its date/task and other alerts; global muting preserves that local choice. Existing garden files are decoded without rewriting on read.
+
+The optional `Plant.typeName` preserves a custom plant’s original type independently of its nickname. Existing catalog plants resolve their type from species without a migration; a legacy custom plant’s current type is preserved on its next explicit edit.

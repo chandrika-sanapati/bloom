@@ -45,6 +45,12 @@ import XCTest
         capture("Audit plant details", app)
         tap("Plant options", app); tap("Edit plant", app)
         XCTAssertFalse(app.textFields["Species (optional)"].exists)
+        let type = app.descendants(matching: .any).matching(identifier: "plant-type-value").firstMatch
+        XCTAssertTrue(type.label.contains("Snake Plant"))
+        XCTAssertFalse(app.textFields["plant-type-value"].exists)
+        XCTAssertFalse(app.buttons["plant-type-value"].exists)
+        XCTAssertEqual(app.textFields["plant-name-field"].label, "Nickname")
+        XCTAssertTrue(app.staticTexts["Nickname"].exists)
         XCTAssertFalse(app.textFields["Room or location"].exists)
         XCTAssertFalse(app.switches["I know when I last watered"].exists)
         capture("Audit edit plant", app)
@@ -52,9 +58,11 @@ import XCTest
         XCTAssertTrue(app.buttons["change-plant-photo"].exists)
         capture("Audit photo viewer", app)
         tap("Close photo", app)
-        let name = app.textFields["plant-name-field"]; name.tap()
+        let name = app.textFields["plant-name-field"]
         let previousName = name.value as? String ?? ""
+        name.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5)).tap()
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previousName.count) + "Desk snake")
+        XCTAssertEqual(name.value as? String, "Desk snake")
         tap("save-plant", app)
         let identity = app.descendants(matching: .any).matching(identifier: "plant-detail-identity").firstMatch
         XCTAssertTrue(identity.label.contains("Dracaena trifasciata"))
@@ -62,6 +70,8 @@ import XCTest
         let location = app.descendants(matching: .any).matching(identifier: "plant-detail-location").firstMatch
         for _ in 0..<4 { if location.exists { break }; app.swipeUp() }
         XCTAssertEqual(location.value as? String, "Living room")
+        let savedType = app.descendants(matching: .any).matching(identifier: "plant-detail-type").firstMatch
+        XCTAssertTrue(savedType.label.contains("Snake Plant"))
         app.navigationBars["Plant"].buttons.firstMatch.tap()
         tap("plant-Desk snake", app); tap("start-observation", app)
         capture("Audit final observation areas", app)

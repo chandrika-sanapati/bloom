@@ -266,6 +266,8 @@ struct PlantDetailView: View {
                         }
                     }
                     Section("Additional details") {
+                        LabeledContent("Plant type", value: plant.plantTypeName)
+                            .accessibilityElement(children: .combine).accessibilityIdentifier("plant-detail-type")
                         LabeledContent("Location", value: plant.location.isEmpty ? "Not set" : plant.location)
                             .accessibilityElement(children: .ignore).accessibilityLabel("Location")
                             .accessibilityValue(plant.location.isEmpty ? "Not set" : plant.location)
@@ -337,11 +339,18 @@ struct PlantEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State var plant: Plant
     let isNew: Bool
+    private let originalTypeName: String
     var finish: (() -> Void)? = nil
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var photoError: String?
     @State private var viewingPhoto = false
     @State private var photoLoading = false
+    init(plant: Plant, isNew: Bool, finish: (() -> Void)? = nil) {
+        _plant = State(initialValue: plant)
+        self.isNew = isNew
+        self.originalTypeName = plant.plantTypeName
+        self.finish = finish
+    }
     var valid: Bool { !plant.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !photoLoading }
     var body: some View {
         Group {
@@ -362,7 +371,12 @@ struct PlantEditorView: View {
                 if let photoError { Text(photoError).foregroundStyle(.red).font(BloomType.supporting) }
             }
             Section("Basic details") {
-                TextField("Plant nickname", text: $plant.name).accessibilityIdentifier("plant-name-field")
+                LabeledContent("Plant type", value: originalTypeName)
+                    .accessibilityElement(children: .combine).accessibilityIdentifier("plant-type-value")
+                LabeledContent("Nickname") {
+                    TextField("", text: $plant.name).multilineTextAlignment(.trailing)
+                        .textInputAutocapitalization(.words).accessibilityIdentifier("plant-name-field")
+                }
             }
             Section {
                 Picker("Placement", selection: $plant.placement) { Text("Not set").tag(PlantPlacement?.none); ForEach(PlantPlacement.allCases) { Text($0.rawValue).tag(Optional($0)) } }
@@ -406,6 +420,11 @@ struct PlantEditorView: View {
     }
     private func save() {
         plant.name = plant.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if store.savePlant(plant) { BloomFeedback.success(); if let finish { finish() } else { dismiss() } }
+        let saved: Bool
+        if isNew {
+            plant.typeName = originalTypeName
+            saved = store.savePlant(plant)
+        } else { saved = store.updatePlantDetails(plant) }
+        if saved { BloomFeedback.success(); if let finish { finish() } else { dismiss() } }
     }
 }

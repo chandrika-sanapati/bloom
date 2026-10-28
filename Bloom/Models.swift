@@ -77,6 +77,17 @@ struct Plant: Identifiable, Codable, Hashable {
     var initialStatus: InitialPlantStatus?
     var reminderObservationID: UUID?
     var reminderNotifications: Bool?
+    var typeName: String?
+
+    /// The original plant identity is independent of its personal nickname.
+    var plantTypeName: String {
+        if let value = typeName?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty { return value }
+        let scientific = species.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let known = PlantSpecies.catalog.first(where: { $0.scientific.caseInsensitiveCompare(scientific) == .orderedSame }) { return known.name }
+        if !scientific.isEmpty { return scientific }
+        let original = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return original.isEmpty ? "Custom plant" : original
+    }
 
     var referenceURL: URL? {
         let known = ["Dracaena trifasciata", "Monstera deliciosa", "Ficus elastica", "Epipremnum aureum"]
@@ -269,11 +280,24 @@ final class BloomStore {
             else { garden.plants.append(plant) }
         }
     }
+    /// Editing personal details cannot replace identity or overwrite newer care data.
+    func updatePlantDetails(_ draft: Plant) -> Bool {
+        let nickname = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !nickname.isEmpty, var current = plant(draft.id) else { return false }
+        current.typeName = current.plantTypeName
+        current.name = nickname
+        current.photo = draft.photo
+        current.placement = draft.placement
+        current.light = draft.light
+        current.drainage = draft.drainage
+        return savePlant(current)
+    }
     /// Save the whole setup at once, so closing the flow never leaves a partial plant.
     func addPlant(_ plant: Plant, placement: PlantPlacement, status: InitialPlantStatus?) -> Bool {
         var ready = plant
         ready.name = ready.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !ready.name.isEmpty else { return false }
+        ready.typeName = ready.plantTypeName
         ready.placement = placement
         ready.initialStatus = status
         return savePlant(ready)

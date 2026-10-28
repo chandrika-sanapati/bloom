@@ -54,3 +54,5 @@ On Home, name the section Activity and its tabs Upcoming and Past. Upcoming show
 Do not repeat Upcoming as a heading inside the Upcoming tab. Keep Overdue and Today headings when they help distinguish task timing.
 
 Present plant status as two independent rows inside a quiet inset block: Both rows use a primary label on the left and a quieter date aligned to the right. The blue recorded soil-condition tag sits beneath Last soil check; Last watered has no filler detail or forced equal height. Do not put watering under a shared Last check heading. Derive Last watered from actual watering history or the explicitly saved watering date; missing dates say Not recorded. Keep recorded actions in activity history. Show short dates, retain full timestamps for VoiceOver, and stack each row's contents at accessibility text sizes.
+
+Plant type is fixed after creation. Show it as read-only information in the editor and plant details; Nickname is the separate editable personal label. Saving personal details must preserve scientific species, original type, reference image, room, existing care records and current scheduling data.

@@ -136,10 +136,10 @@ struct AddPlantFlowView: View {
     }
     private func select(_ species: PlantSpecies) {
         store.rememberPlantSearch(query.isEmpty ? species.name : query)
-        setup.plant = Plant(name: species.name, species: species.scientific, asset: species.asset)
+        setup.plant = Plant(name: species.name, species: species.scientific, asset: species.asset, typeName: species.name)
         setup.status = nil; setup.placement = .indoor; navigate(.review)
     }
-    private func addCustom(_ name: String) { store.rememberPlantSearch(name); setup.plant = Plant(name: name, species: "", asset: ""); setup.status = nil; setup.placement = .indoor; navigate(.review) }
+    private func addCustom(_ name: String) { store.rememberPlantSearch(name); setup.plant = Plant(name: name, species: "", asset: "", typeName: name); setup.status = nil; setup.placement = .indoor; navigate(.review) }
     private func save() {
         setup.plant.location = setup.plant.location.trimmingCharacters(in: .whitespacesAndNewlines)
         if store.addPlant(setup.plant, placement: setup.placement, status: setup.status) {

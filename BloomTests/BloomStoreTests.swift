@@ -7,6 +7,56 @@ final class BloomStoreTests: XCTestCase {
         FileManager.default.temporaryDirectory.appending(path: UUID().uuidString).appending(path: "garden.json")
     }
 
+    func testEditingDetailsPreservesPlantIdentityAndCurrentCareData() throws {
+        let url = temporaryURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = BloomStore(fileURL: url, managesNotifications: false)
+        let original = Plant(name: "Rubber Plant", species: "Ficus elastica", asset: "rubber", location: "Bedroom")
+        XCTAssertTrue(store.savePlant(original))
+        let record = CareRecord(plantID: original.id, kind: .check, soil: .damp, action: .waited)
+        XCTAssertTrue(store.saveRecord(record))
+        var draft = original
+        draft.name = "  Desk plant  "; draft.species = "Monstera deliciosa"; draft.asset = "monstera"; draft.typeName = "Monstera"
+        draft.location = "Wrong room"; draft.photo = Data([1, 2, 3]); draft.placement = .indoor
+        draft.light = "Indirect light"; draft.drainage = "Yes"
+        var current = original
+        current.reminder = Date().addingTimeInterval(86400); current.reminderNotifications = false
+        current.initialStatus = .needsAttention; current.lastWatered = Date().addingTimeInterval(-86400)
+        XCTAssertTrue(store.savePlant(current))
+        XCTAssertTrue(store.updatePlantDetails(draft))
+        let saved = try XCTUnwrap(store.plant(original.id))
+        XCTAssertEqual(saved.plantTypeName, "Rubber Plant"); XCTAssertEqual(saved.typeName, "Rubber Plant")
+        XCTAssertEqual(saved.species, original.species); XCTAssertEqual(saved.asset, original.asset)
+        XCTAssertEqual(saved.location, original.location); XCTAssertEqual(saved.initialStatus, current.initialStatus)
+        XCTAssertEqual(saved.reminder, current.reminder); XCTAssertEqual(saved.reminderNotifications, false)
+        XCTAssertEqual(saved.lastWatered, current.lastWatered); XCTAssertEqual(store.record(record.id), record)
+        XCTAssertEqual(saved.name, "Desk plant"); XCTAssertEqual(saved.photo, draft.photo)
+        XCTAssertEqual(saved.placement, .indoor); XCTAssertEqual(saved.light, "Indirect light"); XCTAssertEqual(saved.drainage, "Yes")
+        let loaded = BloomStore(fileURL: url, managesNotifications: false)
+        XCTAssertEqual(loaded.plant(original.id), saved)
+    }
+
+    func testCustomTypeStaysFixedThroughNicknameChangesAndRelaunch() throws {
+        let url = temporaryURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = BloomStore(fileURL: url, managesNotifications: false)
+        let legacy = Plant(name: "Fern", species: "", asset: "")
+        XCTAssertTrue(store.savePlant(legacy))
+        var draft = legacy; draft.name = "Desk fern"; draft.typeName = "Orchid"
+        XCTAssertTrue(store.updatePlantDetails(draft))
+        let loaded = BloomStore(fileURL: url, managesNotifications: false)
+        var renamed = try XCTUnwrap(loaded.plant(legacy.id))
+        XCTAssertEqual(renamed.plantTypeName, "Fern"); XCTAssertEqual(renamed.name, "Desk fern")
+        renamed.name = "Window fern"; renamed.typeName = "Rose"
+        XCTAssertTrue(loaded.updatePlantDetails(renamed))
+        XCTAssertEqual(loaded.plant(legacy.id)?.plantTypeName, "Fern")
+        let custom = Plant(name: "Balcony basil", species: "", asset: "", typeName: "Basil")
+        XCTAssertTrue(loaded.addPlant(custom, placement: .outdoor, status: .lookingGood))
+        XCTAssertEqual(loaded.plant(custom.id)?.plantTypeName, "Basil")
+        XCTAssertFalse(loaded.updatePlantDetails(Plant(name: "Missing", species: "", asset: "")))
+        XCTAssertEqual(loaded.garden.plants.count, 2)
+    }
+
     func testCareTasksDistinguishOverdueTodayAndUpcoming() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
