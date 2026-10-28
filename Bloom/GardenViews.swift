@@ -215,7 +215,7 @@ struct PlantDetailView: View {
                     Section {
                         PlantPortrait(plant: plant, contentMode: .fill).frame(height: 230)
                             .listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 16) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(plant.name).font(BloomTheme.heading).foregroundStyle(BloomTheme.ink)
                                     .fixedSize(horizontal: false, vertical: true)

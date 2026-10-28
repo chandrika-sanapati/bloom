@@ -52,3 +52,5 @@ Use the same outlined plus control in the Home header and full My plants toolbar
 On Home, name the section Activity and its tabs Upcoming and Past. Upcoming shows open tasks; Past shows saved records. Keep these labels distinct from the Care actions within an individual plant.
 
 Do not repeat Upcoming as a heading inside the Upcoming tab. Keep Overdue and Today headings when they help distinguish task timing.
+
+Present the last soil check as a quiet inset status block in the plant card: small header/date, separate Soil and Action fields, and stronger values. Use blue for soil information and neutral ink for the recorded action. Show a short date, retain the full timestamp for VoiceOver, and stack the fields at accessibility text sizes.

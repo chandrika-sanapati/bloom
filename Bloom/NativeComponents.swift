@@ -138,13 +138,44 @@ struct BloomPlantIdentity: View {
 
 /// Dated plant status belongs with the plant identity, independently of reminders.
 struct LastSoilCheckSummary: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let check: CareRecord
+    private var soil: String { check.soil?.rawValue ?? "Not recorded" }
+    private var action: String { check.action?.rawValue ?? "Not recorded" }
+    private var dateLabel: String {
+        let style = Date.FormatStyle.dateTime.day().month(.abbreviated)
+        return check.date.formatted(Calendar.current.isDate(check.date, equalTo: .now, toGranularity: .year) ? style : style.year())
+    }
+    private var heading: some View {
+        Text("Last soil check").font(BloomType.supporting.weight(.semibold)).foregroundStyle(BloomTheme.ink)
+    }
+    private var timestamp: some View {
+        Text(dateLabel).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+    }
     var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) { heading; timestamp }
+            } else {
+                HStack(alignment: .firstTextBaseline) { heading; Spacer(minLength: 12); timestamp }
+            }
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) { soilField; actionField }
+            } else {
+                HStack(alignment: .top, spacing: 20) { soilField; actionField }
+            }
+        }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(BloomTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Last soil check. Soil: \(soil). Action: \(action). \(check.date.formatted(date: .complete, time: .shortened)).")
+    }
+    private var soilField: some View { statusField("Soil", value: soil, ink: BloomTone.blue.ink) }
+    private var actionField: some View { statusField("Action", value: action, ink: BloomTheme.ink) }
+    private func statusField(_ label: String, value: String, ink: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Last soil check · \(check.date.formatted(date: .abbreviated, time: .shortened))").font(BloomType.supporting)
-            Text(check.summary).font(BloomType.body)
-        }.foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityElement(children: .combine)
+            Text(label).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+            Text(value).font(BloomType.section).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true)
+        }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

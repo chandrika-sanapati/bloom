@@ -123,6 +123,8 @@ import XCTest
         for _ in 0..<4 { if !summary.isHittable { app.swipeUp() } }
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
         XCTAssertTrue(summary.label.contains("Last soil check"))
+        XCTAssertTrue(summary.label.contains("Soil:"))
+        XCTAssertTrue(summary.label.contains("Action:"))
         XCTAssertTrue(summary.label.contains("Not sure"))
         XCTAssertTrue(summary.label.contains("Will check later"))
         XCTAssertFalse(app.buttons["plant-last-care-summary"].exists)
