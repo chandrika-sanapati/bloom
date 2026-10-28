@@ -148,39 +148,32 @@ struct PlantStatusSummary: View {
         return date.formatted(Calendar.current.isDate(date, equalTo: .now, toGranularity: .year) ? style : style.year())
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            statusRow("Last soil check") { soilDetails }
-            statusRow("Last watered") { dateValue(lastWatered) }
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                statusRow("Last soil check", date: check?.date)
+                if let recordedSoil = check?.soil { StatusTag(text: recordedSoil.rawValue, tone: .blue) }
+            }
+            statusRow("Last watered", date: lastWatered)
         }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
             .background(BloomTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Last soil check: \(check?.date.formatted(date: .complete, time: .shortened) ?? "Not recorded"). Soil: \(soil). Last watered: \(lastWatered?.formatted(date: .complete, time: .omitted) ?? "Not recorded").")
     }
-    @ViewBuilder private var soilDetails: some View {
-        if typeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 8) { dateValue(check?.date); soilTag }
-        } else {
-            HStack(spacing: 8) { dateValue(check?.date); soilTag }
-        }
-    }
-    @ViewBuilder private var soilTag: some View {
-        if let recordedSoil = check?.soil { StatusTag(text: recordedSoil.rawValue, tone: .blue) }
-    }
     private func dateValue(_ date: Date?) -> some View {
-        Text(dateLabel(date)).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+        Text(dateLabel(date)).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
-    @ViewBuilder private func statusRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+    @ViewBuilder private func statusRow(_ label: String, date: Date?) -> some View {
         if typeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 6) {
-                Text(label).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-                content()
+                Text(label).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                dateValue(date)
             }.frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            HStack(alignment: .center, spacing: 12) {
-                Text(label).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(label).font(BloomType.section).foregroundStyle(BloomTheme.ink)
                 Spacer(minLength: 12)
-                content()
+                dateValue(date).multilineTextAlignment(.trailing)
             }
         }
     }

@@ -203,3 +203,7 @@ PASS: the summary also supports a known watering date without a saved soil check
 28 October 2026 — independent soil-check and watering statuses
 PASS: replaced the shared Last check header with two independent rows. Last soil check pairs its own date with the recorded soil condition; Last watered displays its independent history-derived date. No action is shown, and no soil-check date is reused as a watering date. Rows reflow vertically at accessibility text sizes.
 PASS: the existing focused UI journey passed (1 test, 0 failures, 20:28 local). The exported native screenshot was visually checked for independent labels, date/condition grouping, spacing and reminder separation. No model or saved-data changes. Swift syntax and Git whitespace checks pass.
+
+28 October 2026 — consistent label/date hierarchy for plant status
+PASS: both status entries now share a primary left-aligned label and a quieter right-aligned date. The soil-condition tag sits beneath Last soil check, while Last watered uses a natural single-line row without filler detail. Existing independent date sources, missing-value behavior and accessibility reflow are retained.
+PASS: the existing focused UI journey passed (1 test, 0 failures, 20:36 local). Its native screenshot was exported and visually inspected for date alignment, soil-detail association, information hierarchy and reminder separation. No data or model changes. Swift syntax and Git whitespace checks pass.
