@@ -50,3 +50,5 @@ Primary care and observation journeys use the full screen. Present numbered acti
 Use the same outlined plus control in the Home header and full My plants toolbar. Primary action labels name the next step: Choose location, Choose condition, Record care decision, Review change, Save care, and Close record. Keep native navigation icons and standard date/settings controls.
 
 On Home, name the section Activity and its tabs Upcoming and Past. Upcoming shows open tasks; Past shows saved records. Keep these labels distinct from the Care actions within an individual plant.
+
+Do not repeat Upcoming as a heading inside the Upcoming tab. Keep Overdue and Today headings when they help distinguish task timing.

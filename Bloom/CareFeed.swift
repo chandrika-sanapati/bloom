@@ -41,7 +41,9 @@ struct HomeCareFeed: View {
                             ForEach(CareTaskTiming.allCases) { timing in
                                 let scheduled = tasks.filter { CareTaskTiming.classify($0.due, now: context.date) == timing }
                                 if !scheduled.isEmpty {
-                                    Text(timing.rawValue).font(BloomType.section).foregroundStyle(BloomTheme.secondary).accessibilityAddTraits(.isHeader)
+                                    if timing != .upcoming {
+                                        Text(timing.rawValue).font(BloomType.section).foregroundStyle(BloomTheme.secondary).accessibilityAddTraits(.isHeader)
+                                    }
                                     ForEach(scheduled) { item in
                                         switch item {
                                         case .reminder(let plant):
