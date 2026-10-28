@@ -226,8 +226,10 @@ struct PlantDetailView: View {
                             }.frame(maxWidth: .infinity, alignment: .leading)
                                 .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
                                 .accessibilityIdentifier("plant-detail-identity")
-                            if let check = store.latestCheck(for: plantID) {
-                                LastSoilCheckSummary(check: check).accessibilityIdentifier("plant-last-care-summary")
+                            let check = store.latestCheck(for: plantID)
+                            let lastWatered = store.wateredDate(for: plant)
+                            if check != nil || lastWatered != nil {
+                                PlantStatusSummary(check: check, lastWatered: lastWatered).accessibilityIdentifier("plant-last-care-summary")
                             }
                         }.padding(.vertical, 4).frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -272,7 +274,6 @@ struct PlantDetailView: View {
                         LabeledContent("Initial condition", value: plant.initialStatus?.rawValue ?? "Not set")
                         LabeledContent("Light", value: plant.light)
                         LabeledContent("Drainage holes", value: plant.drainage)
-                        LabeledContent("Last watered", value: store.wateredDate(for: plant).map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "Not sure")
                     }
                     if store.plans(for: plantID).contains(where: { !store.planIsOpen($0.id) }) {
                         Section("Past care plans") {

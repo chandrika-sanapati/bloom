@@ -137,20 +137,21 @@ struct BloomPlantIdentity: View {
 
 
 /// Dated plant status belongs with the plant identity, independently of reminders.
-struct LastSoilCheckSummary: View {
+struct PlantStatusSummary: View {
     @Environment(\.dynamicTypeSize) private var typeSize
-    let check: CareRecord
-    private var soil: String { check.soil?.rawValue ?? "Not recorded" }
-    private var action: String { check.action?.rawValue ?? "Not recorded" }
-    private var dateLabel: String {
+    let check: CareRecord?
+    let lastWatered: Date?
+    private var soil: String { check?.soil?.rawValue ?? "Not recorded" }
+    private func dateLabel(_ date: Date?) -> String {
+        guard let date else { return "Not recorded" }
         let style = Date.FormatStyle.dateTime.day().month(.abbreviated)
-        return check.date.formatted(Calendar.current.isDate(check.date, equalTo: .now, toGranularity: .year) ? style : style.year())
+        return date.formatted(Calendar.current.isDate(date, equalTo: .now, toGranularity: .year) ? style : style.year())
     }
     private var heading: some View {
-        Text("Last soil check").font(BloomType.supporting.weight(.semibold)).foregroundStyle(BloomTheme.ink)
+        Text("Last check").font(BloomType.supporting.weight(.semibold)).foregroundStyle(BloomTheme.ink)
     }
     private var timestamp: some View {
-        Text(dateLabel).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+        Text(dateLabel(check?.date)).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -160,17 +161,17 @@ struct LastSoilCheckSummary: View {
                 HStack(alignment: .firstTextBaseline) { heading; Spacer(minLength: 12); timestamp }
             }
             if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 12) { soilField; actionField }
+                VStack(alignment: .leading, spacing: 12) { soilField; wateredField }
             } else {
-                HStack(alignment: .top, spacing: 20) { soilField; actionField }
+                HStack(alignment: .top, spacing: 20) { soilField; wateredField }
             }
         }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
             .background(BloomTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Last soil check. Soil: \(soil). Action: \(action). \(check.date.formatted(date: .complete, time: .shortened)).")
+            .accessibilityLabel("Last check: \(check?.date.formatted(date: .complete, time: .shortened) ?? "Not recorded"). Soil: \(soil). Last watered: \(lastWatered?.formatted(date: .complete, time: .omitted) ?? "Not recorded").")
     }
     private var soilField: some View { statusField("Soil", value: soil, ink: BloomTone.blue.ink) }
-    private var actionField: some View { statusField("Action", value: action, ink: BloomTheme.ink) }
+    private var wateredField: some View { statusField("Last watered", value: dateLabel(lastWatered), ink: BloomTheme.ink) }
     private func statusField(_ label: String, value: String, ink: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
