@@ -111,13 +111,21 @@ struct GardenView: View {
                             Spacer(minLength: 8)
                             NavigationLink("See all", value: PlantsRoute.all).font(BloomType.section)
                         }.padding(.horizontal, 20)
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 13, alignment: .top), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), alignment: .leading, spacing: 13) {
-                            ForEach(Array(store.garden.plants.prefix(2))) { plant in
-                                NavigationLink(value: PlantsRoute.plant(plant.id)) {
-                                    BloomPlantCard(plant: plant, status: store.latestCheck(for: plant.id)?.soil?.rawValue ?? "Not checked yet")
-                                }.buttonStyle(BloomPressStyle()).accessibilityIdentifier("plant-\(plant.name)")
-                            }
-                        }.padding(.horizontal, 20).accessibilityIdentifier("home-plant-grid")
+                        if dynamicTypeSize.isAccessibilitySize {
+                            VStack(spacing: 13) {
+                                ForEach(Array(store.garden.plants.prefix(2))) { plant in plantLink(plant) }
+                            }.padding(.horizontal, 20)
+                        } else {
+                            ScrollView(.horizontal) {
+                                LazyHStack(alignment: .top, spacing: 13) {
+                                    ForEach(store.garden.plants) { plant in
+                                        plantLink(plant).containerRelativeFrame(.horizontal, count: 2, spacing: 13)
+                                    }
+                                }.scrollTargetLayout()
+                            }.padding(.horizontal, 20)
+                                .scrollTargetBehavior(.viewAligned).scrollIndicators(.hidden)
+                                .accessibilityIdentifier("home-plant-carousel")
+                        }
                     }
                 }
                 HomeCareFeed(selection: $care).padding(.horizontal, 20)
@@ -130,6 +138,11 @@ struct GardenView: View {
             .fullScreenCover(isPresented: $settings) { PreferencesView() }
             .safeAreaInset(edge: .bottom, spacing: 0) { CareFeedbackBanner() }
     }
+    private func plantLink(_ plant: Plant) -> some View {
+        NavigationLink(value: PlantsRoute.plant(plant.id)) {
+            BloomPlantCard(plant: plant, status: store.latestCheck(for: plant.id)?.soil?.rawValue ?? "Not checked yet")
+        }.buttonStyle(BloomPressStyle()).accessibilityIdentifier("plant-\(plant.name)")
+    }
     private var brandHeader: some View {
         HStack(spacing: 11) {
             Button { settings = true } label: {
@@ -141,13 +154,7 @@ struct GardenView: View {
                 .accessibilityLabel("Bloom, preferences and settings").accessibilityAddTraits(.isButton)
                 .accessibilityIdentifier("home-preferences")
             Spacer(minLength: 8)
-            Button(action: presentPlantAdd) {
-                BloomSymbol(name: "plus").foregroundStyle(BloomTheme.teal)
-                    .frame(width: 44, height: 44).background(.white, in: Circle())
-                    .overlay(Circle().strokeBorder(BloomTheme.border, lineWidth: 1))
-            }.buttonStyle(BloomPressStyle()).accessibilityLabel("Add plant")
-                .accessibilityHint("Search for a plant to add to My plants")
-                .accessibilityIdentifier("home-add-plant")
+            BloomAddPlantButton(action: presentPlantAdd).accessibilityIdentifier("home-add-plant")
         }.padding(.horizontal, 20).padding(.vertical, 12)
             .background(.regularMaterial)
             .overlay(alignment: .bottom) { Rectangle().fill(BloomTheme.border.opacity(0.55)).frame(height: 0.5) }
@@ -180,11 +187,13 @@ struct AllPlantsView: View {
                         .buttonStyle(.plain).accessibilityIdentifier("all-plant-\(plant.name)")
                 }
             }.padding(20)
-            Button("Add plant", action: addPlant).font(BloomType.section)
-                .frame(maxWidth: .infinity, minHeight: 44).background(BloomTheme.selected, in: Capsule())
-                .padding(.horizontal, 20).padding(.bottom, 24).accessibilityIdentifier("collection-add-plant")
         }.background(BloomTheme.canvas).toolbar(.visible, for: .navigationBar).navigationTitle("My plants").navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search your plants")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    BloomAddPlantButton(action: addPlant).accessibilityIdentifier("collection-add-plant")
+                }
+            }
     }
 }
 
@@ -198,6 +207,7 @@ struct PlantDetailView: View {
     @State private var careGuidance: CareGuidanceDestination?
     @State private var editing = false
     @State private var deleting = false
+    private var openPlans: [CarePlan] { store.plans(for: plantID).filter { store.planIsOpen($0.id) } }
     var body: some View {
         Group {
             if let plant = store.plant(plantID) {
@@ -216,43 +226,36 @@ struct PlantDetailView: View {
                             .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
                             .accessibilityIdentifier("plant-detail-identity")
                     }
-                    Section {
-                        ForEach(store.plans(for: plantID).filter { store.planIsOpen($0.id) }) { plan in
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(plan.baseline.observation).font(BloomType.body).foregroundStyle(.secondary)
-                                if plan.status == .needsReview {
-                                    Button { careGuidance = CareGuidanceDestination(id: plan.observationID) } label: {
-                                        Text("Review the next step")
-                                    }.accessibilityIdentifier("plant-review-care")
-                                }
-                                if let next = store.tasks(for: plan.id).first(where: { $0.status == .pending && $0.step != .review })
-                                    ?? store.tasks(for: plan.id).first(where: { $0.status == .pending && $0.step == .review }) {
-                                    Button { careTask = PlanTaskRoute(id: next.id) } label: {
-                                        HStack(alignment: .top, spacing: 10) {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text(next.step == .review ? "Check progress" : next.step.title).font(BloomType.section)
-                                                if next.step == .review, let due = next.due { Text(due.formatted(date: .abbreviated, time: .omitted)).font(BloomType.supporting).foregroundStyle(.secondary) }
-                                                else { Text("Next care task").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary) }
-                                            }
-                                            Spacer(minLength: 4)
-                                            BloomSymbol(name: "chevron.right", compact: true)
-                                        }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 6).contentShape(Rectangle())
-                                    }.buttonStyle(.plain).foregroundStyle(BloomTheme.teal).accessibilityIdentifier("plant-next-care-task")
-                                }
-                            }.padding(.vertical, 4)
-                            NavigationLink("Care plan details") { CarePlanDetailView(planID: plan.id) }
-                                .font(BloomType.body).accessibilityIdentifier("plant-care-plan-\(plan.id.uuidString)")
-                        }
+                    Section("Care") {
                         Button { checking = true } label: { BloomActionRow(title: "Check soil") }.accessibilityIdentifier("start-check")
                         Button { observing = true } label: { BloomActionRow(title: "Record a change") }.accessibilityIdentifier("start-observation")
-                        ReminderCard(plantID: plantID, compact: true)
-                    } header: { Text("Care") } footer: {
-                        if let check = store.latestCheck(for: plantID) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Last soil check · \(check.date.formatted(date: .abbreviated, time: .shortened))").font(BloomType.supporting)
-                                Text(check.summary).font(BloomType.body)
-                            }.foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, alignment: .leading)
-                                .accessibilityElement(children: .combine).accessibilityIdentifier("plant-last-care-summary")
+                        ReminderCard(plantID: plantID, compact: true, showLastSoilCheck: true)
+                    }
+                    if !openPlans.isEmpty {
+                        Section("Care plans") {
+                            ForEach(openPlans) { plan in
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text(plan.baseline.observation).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                                    if plan.status == .needsReview {
+                                        Button { careGuidance = CareGuidanceDestination(id: plan.observationID) } label: {
+                                            BloomActionRow(title: "Review care steps")
+                                        }.buttonStyle(.plain).accessibilityIdentifier("plant-review-care")
+                                    }
+                                    if let next = store.tasks(for: plan.id).first(where: { $0.status == .pending && $0.step != .review })
+                                        ?? store.tasks(for: plan.id).first(where: { $0.status == .pending && $0.step == .review }) {
+                                        Button { careTask = PlanTaskRoute(id: next.id) } label: {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                BloomActionRow(title: next.step == .review ? "Check progress" : next.step.title)
+                                                if let due = next.due {
+                                                    Text(due.formatted(date: .abbreviated, time: .omitted)).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                                                }
+                                            }.contentShape(Rectangle())
+                                        }.buttonStyle(.plain).accessibilityIdentifier("plant-next-care-task")
+                                    }
+                                }.padding(.vertical, 4)
+                                NavigationLink { CarePlanDetailView(planID: plan.id) } label: { BloomActionRow(title: "View care plan") }
+                                    .accessibilityIdentifier("plant-care-plan-\(plan.id.uuidString)")
+                            }
                         }
                     }
                     Section("Additional details") {
@@ -380,7 +383,7 @@ struct PlantEditorView: View {
                         }
                     }.padding(20).background(BloomTheme.canvas)
                         .navigationTitle("Plant photo").navigationBarTitleDisplayMode(.inline)
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { viewingPhoto = false } } }
+                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Close photo") { viewingPhoto = false } } }
                 }
             }
             .onChange(of: selectedPhoto) { _, photo in

@@ -53,7 +53,7 @@ struct PlanTaskFlowView: View {
                                             dismiss()
                                         } else { message = "Choose a future date to schedule your check-in." }
                                     }.accessibilityIdentifier("schedule-completion-check-in")
-                                    Button("Not now") { dismiss() }.frame(minHeight: 44).accessibilityIdentifier("skip-completion-check-in")
+                                    Button("Skip check-in") { dismiss() }.frame(minHeight: 44).accessibilityIdentifier("skip-completion-check-in")
                                 }
                             }
                     } else if task.status == .pending && store.planIsOpen(plan.id) {

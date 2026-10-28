@@ -28,6 +28,19 @@ struct BloomPrimaryAction: View {
     }
 }
 
+/// One add control across Home and the full collection.
+struct BloomAddPlantButton: View {
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            BloomSymbol(name: "plus").foregroundStyle(BloomTheme.teal)
+                .frame(width: 44, height: 44).background(.white, in: Circle())
+                .overlay(Circle().strokeBorder(BloomTheme.border, lineWidth: 1))
+        }.buttonStyle(BloomPressStyle()).accessibilityLabel("Add plant")
+            .accessibilityHint("Search for a plant to add to My plants")
+    }
+}
+
 struct BloomActionRow: View {
     let title: String
     var body: some View {

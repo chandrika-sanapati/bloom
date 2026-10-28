@@ -29,7 +29,7 @@ struct CareCheckView: View {
                         .bloomNativeFooter {
                             VStack(spacing: 8) {
                                 if draft?.soil == nil { BloomSelectionHint() }
-                                BloomPrimaryAction(title: "Continue") { path.append(.decide) }.disabled(draft?.soil == nil).accessibilityIdentifier("continue-check")
+                                BloomPrimaryAction(title: "Record care decision") { path.append(.decide) }.disabled(draft?.soil == nil).accessibilityIdentifier("continue-check")
                             }
                         }
                 } else { ContentUnavailableView("Plant unavailable", systemImage: "leaf") }
@@ -116,7 +116,7 @@ struct SavedRecordView: View {
                     }.buttonStyle(.plain).background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                 }.navigationTitle("Saved").navigationBarTitleDisplayMode(.inline).navigationBarBackButtonHidden()
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Back to plant", systemImage: "chevron.backward", action: finish).labelStyle(.iconOnly) } }
-                    .bloomNativeFooter { BloomPrimaryAction(title: "Done", action: finish).accessibilityIdentifier("finish-record") }
+                    .bloomNativeFooter { BloomPrimaryAction(title: "Close record", action: finish).accessibilityIdentifier("finish-record") }
 
             }
         }
@@ -130,21 +130,39 @@ struct ReminderCard: View {
     var kind: PlantReminderKind = .soilCheck
     var observationID: UUID? = nil
     var compact = false
+    var showLastSoilCheck = false
     @State private var editingDate = false
     private var effectiveKind: PlantReminderKind { store.plant(plantID)?.reminderKind ?? kind }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !compact { Label(effectiveKind == .soilCheck ? "Check soil again" : "Compare your observation", systemImage: effectiveKind == .soilCheck ? "drop" : "eye").font(BloomType.section) }
-            if let date = store.plant(plantID)?.reminder { Text(date.formatted(date: .abbreviated, time: .shortened)).font(BloomType.body).foregroundStyle(.secondary) }
-            else if !compact { Text("Choose when you'd like to check in again.").font(BloomType.body).foregroundStyle(.secondary) }
-            Button { editingDate = true } label: { BloomActionRow(title: store.plant(plantID)?.reminder == nil ? "Remind me" : "Change reminder") }
+            Button { editingDate = true } label: { BloomActionRow(title: store.plant(plantID)?.reminder == nil ? "Set reminder" : "Edit reminder") }
                 .buttonStyle(.plain).frame(minHeight: 44, alignment: .leading)
                 .accessibilityIdentifier("reminder-options")
+            if let date = store.plant(plantID)?.reminder {
+                Text("Next reminder · \(date.formatted(date: .abbreviated, time: .shortened))")
+                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+            }
+            if showLastSoilCheck, let check = store.latestCheck(for: plantID) {
+                LastSoilCheckSummary(check: check).accessibilityIdentifier("plant-last-care-summary")
+            }
             if let problem = store.notificationMessage { Text(problem).font(BloomType.supporting).foregroundStyle(.secondary) }
         }.padding(.vertical, 5)
             .fullScreenCover(isPresented: $editingDate) { ReminderEditorView(plantID: plantID, kind: effectiveKind, observationID: observationID) }
     }
 
+}
+
+/// Read-only context belongs with scheduling, rather than looking like another care action.
+struct LastSoilCheckSummary: View {
+    let check: CareRecord
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Last soil check · \(check.date.formatted(date: .abbreviated, time: .shortened))").font(BloomType.supporting)
+            Text(check.summary).font(BloomType.supporting)
+        }.foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+    }
 }
 
 struct ReminderEditorView: View {
@@ -168,12 +186,15 @@ struct ReminderEditorView: View {
                         Text("Check soil").tag(PlantReminderKind.soilCheck)
                         Text("Compare observation").tag(PlantReminderKind.observation)
                     }.accessibilityIdentifier("reminder-kind")
+                    if selectedKind == .soilCheck, let check = store.latestCheck(for: plantID) {
+                        LastSoilCheckSummary(check: check).accessibilityIdentifier("reminder-last-care-summary")
+                    }
                     DatePicker("Date and time", selection: $date, in: Date()..., displayedComponents: [.date, .hourAndMinute])
                         .accessibilityIdentifier("reminder-date")
                 }.bloomCard(padding: 16)
                 HStack(spacing: 12) {
-                    Button("In 3 days") { date = store.newReminderDate(days: 3) }.accessibilityIdentifier("reminder-three-days")
-                    Button("In a week") { date = store.newReminderDate(days: 7) }
+                    Button("Remind in 3 days") { date = store.newReminderDate(days: 3) }.accessibilityIdentifier("reminder-three-days")
+                    Button("Remind in a week") { date = store.newReminderDate(days: 7) }
                 }.buttonStyle(.bordered).controlSize(.large)
                 Toggle("Notify me", isOn: $notify).disabled(!store.appPreferences.taskNotifications)
                     .padding(16).background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16))

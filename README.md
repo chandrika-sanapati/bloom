@@ -6,13 +6,13 @@ Open **Bloom.xcodeproj**, select **Bloom → iPhone 17** (or another installed i
 
 ## MVP scope
 
-- **My plants:** Home shows the full collection count and two complete, static plant cards. Tapping a card opens that plant; accessibility text sizes stack the cards vertically. **See all** opens the searchable collection. Each plant keeps its room, optional photo, starting condition, and care history.
-- **Add a plant:** an outlined plus at the top right has the accessible label **Add plant** and opens the Add plant page with **Search plant** inside its search field. Choose from a small local catalog or enter any name, optionally attach a photo, choose its room, and record its current status. Saving opens that plant's detail page. Nothing is added until setup is saved.
-- **Check and decide:** record soil as Dry, Damp, or Not sure, then record whether you watered, waited, or will check later. Saving offers Edit, Undo, an optional reminder, and Done.
+- **My plants:** Home shows the full collection count and two complete plant cards initially, with horizontal swiping to browse the rest. Tapping a card opens that plant; accessibility text sizes stack the cards vertically. **See all** opens the searchable collection. Each plant keeps its room, optional photo, starting condition, and care history.
+- **Add a plant:** the same outlined plus in the Home header and My plants toolbar has the accessible label **Add plant** and opens the Add plant page with **Search plant** inside its search field. Choose from a small local catalog or enter any name, optionally attach a photo, choose its room, and record its current status. Saving opens that plant's detail page. Nothing is added until setup is saved.
+- **Check and decide:** record soil as Dry, Damp, or Not sure, then record whether you watered, waited, or will check later. Saving offers Edit, Undo, an optional reminder, and Close record.
 - **Observe and find next steps:** tap a photographed area card, choose a single visible-change card, then add optional notes/photo. **Save change** saves the record and immediately opens the visual cause/first-step guide with a **Change saved** notice. **Add to care plan** explicitly creates planned work; it never records treatment as done. Adding the plan returns directly to the plant, where the next care task is visible. Back to plant keeps the observation without starting a plan. There is no intermediate saved receipt or plan-setup confirmation. Activity keeps guidance and editing available.
-- **Care on a plant:** the next action or progress check opens directly from the plant's Care section. Care plan details remain available as a secondary link; past plans stay accessible. Optional materials, notes, dates and sources are expandable.
-- **Care → Tasks:** all scheduled checks appear on Home, grouped into Overdue, Today, and Upcoming. Tasks retain their type: Check soil, Observe, plan Action, or progress Review. Multiple plan tasks and ordinary soil reminders coexist. A plan that needs reassessment stays visible on Home. Completing a check clears only its matching task; Undo restores it while preserving any newer reminder you chose. An overdue check never means a plant automatically needs water.
-- **Care → Activity:** a native segmented control switches the same care area to the five most recent saved activities. This includes unscheduled checks, observations, and decisions to wait. Tap a record to review it, or choose **See all activity** for search and plant/type filters. Returning from a record preserves the Activity selection. Each plant also retains its own activity archive.
+- **Care on a plant:** the next action or progress check opens directly from the plant's Care plans section. Active plans have their own Care plans section with View care plan; past plans stay accessible. Optional materials, notes, dates and sources are expandable.
+- **Activity → Upcoming:** all scheduled checks appear on Home, grouped into Overdue, Today, and Upcoming. Tasks retain their type: Check soil, Observe, plan Action, or progress Review. Multiple plan tasks and ordinary soil reminders coexist. A plan that needs reassessment stays visible on Home. Completing a check clears only its matching task; Undo restores it while preserving any newer reminder you chose. An overdue check never means a plant automatically needs water.
+- **Activity → Past:** a native segmented control switches the same care area to the five most recent saved activities. This includes unscheduled checks, observations, and decisions to wait. Tap a record to review it, or choose **See all activity** for search and plant/type filters. Returning from a record preserves the Past selection. Each plant also retains its own activity archive.
 
 Home weather and city shortcuts, the profile shortcut, the standalone Diagnosis tab, and the unconnected scanner have been removed. There is no live weather service or background weather adaptation. Optional regional climatology is used only within personalized discovery. Photos use the native photo picker; the app no longer requests camera access. The catalog is labeled **Choose a plant**, without claiming a live popularity ranking.
 
@@ -34,7 +34,7 @@ Plant-care context also uses [University of Minnesota indoor-light guidance](htt
 
 ## Sourced leaf guidance
 
-After **Record a change → Leaves card → Dropping leaves card → Continue → Save change**, the **What could help** page immediately explains possible causes using colored symbol cards. Users do not choose or confirm a diagnosis. A first action is shown as short visual steps, with detailed instructions under **How to do this** and explanations/source links under **Why this might help**.
+After **Record a change → Leaves card → Dropping leaves card → Review change → Save change**, the **What could help** page immediately explains possible causes using colored symbol cards. Users do not choose or confirm a diagnosis. A first action is shown as short visual steps, with detailed instructions under **How to do this** and explanations/source links under **Why this might help**.
 
 **Add to care plan** works without answering questions and creates a conservative inspection task when evidence is missing. **I've checked my plant** is an optional disclosure for recording observations; soil choices use visual cards, drainage only appears for dry mix, and previously supplied placement is reused. These refinements save for resuming and can be cleared together. Missing answers remain unknown. Watering still requires dry mix, confirmed drainage, no reported warning signs and a supported indoor plant; other evidence-dependent actions retain conservative bounds.
 
@@ -145,10 +145,10 @@ The native app follows the interactive demo at chandrikasanapati.me/bloom throug
 
 | Journey | Native behaviour |
 | --- | --- |
-| Home / collection | Two complete cards, collection count, See all, Bloom logo preferences, outlined plus, task-first Care rows and compact Activity cards. |
+| Home / collection | Two complete cards initially, horizontal collection browsing, collection count, See all, Bloom logo preferences, outlined plus, task-first Upcoming rows and compact Past cards. |
 | Search / personalize | Compact white personalization entry, photographic catalogue/form choices, room-light preferences, optional real city location, reset beside the choices and fixed Save. |
-| Add plant | Photo/name review, visible room shortcuts, Indoor/Outdoor placement, selected-state status rows and optional Choose later. |
-| Routine care | Soil choice → recorded decision → saved receipt, with fixed primary actions and visible selection hints. Done returns to the caller. |
+| Add plant | Photo/name review, visible room shortcuts, Indoor/Outdoor placement, selected-state status rows and explicit skip actions. |
+| Routine care | Soil choice → recorded decision → saved receipt, with fixed primary actions and visible selection hints. Close record returns to the caller. |
 | Reminder | Task kind, date/time, draft-only 3-day/week presets, optional per-reminder notifications and Save/Cancel. Merely choosing a preset never saves. |
 | Notice a change | Real plant-part cards → visible-change cards → optional photo/note → immediate What could help. |
 | Understand | Canonical care-plan title, possible-cause cards, visible step summaries/explanation and sources. Opening a saved assessment starts with guidance; questions stay optional. Existing plans offer View care plan. |

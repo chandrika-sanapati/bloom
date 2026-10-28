@@ -83,7 +83,7 @@ struct AddPlantFlowView: View {
                 }
             }
             .bloomNativeFooter {
-                BloomPrimaryAction(title: "Continue") { navigate(.location) }
+                BloomPrimaryAction(title: "Choose location") { navigate(.location) }
                     .disabled(setup.plant.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || setup.loading).accessibilityIdentifier("overlay-continue-plant")
             }
     }
@@ -114,8 +114,8 @@ struct AddPlantFlowView: View {
             .bloomNativeFooter {
                 VStack(spacing: 8) {
                     if setup.plant.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { BloomSelectionHint() }
-                    BloomPrimaryAction(title: "Continue") { navigate(.status) }.disabled(setup.plant.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("setup-continue-location")
-                    Button("Choose later") { setup.plant.location = ""; navigate(.status) }.frame(minHeight: 44)
+                    BloomPrimaryAction(title: "Choose condition") { navigate(.status) }.disabled(setup.plant.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("setup-continue-location")
+                    Button("Skip location") { setup.plant.location = ""; navigate(.status) }.frame(minHeight: 44)
                 }
             }
     }
@@ -130,7 +130,7 @@ struct AddPlantFlowView: View {
                 VStack(spacing: 8) {
                     if setup.status == nil { BloomSelectionHint() }
                     BloomPrimaryAction(title: "Add plant", action: save).disabled(setup.status == nil).accessibilityIdentifier("overlay-save-plant")
-                    Button("Choose later") { setup.status = .notSure; save() }.frame(minHeight: 44)
+                    Button("Add without a condition") { setup.status = .notSure; save() }.frame(minHeight: 44)
                 }
             }
     }

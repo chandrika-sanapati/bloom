@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum CareFeedSelection: String, CaseIterable, Identifiable {
-    case tasks = "Tasks", activity = "Activity"
+    case tasks = "Upcoming", activity = "Past"
     var id: Self { self }
 }
 
@@ -23,8 +23,8 @@ struct HomeCareFeed: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Care").bloomHeading().accessibilityAddTraits(.isHeader)
-            Picker("Care", selection: $selection) {
+            Text("Activity").bloomHeading().accessibilityAddTraits(.isHeader)
+            Picker("Activity", selection: $selection) {
                 ForEach(CareFeedSelection.allCases) { Text($0.rawValue).tag($0) }
             }.pickerStyle(.segmented).accessibilityIdentifier("home-care-picker")
             if selection == .tasks {

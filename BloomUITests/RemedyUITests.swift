@@ -34,7 +34,7 @@ import XCTest
         XCTAssertTrue(app.navigationBars["What could help"].waitForExistence(timeout: 5))
     }
     private func openSavedObservation(_ app: XCUIApplication) {
-        app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
+        app.segmentedControls["home-care-picker"].buttons["Past"].tap()
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-")).firstMatch.tap()
         let next = app.buttons["find-next-steps"]; reveal(next, app: app); next.tap()
         if app.buttons["leaf-check-pests"].waitForExistence(timeout: 2) {

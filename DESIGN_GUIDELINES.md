@@ -34,11 +34,11 @@ Success names the object: “Snake Plant added” or “Snake Plant removed”. 
 
 ## Accessibility
 
-Maintain 44 pt interactive targets, readable text contrast, VoiceOver names and selected state, and Dynamic Type reflow. Home shows two complete cards with the remaining plants under See all. At accessibility text sizes, the two cards stack vertically. Avoid horizontal carousels and swipe instructions on Home. Custom animations respect Reduce Motion. Body text and action labels must not be truncated to fit.
+Maintain 44 pt interactive targets, readable text contrast, VoiceOver names and selected state, and Dynamic Type reflow. Home shows two complete cards initially, with horizontal browsing for the rest and See all preserved. Hide scroll indicators and avoid swipe-instruction text. At accessibility text sizes, two cards stack vertically and See all opens the full collection. Custom animations respect Reduce Motion. Body text and action labels must not be truncated to fit.
 
 ## Home and history
 
-The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The last soil check is a dated, non-interactive summary below the Care actions, without a divider or action-row styling.
+The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The last soil check is dated, non-interactive context beneath Set/Edit reminder, repeated in the soil-reminder editor. Keep it inside the reminder group without a separate divider. Basic Care actions and active Care plans occupy separate sections.
 
 
 ## Demo-aligned flows
@@ -46,3 +46,7 @@ The Bloom leaf mark and name open Preferences. The top-right Add plant action is
 Use the shared white selection group with 52 pt rows, a neutral unselected circle, and a teal selected check/background. Keep required choices separate from optional photo/note fields; show a concise selection hint beside a disabled fixed primary action. Room shortcuts are visible rather than hidden in a menu. Save belongs at the bottom of growing-space preferences; reset belongs with the choices.
 
 Primary care and observation journeys use the full screen. Present numbered action instructions and optional notes directly. Saving a progress comparison shows a dedicated result with a next step; it never implies that completing treatment resolved the issue. Keep platform date/permission controls native. Use yellow for open/review care states, green for completed/resolved states, and neutral for stopped/skipped states. Collection cards carry identity; Care rows carry task tags.
+
+Use the same outlined plus control in the Home header and full My plants toolbar. Primary action labels name the next step: Choose location, Choose condition, Record care decision, Review change, Save care, and Close record. Keep native navigation icons and standard date/settings controls.
+
+On Home, name the section Activity and its tabs Upcoming and Past. Upcoming shows open tasks; Past shows saved records. Keep these labels distinct from the Care actions within an individual plant.

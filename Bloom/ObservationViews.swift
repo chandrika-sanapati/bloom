@@ -183,7 +183,7 @@ struct ObservationFlowView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("observation-selection-hint")
                     }
-                    BloomPrimaryAction(title: "Continue") { path.append(.context) }
+                    BloomPrimaryAction(title: "Review change") { path.append(.context) }
                         .disabled(!validObservation).accessibilityIdentifier("continue-observation")
                 }
             }

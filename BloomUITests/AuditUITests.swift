@@ -51,7 +51,7 @@ import XCTest
         tap("edit-plant-photo", app)
         XCTAssertTrue(app.buttons["change-plant-photo"].exists)
         capture("Audit photo viewer", app)
-        tap("Done", app)
+        tap("Close photo", app)
         let name = app.textFields["plant-name-field"]; name.tap()
         let previousName = name.value as? String ?? ""
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previousName.count) + "Desk snake")
@@ -73,7 +73,7 @@ import XCTest
         let app = launch(); tap("home-add-plant", app); tap("select-species-Snake Plant", app)
         XCTAssertTrue(app.staticTexts["duplicate-plant-hint"].exists)
         XCTAssertTrue(app.navigationBars["Add plant"].exists)
-        tap("overlay-continue-plant", app); tap("Choose later", app)
+        tap("overlay-continue-plant", app); tap("Skip location", app)
         tap("setup-status-Looking good", app); tap("overlay-save-plant", app)
         XCTAssertTrue(app.staticTexts["care-feedback-title"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["care-feedback-title"].label, "Snake Plant added")
@@ -90,6 +90,10 @@ import XCTest
     }
     func testAtomicTasksThenOptionalCheckInAndNeutralUndo() {
         let app = launch(); newInspection(app)
+        let reminder = app.buttons["reminder-options"]
+        let nextTask = app.buttons["plant-next-care-task"]
+        XCTAssertTrue(app.staticTexts["Care plans"].exists)
+        XCTAssertGreaterThan(nextTask.frame.minY, reminder.frame.maxY)
         completeInspection(app)
         XCTAssertTrue(app.buttons["skip-completion-check-in"].waitForExistence(timeout: 5))
         capture("Audit optional progress check", app)
@@ -122,7 +126,17 @@ import XCTest
         XCTAssertTrue(summary.label.contains("Not sure"))
         XCTAssertTrue(summary.label.contains("Will check later"))
         XCTAssertFalse(app.buttons["plant-last-care-summary"].exists)
-        capture("Native dated care history", app)
+        let reminder = app.buttons["reminder-options"]
+        XCTAssertGreaterThan(summary.frame.minY, reminder.frame.maxY)
+        capture("Last soil check grouped with reminder", app)
+        let summaryLabel = summary.label
+        tap("reminder-options", app)
+        XCTAssertTrue(app.navigationBars["Reminder"].waitForExistence(timeout: 5))
+        let context = app.descendants(matching: .any).matching(identifier: "reminder-last-care-summary").firstMatch
+        XCTAssertEqual(context.label, summaryLabel)
+        capture("Reminder editor retains last soil check", app)
+        app.navigationBars["Reminder"].buttons["Cancel"].tap()
+        XCTAssertTrue(app.navigationBars["Plant"].waitForExistence(timeout: 5))
     }
 
 }

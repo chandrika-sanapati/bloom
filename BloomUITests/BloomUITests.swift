@@ -57,7 +57,7 @@ final class BloomUITests: XCTestCase {
         let header = app.buttons["home-preferences"]
         XCTAssertTrue(header.waitForExistence(timeout: 5))
         let initialY = header.frame.minY
-        app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
+        app.segmentedControls["home-care-picker"].buttons["Past"].tap()
         app.swipeUp()
         XCTAssertEqual(header.frame.minY, initialY, accuracy: 1)
         let add = app.buttons["home-add-plant"]
@@ -66,7 +66,7 @@ final class BloomUITests: XCTestCase {
         XCTAssertTrue(add.isHittable)
         XCTAssertEqual(add.frame.minY, header.frame.minY, accuracy: 1)
         XCTAssertGreaterThan(add.frame.minX, header.frame.maxX)
-        XCTAssertFalse(app.scrollViews["home-plant-carousel"].exists)
+        XCTAssertTrue(app.scrollViews["home-plant-carousel"].exists)
         XCTAssertFalse(app.buttons["floating-add-plant"].exists)
         add.tap()
         XCTAssertTrue(app.navigationBars["Add plant"].waitForExistence(timeout: 5))
@@ -89,7 +89,9 @@ final class BloomUITests: XCTestCase {
         let search = app.textFields["plant-search-field"]
         search.tap(); search.typeText("Fern")
         app.buttons["Add \"Fern\" by name"].tap()
+        XCTAssertEqual(app.buttons["overlay-continue-plant"].label, "Choose location")
         app.buttons["overlay-continue-plant"].tap()
+        XCTAssertEqual(app.buttons["setup-continue-location"].label, "Choose condition")
         XCTAssertFalse(app.buttons["setup-continue-location"].isEnabled)
         capture("66 Native visible disabled plant setup", app)
         capture("07 Native location", app)
@@ -118,17 +120,35 @@ final class BloomUITests: XCTestCase {
         XCTAssertFalse(app.buttons["plant-Monstera"].label.contains("Check soil"))
         capture("01 Native home", app)
         capture("64 Native compact plant collection", app)
-        XCTAssertFalse(app.scrollViews["home-plant-carousel"].exists)
+        XCTAssertTrue(app.scrollViews["home-plant-carousel"].exists)
         XCTAssertFalse(app.staticTexts["Swipe for more plants"].exists)
-        let cards = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "plant-"))
-        XCTAssertEqual(cards.count, 2)
+        let carousel = app.scrollViews["home-plant-carousel"]
+        let cards = [app.buttons["plant-Snake Plant"], app.buttons["plant-Monstera"]]
         let home = app.scrollViews["home-scroll"]
-        for card in cards.allElementsBoundByIndex {
+        for card in cards {
             XCTAssertTrue(card.isHittable)
             XCTAssertGreaterThanOrEqual(card.frame.minX, home.frame.minX)
             XCTAssertLessThanOrEqual(card.frame.maxX, home.frame.maxX)
         }
+        carousel.swipeLeft()
+        let laterCards = ["Rubber Plant", "Kitchen Monstera", "Office Snake"].map { app.buttons["plant-\($0)"] }
+        XCTAssertTrue(laterCards.contains { $0.exists && $0.isHittable && $0.frame.minX >= carousel.frame.minX && $0.frame.maxX <= carousel.frame.maxX })
+        capture("Collection browse later plants", app)
+        let first = app.buttons["plant-Snake Plant"]
+        for _ in 0..<3 {
+            if first.exists && first.frame.minX >= carousel.frame.minX && first.isHittable { break }
+            carousel.swipeRight()
+        }
+        XCTAssertTrue(first.isHittable)
+        XCTAssertGreaterThanOrEqual(first.frame.minX, carousel.frame.minX)
         app.buttons["See all"].tap()
+        let add = app.buttons["collection-add-plant"]
+        XCTAssertTrue(add.isHittable)
+        XCTAssertEqual(add.label, "Add plant")
+        add.tap()
+        XCTAssertTrue(app.navigationBars["Add plant"].waitForExistence(timeout: 5))
+        app.navigationBars["Add plant"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["My plants"].waitForExistence(timeout: 5))
         let lastPlant = app.buttons["all-plant-Office Snake"]
         for _ in 0..<3 { if !lastPlant.isHittable { app.swipeUp() } }
         XCTAssertTrue(lastPlant.waitForExistence(timeout: 5))
@@ -153,7 +173,7 @@ final class BloomUITests: XCTestCase {
         app.buttons["home-preferences"].tap()
         XCTAssertTrue(app.navigationBars["Preferences"].waitForExistence(timeout: 5))
         app.navigationBars["Preferences"].buttons["Close"].tap()
-        let activity = app.segmentedControls["home-care-picker"].buttons["Activity"]
+        let activity = app.segmentedControls["home-care-picker"].buttons["Past"]
         activity.tap()
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-"))
         XCTAssertEqual(rows.count, 5)
@@ -182,7 +202,7 @@ final class BloomUITests: XCTestCase {
         add.tap()
         XCTAssertTrue(app.navigationBars["Add plant"].waitForExistence(timeout: 5))
         app.navigationBars["Add plant"].buttons.firstMatch.tap()
-        app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
+        app.segmentedControls["home-care-picker"].buttons["Past"].tap()
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-")).firstMatch.exists)
     }
 
@@ -198,7 +218,7 @@ final class BloomUITests: XCTestCase {
         let picker = app.segmentedControls["home-care-picker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         XCTAssertFalse(task.exists)
-        picker.buttons["Activity"].tap()
+        picker.buttons["Past"].tap()
         let latest = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-")).firstMatch
         XCTAssertTrue(latest.label.contains("Soil check"))
         XCTAssertTrue(latest.label.contains("Monstera"))
@@ -211,7 +231,7 @@ final class BloomUITests: XCTestCase {
     @MainActor
     func testEmptyActivityExplainsHowToStart() {
         let app = XCUIApplication(); app.launchArguments = ["--uitesting", "--uitesting-no-tasks", "--uitesting-no-activity"]; app.launch()
-        app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
+        app.segmentedControls["home-care-picker"].buttons["Past"].tap()
         XCTAssertTrue(app.staticTexts["Your care story starts here"].exists)
         XCTAssertTrue(app.buttons["home-add-plant"].isHittable)
         capture("13 Native empty activity", app)
@@ -275,7 +295,7 @@ final class BloomUITests: XCTestCase {
         app.buttons["reminder-three-days"].tap()
         app.navigationBars["Reminder"].buttons["Cancel"].tap()
         XCTAssertTrue(reminder.waitForExistence(timeout: 5))
-        XCTAssertTrue(reminder.label.contains("Remind me"))
+        XCTAssertTrue(reminder.label.contains("Set reminder"))
         reminder.tap(); app.buttons["reminder-three-days"].tap()
         let notify = app.switches["reminder-notification"]
         if notify.value as? String == "1" {
@@ -284,7 +304,7 @@ final class BloomUITests: XCTestCase {
         XCTAssertEqual(notify.value as? String, "0")
         app.buttons["save-reminder"].tap()
         XCTAssertTrue(reminder.waitForExistence(timeout: 5))
-        XCTAssertTrue(reminder.label.contains("Change reminder"))
+        XCTAssertTrue(reminder.label.contains("Edit reminder"))
         app.navigationBars["Plant"].buttons.firstMatch.tap()
         let task = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "reminder-task-", "Snake Plant")).firstMatch
         XCTAssertTrue(task.waitForExistence(timeout: 5))

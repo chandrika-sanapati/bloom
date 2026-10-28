@@ -46,7 +46,7 @@ import XCTest
     }
     private func startSaved() -> XCUIApplication {
         let app = XCUIApplication(); app.launchArguments = ["--uitesting", "--uitesting-leaf"]; app.launch()
-        app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
+        app.segmentedControls["home-care-picker"].buttons["Past"].tap()
         app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "home-activity-")).firstMatch.tap()
         tap("find-next-steps", app)
         XCTAssertTrue(app.buttons["leaf-start-care-plan"].waitForExistence(timeout: 5)); return app
@@ -85,7 +85,7 @@ import XCTest
         XCTAssertTrue(app.navigationBars["Plant"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["finish-record"].exists)
         clearBanner(app); app.navigationBars["Plant"].buttons.firstMatch.tap()
-        app.segmentedControls["home-care-picker"].buttons["Activity"].tap()
+        app.segmentedControls["home-care-picker"].buttons["Past"].tap()
         let records = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "home-activity-", "Dropping leaves"))
         XCTAssertEqual(records.count, 1); records.firstMatch.tap(); tap("find-next-steps", app)
         XCTAssertTrue(app.navigationBars["What could help"].waitForExistence(timeout: 5)); app.buttons["close-guidance"].tap()

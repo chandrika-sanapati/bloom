@@ -139,7 +139,7 @@ final class PlantSearchUITests: XCTestCase {
         capture("25 Native unlisted plant search", app)
         app.buttons["add-custom-search"].tap()
         app.buttons["overlay-continue-plant"].tap()
-        app.buttons["Choose later"].tap()
+        app.buttons["Skip location"].tap()
         app.buttons["setup-status-Looking good"].tap()
         app.buttons["overlay-save-plant"].tap()
         XCTAssertTrue(app.navigationBars["Plant"].waitForExistence(timeout: 5))
