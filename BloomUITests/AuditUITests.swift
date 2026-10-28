@@ -122,7 +122,7 @@ import XCTest
         let summary = app.descendants(matching: .any).matching(identifier: "plant-last-care-summary").firstMatch
         for _ in 0..<4 { if !summary.isHittable { app.swipeUp() } }
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        XCTAssertTrue(summary.label.contains("Last check:"))
+        XCTAssertTrue(summary.label.contains("Last soil check:"))
         XCTAssertTrue(summary.label.contains("Soil:"))
         XCTAssertTrue(summary.label.contains("Last watered:"))
         XCTAssertFalse(summary.label.contains("Action:"))
@@ -133,7 +133,7 @@ import XCTest
         let soilAction = app.buttons["start-check"]
         XCTAssertGreaterThan(summary.frame.minY, identity.frame.maxY)
         XCTAssertLessThan(summary.frame.maxY, soilAction.frame.minY)
-        capture("Plant status with last check soil and last watered", app)
+        capture("Independent soil check and watering status", app)
         tap("reminder-options", app)
         XCTAssertTrue(app.navigationBars["Reminder"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "reminder-last-care-summary").firstMatch.exists)

@@ -38,7 +38,7 @@ Maintain 44 pt interactive targets, readable text contrast, VoiceOver names and 
 
 ## Home and history
 
-The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The top plant card shows dated, non-interactive plant status beneath the common and scientific names: Last check, Soil and Last watered. Keep it separate from reminder actions and omit it from the reminder editor. Basic Care actions and active Care plans occupy separate sections.
+The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The top plant card shows dated, non-interactive plant status beneath the common and scientific names: Last soil check with its own date/soil condition, and Last watered with its own date. Keep it separate from reminder actions and omit it from the reminder editor. Basic Care actions and active Care plans occupy separate sections.
 
 
 ## Demo-aligned flows
@@ -53,4 +53,4 @@ On Home, name the section Activity and its tabs Upcoming and Past. Upcoming show
 
 Do not repeat Upcoming as a heading inside the Upcoming tab. Keep Overdue and Today headings when they help distinguish task timing.
 
-Present plant status as a quiet inset block: Last check with a short date, then separate Soil and Last watered fields with stronger values. Use blue for soil information and neutral ink for the watering date. Derive Last watered from actual watering history or the explicitly saved watering date; missing dates say Not recorded. Keep recorded actions in activity history. Show a short date, retain the full timestamp for VoiceOver, and stack the fields at accessibility text sizes.
+Present plant status as two independent rows inside a quiet inset block: Last soil check pairs its date with a blue soil-condition tag; Last watered shows its own date. Do not put watering under a shared Last check heading. Derive Last watered from actual watering history or the explicitly saved watering date; missing dates say Not recorded. Keep recorded actions in activity history. Show short dates, retain full timestamps for VoiceOver, and stack each row's contents at accessibility text sizes.

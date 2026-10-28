@@ -147,36 +147,42 @@ struct PlantStatusSummary: View {
         let style = Date.FormatStyle.dateTime.day().month(.abbreviated)
         return date.formatted(Calendar.current.isDate(date, equalTo: .now, toGranularity: .year) ? style : style.year())
     }
-    private var heading: some View {
-        Text("Last check").font(BloomType.supporting.weight(.semibold)).foregroundStyle(BloomTheme.ink)
-    }
-    private var timestamp: some View {
-        Text(dateLabel(check?.date)).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-    }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 4) { heading; timestamp }
-            } else {
-                HStack(alignment: .firstTextBaseline) { heading; Spacer(minLength: 12); timestamp }
-            }
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 12) { soilField; wateredField }
-            } else {
-                HStack(alignment: .top, spacing: 20) { soilField; wateredField }
-            }
+            statusRow("Last soil check") { soilDetails }
+            statusRow("Last watered") { dateValue(lastWatered) }
         }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
             .background(BloomTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Last check: \(check?.date.formatted(date: .complete, time: .shortened) ?? "Not recorded"). Soil: \(soil). Last watered: \(lastWatered?.formatted(date: .complete, time: .omitted) ?? "Not recorded").")
+            .accessibilityLabel("Last soil check: \(check?.date.formatted(date: .complete, time: .shortened) ?? "Not recorded"). Soil: \(soil). Last watered: \(lastWatered?.formatted(date: .complete, time: .omitted) ?? "Not recorded").")
     }
-    private var soilField: some View { statusField("Soil", value: soil, ink: BloomTone.blue.ink) }
-    private var wateredField: some View { statusField("Last watered", value: dateLabel(lastWatered), ink: BloomTheme.ink) }
-    private func statusField(_ label: String, value: String, ink: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-            Text(value).font(BloomType.section).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true)
-        }.frame(maxWidth: .infinity, alignment: .leading)
+    @ViewBuilder private var soilDetails: some View {
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) { dateValue(check?.date); soilTag }
+        } else {
+            HStack(spacing: 8) { dateValue(check?.date); soilTag }
+        }
+    }
+    @ViewBuilder private var soilTag: some View {
+        if let recordedSoil = check?.soil { StatusTag(text: recordedSoil.rawValue, tone: .blue) }
+    }
+    private func dateValue(_ date: Date?) -> some View {
+        Text(dateLabel(date)).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+    @ViewBuilder private func statusRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(label).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                content()
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(alignment: .center, spacing: 12) {
+                Text(label).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                Spacer(minLength: 12)
+                content()
+            }
+        }
     }
 }
 
