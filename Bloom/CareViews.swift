@@ -130,7 +130,6 @@ struct ReminderCard: View {
     var kind: PlantReminderKind = .soilCheck
     var observationID: UUID? = nil
     var compact = false
-    var showLastSoilCheck = false
     @State private var editingDate = false
     private var effectiveKind: PlantReminderKind { store.plant(plantID)?.reminderKind ?? kind }
     var body: some View {
@@ -143,26 +142,11 @@ struct ReminderCard: View {
                 Text("Next reminder · \(date.formatted(date: .abbreviated, time: .shortened))")
                     .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
             }
-            if showLastSoilCheck, let check = store.latestCheck(for: plantID) {
-                LastSoilCheckSummary(check: check).accessibilityIdentifier("plant-last-care-summary")
-            }
             if let problem = store.notificationMessage { Text(problem).font(BloomType.supporting).foregroundStyle(.secondary) }
         }.padding(.vertical, 5)
             .fullScreenCover(isPresented: $editingDate) { ReminderEditorView(plantID: plantID, kind: effectiveKind, observationID: observationID) }
     }
 
-}
-
-/// Read-only context belongs with scheduling, rather than looking like another care action.
-struct LastSoilCheckSummary: View {
-    let check: CareRecord
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Last soil check · \(check.date.formatted(date: .abbreviated, time: .shortened))").font(BloomType.supporting)
-            Text(check.summary).font(BloomType.supporting)
-        }.foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityElement(children: .combine)
-    }
 }
 
 struct ReminderEditorView: View {
@@ -186,9 +170,6 @@ struct ReminderEditorView: View {
                         Text("Check soil").tag(PlantReminderKind.soilCheck)
                         Text("Compare observation").tag(PlantReminderKind.observation)
                     }.accessibilityIdentifier("reminder-kind")
-                    if selectedKind == .soilCheck, let check = store.latestCheck(for: plantID) {
-                        LastSoilCheckSummary(check: check).accessibilityIdentifier("reminder-last-care-summary")
-                    }
                     DatePicker("Date and time", selection: $date, in: Date()..., displayedComponents: [.date, .hourAndMinute])
                         .accessibilityIdentifier("reminder-date")
                 }.bloomCard(padding: 16)

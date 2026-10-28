@@ -136,6 +136,18 @@ struct BloomPlantIdentity: View {
 }
 
 
+/// Dated plant status belongs with the plant identity, independently of reminders.
+struct LastSoilCheckSummary: View {
+    let check: CareRecord
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Last soil check · \(check.date.formatted(date: .abbreviated, time: .shortened))").font(BloomType.supporting)
+            Text(check.summary).font(BloomType.body)
+        }.foregroundStyle(BloomTheme.secondary).frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+    }
+}
+
 /// Transient feedback stays with the user's plant; it is never part of saved garden data.
 struct CareFlowFeedback: Identifiable {
     let id = UUID()

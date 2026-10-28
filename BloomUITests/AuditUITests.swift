@@ -126,15 +126,15 @@ import XCTest
         XCTAssertTrue(summary.label.contains("Not sure"))
         XCTAssertTrue(summary.label.contains("Will check later"))
         XCTAssertFalse(app.buttons["plant-last-care-summary"].exists)
-        let reminder = app.buttons["reminder-options"]
-        XCTAssertGreaterThan(summary.frame.minY, reminder.frame.maxY)
-        capture("Last soil check grouped with reminder", app)
-        let summaryLabel = summary.label
+        let identity = app.descendants(matching: .any).matching(identifier: "plant-detail-identity").firstMatch
+        let soilAction = app.buttons["start-check"]
+        XCTAssertGreaterThan(summary.frame.minY, identity.frame.maxY)
+        XCTAssertLessThan(summary.frame.maxY, soilAction.frame.minY)
+        capture("Last soil check within plant identity card", app)
         tap("reminder-options", app)
         XCTAssertTrue(app.navigationBars["Reminder"].waitForExistence(timeout: 5))
-        let context = app.descendants(matching: .any).matching(identifier: "reminder-last-care-summary").firstMatch
-        XCTAssertEqual(context.label, summaryLabel)
-        capture("Reminder editor retains last soil check", app)
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "reminder-last-care-summary").firstMatch.exists)
+        capture("Reminder editor contains scheduling only", app)
         app.navigationBars["Reminder"].buttons["Cancel"].tap()
         XCTAssertTrue(app.navigationBars["Plant"].waitForExistence(timeout: 5))
     }

@@ -38,7 +38,7 @@ Maintain 44 pt interactive targets, readable text contrast, VoiceOver names and 
 
 ## Home and history
 
-The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The last soil check is dated, non-interactive context beneath Set/Edit reminder, repeated in the soil-reminder editor. Keep it inside the reminder group without a separate divider. Basic Care actions and active Care plans occupy separate sections.
+The Bloom leaf mark and name open Preferences. The top-right Add plant action is an outlined white circle with a teal plus; the solid teal brand mark remains visually distinct. Use real catalogue/plant-form/plant-area photos. Unknown custom plants invite a photo rather than showing an invented species. Keep search prompts inside their fields, dismiss controls icon-only with accessible names, and instructional copy only where it helps a care decision. The last soil check is dated, non-interactive plant status within the top plant card, beneath the common and scientific names. Keep it separate from reminder actions and omit it from the reminder editor. Basic Care actions and active Care plans occupy separate sections.
 
 
 ## Demo-aligned flows

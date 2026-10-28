@@ -215,21 +215,26 @@ struct PlantDetailView: View {
                     Section {
                         PlantPortrait(plant: plant, contentMode: .fill).frame(height: 230)
                             .listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(plant.name).font(BloomTheme.heading).foregroundStyle(BloomTheme.ink)
-                                .fixedSize(horizontal: false, vertical: true)
-                            if !plant.species.isEmpty {
-                                Text(plant.species).font(BloomType.body).italic().foregroundStyle(BloomTheme.secondary)
+                        VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(plant.name).font(BloomTheme.heading).foregroundStyle(BloomTheme.ink)
                                     .fixedSize(horizontal: false, vertical: true)
+                                if !plant.species.isEmpty {
+                                    Text(plant.species).font(BloomType.body).italic().foregroundStyle(BloomTheme.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }.frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
+                                .accessibilityIdentifier("plant-detail-identity")
+                            if let check = store.latestCheck(for: plantID) {
+                                LastSoilCheckSummary(check: check).accessibilityIdentifier("plant-last-care-summary")
                             }
                         }.padding(.vertical, 4).frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
-                            .accessibilityIdentifier("plant-detail-identity")
                     }
                     Section("Care") {
                         Button { checking = true } label: { BloomActionRow(title: "Check soil") }.accessibilityIdentifier("start-check")
                         Button { observing = true } label: { BloomActionRow(title: "Record a change") }.accessibilityIdentifier("start-observation")
-                        ReminderCard(plantID: plantID, compact: true, showLastSoilCheck: true)
+                        ReminderCard(plantID: plantID, compact: true)
                     }
                     if !openPlans.isEmpty {
                         Section("Care plans") {
