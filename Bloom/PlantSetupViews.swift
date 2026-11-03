@@ -14,5 +14,5 @@ struct PlantRoom: Identifiable {
         PlantRoom(name: "Porch", symbol: "door.left.hand.open"), PlantRoom(name: "Patio", symbol: "umbrella.fill"),
         PlantRoom(name: "Balcony", symbol: "sun.max.fill"), PlantRoom(name: "Garden", symbol: "tree.fill")
     ]
+    static let other = PlantRoom(name: "Other location…", symbol: "pencil")
 }
-

@@ -107,20 +107,15 @@ struct ObservationFlowView: View {
                 Text("Notes · Optional").font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                 TextField("Add a note", text: $note, axis: .vertical).lineLimit(3...6).bloomInput().accessibilityIdentifier("observation-note")
             }
-            DisclosureGroup("Add care details") {
-                VStack(spacing: 14) {
-                    Picker("First noticed", selection: $firstNoticed) { ForEach(["Not sure", "Recently", "A while ago"], id: \.self) { Text($0) } }
-                    Picker("Last watered", selection: $wateringContext) { ForEach(["I don't know", "Today", "Within a week", "More than a week ago"], id: \.self) { Text($0) } }
-                    Picker("Light or location changed?", selection: $lightChanged) { ForEach(["Not sure", "Yes", "No"], id: \.self) { Text($0) } }
-                }.padding(.top, 12)
-            }
-            Text("Photo · Optional").bloomHeading()
+            Text("Photo · Optional").font(BloomType.supporting.weight(.semibold)).foregroundStyle(BloomTheme.secondary)
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                Text(photoLoading ? "Opening photo…" : "Add a photo").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            }.buttonStyle(.bordered).disabled(photoLoading)
-            if let photoData, let image = UIImage(data: photoData) {
-                Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 200)
-                Button("Remove photo", role: .destructive) { self.photoData = nil; selectedPhoto = nil }
+                photoPickerLabel
+            }.buttonStyle(.plain).disabled(photoLoading)
+                .accessibilityIdentifier("observation-add-photo")
+                .accessibilityLabel(photoLoading ? "Opening photo" : photoData == nil ? "Add a photo, optional" : "Change photo")
+            if photoData != nil {
+                Button("Remove photo", role: .destructive) { photoData = nil; selectedPhoto = nil }
+                    .frame(minHeight: 44).accessibilityIdentifier("remove-observation-photo")
             }
             if let photoError { Text(photoError).font(BloomType.supporting).foregroundStyle(.red) }
             if let saveError { Text(saveError).foregroundStyle(.red) }
@@ -129,6 +124,41 @@ struct ObservationFlowView: View {
                 BloomPrimaryAction(title: busy ? "Saving…" : "Save change", action: save)
                     .disabled(!validObservation || photoLoading || busy).accessibilityIdentifier("save-change")
             }
+    }
+    @ViewBuilder private var photoPickerLabel: some View {
+        Group {
+            if let photoData, let image = UIImage(data: photoData) {
+                Image(uiImage: image).resizable().scaledToFill()
+                    .frame(width: 112, height: 104).clipped()
+                    .overlay(alignment: .bottom) {
+                        Text(photoLoading ? "Opening…" : "Change")
+                            .font(BloomType.supporting.weight(.semibold)).foregroundStyle(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 5)
+                            .background(.black.opacity(0.55))
+                    }
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 25, weight: .regular))
+                        .overlay(alignment: .topTrailing) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(BloomTheme.teal, BloomTheme.surface)
+                                .offset(x: 8, y: -5)
+                        }
+                        .foregroundStyle(BloomTheme.teal)
+                        .accessibilityHidden(true)
+                    Text(photoLoading ? "Opening…" : "Add photo")
+                        .font(BloomType.supporting.weight(.semibold)).foregroundStyle(BloomTheme.teal)
+                        .fixedSize(horizontal: false, vertical: true)
+                }.frame(width: 112).frame(minHeight: 88).padding(.vertical, 8)
+                    .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(BloomTheme.border))
+            }
+        }
+        .frame(width: 112).frame(minHeight: 104)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     private var cardColumns: [GridItem] {
         Array(repeating: GridItem(.flexible(), alignment: .top), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2)
@@ -204,9 +234,6 @@ struct ObservationFlowView: View {
     }
     private var validObservation: Bool { area != nil && !observation.isEmpty && (observation != "Something else" || !customObservation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
     private func finishObservation() {
-        if let savedID, store.plan(for: savedID) == nil {
-            store.careFeedback = CareFlowFeedback(plantID: plantID, title: "Change saved", detail: "You can find guidance again in this plant's activity.")
-        }
         dismiss()
     }
     private func showConfirmation(_ id: UUID) {
@@ -253,7 +280,7 @@ struct PlantAreaArtwork: View {
             BloomTheme.selected
             Circle().fill(Color.white.opacity(0.6)).frame(width: 60, height: 60)
             if area == .whole {
-                PlantFormArtwork(form: .bushy).frame(width: 64, height: 68)
+                Image(systemName: "tree.fill").font(.system(size: 34)).foregroundStyle(BloomTheme.teal)
             } else if area == .stems {
                 Canvas { context, size in
                     var stem = Path()
@@ -294,11 +321,14 @@ struct SupportView: View {
                 }
                 Section("Ask for help") {
                     Text("Bring a whole-plant photo, a close-up, and your recent care notes to a plant-care specialist if you're concerned.")
-                    ShareLink(item: "Plant: \(plant.name) (\(plant.species))\nObservation: \(record.observation)\nFirst noticed: \(record.firstNoticed)\nLast watered: \(record.wateringContext)\nLocation/light changed: \(record.lightChanged)\nNotes: \(record.note)") { Text("Share your observation") }
-                    NavigationLink { PlantDetailView(plantID: plant.id) } label: { Text("Review plant details") }
+                    ShareLink(item: "Plant: \(plant.displayName) (\(plant.species))\nObservation: \(record.observation)\nFirst noticed: \(record.firstNoticed)\nLast watered: \(record.wateringContext)\nLocation/light changed: \(record.lightChanged)\nNotes: \(record.note)") { Text("Share your observation") }
+                    NavigationLink { PlantDetailView(plantID: plant.id) } label: {
+                        BloomActionRow(title: "Review plant details")
+                    }
                 }
                 Section("Check in again") { ReminderCard(plantID: plant.id, kind: .observation, observationID: record.kind == .change ? record.id : record.parentID) }
             }
-        }.listStyle(.insetGrouped).bloomNativeForm().navigationTitle("Get support").navigationBarTitleDisplayMode(.inline)
+        }.listStyle(.insetGrouped).bloomNativeForm().navigationLinkIndicatorVisibility(.hidden)
+            .navigationTitle("Get support").navigationBarTitleDisplayMode(.inline)
     }
 }

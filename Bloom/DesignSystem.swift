@@ -46,6 +46,14 @@ enum BloomTheme {
     static let section = Font.system(.body).weight(.semibold)
 }
 
+/// Home and shared card layouts use an 8-point spacing rhythm.
+enum BloomSpacing {
+    static let small: CGFloat = 8
+    static let medium: CGFloat = 16
+    static let large: CGFloat = 24
+    static let extraLarge: CGFloat = 32
+}
+
 /// Four semantic roles, all scaled by the user's Dynamic Type setting.
 enum BloomType {
     static let title = BloomTheme.heading
@@ -112,7 +120,7 @@ struct BloomMark: View {
     var body: some View {
         Image(systemName: "leaf.fill").font(.title3.weight(.medium))
             .foregroundStyle(.white).frame(width: 40, height: 40)
-            .background(BloomTheme.teal, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(BloomTheme.teal, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
             .accessibilityHidden(true)
     }
 }
@@ -121,12 +129,12 @@ struct BloomIconTile: View {
     let symbol: String
     var emphasized = false
     var tone: BloomTone = .teal
-    @ScaledMetric(relativeTo: .body) private var size = 42
+    @ScaledMetric(relativeTo: .body) private var size = 40
     var body: some View {
         BloomSymbol(name: symbol)
             .foregroundStyle(emphasized && tone != .yellow ? .white : tone.ink)
             .frame(width: size, height: size)
-            .background(emphasized ? tone.accent : tone.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(emphasized ? tone.accent : tone.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
             .accessibilityHidden(true)
     }
 }
@@ -161,16 +169,19 @@ struct Eyebrow: View {
 
 struct InfoCard: View {
     let title: String
-    let message: String
+    var message: String? = nil
     var icon = "leaf"
+    var tone: BloomTone = .teal
     var body: some View {
-        HStack(alignment: .top, spacing: 13) {
-            BloomIconTile(symbol: icon)
-            VStack(alignment: .leading, spacing: 5) {
+        HStack(alignment: .top, spacing: BloomSpacing.medium) {
+            BloomIconTile(symbol: icon, tone: tone)
+            VStack(alignment: .leading, spacing: BloomSpacing.small) {
                 Text(title).font(BloomType.section).foregroundStyle(BloomTheme.ink)
-                Text(message).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
+                if let message, !message.isEmpty {
+                    Text(message).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary).fixedSize(horizontal: false, vertical: true)
+                }
             }
-        }.bloomCard()
+        }.bloomCard(padding: 16)
     }
 }
 
@@ -236,13 +247,13 @@ struct BloomPlantCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             PlantPortrait(plant: plant, contentMode: typeSize.isAccessibilitySize ? .fit : .fill)
-                .frame(height: typeSize.isAccessibilitySize ? 220 : 130)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(plant.name).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                .frame(height: typeSize.isAccessibilitySize ? 224 : 128)
+            VStack(alignment: .leading, spacing: BloomSpacing.small) {
+                Text(plant.displayName).font(BloomType.section).foregroundStyle(BloomTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(plant.location.isEmpty ? "Location not set" : plant.location).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
                     .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-            }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
+            }.frame(maxWidth: .infinity, alignment: .leading).padding(BloomSpacing.medium)
         }.background(BloomTheme.surface)
             .clipShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
@@ -259,33 +270,49 @@ struct RecordRow: View {
     private var tag: String {
         switch record.kind { case .check: "Soil check"; case .change: "Observation"; case .followUp: "Check-in"; case .careAction: "Care action" }
     }
+    private var showsTypeTag: Bool { record.kind == .change || record.kind == .careAction }
     var body: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(record.title).font(BloomType.section).foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
-                Text("\(plantName) · \(record.date.formatted(date: .abbreviated, time: .omitted))")
-                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            StatusTag(text: tag, tone: tone)
-        }.padding(.vertical, 3).accessibilityElement(children: .combine)
+        VStack(alignment: .leading, spacing: BloomSpacing.small) {
+            HStack(alignment: .center, spacing: BloomSpacing.small) {
+                VStack(alignment: .leading, spacing: BloomSpacing.small) {
+                    Text(record.title).font(BloomType.section).foregroundStyle(BloomTheme.ink).fixedSize(horizontal: false, vertical: true)
+                    Text("\(plantName) · \(record.date.formatted(date: .abbreviated, time: .omitted))")
+                        .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                if !typeSize.isAccessibilitySize && showsTypeTag { StatusTag(text: tag, tone: tone) }
+            }
+            if typeSize.isAccessibilitySize && showsTypeTag { StatusTag(text: tag, tone: tone) }
+        }.accessibilityElement(children: .combine)
     }
 }
 
 struct BloomReminderRow: View {
     let plant: Plant
+    @Environment(\.dynamicTypeSize) private var typeSize
     private var kind: PlantReminderKind { plant.reminderKind ?? .soilCheck }
     private var tone: BloomTone { kind == .soilCheck ? .blue : .yellow }
     var body: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(kind == .soilCheck ? "Check soil" : "Look again").font(BloomType.section)
-                Text(plant.name + (plant.reminder.map { " · " + $0.formatted(date: .abbreviated, time: .omitted) } ?? ""))
-                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            StatusTag(text: "Scheduled task", tone: tone)
-            BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
-        }.padding(16).frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
-            .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius))
+        VStack(alignment: .leading, spacing: BloomSpacing.small) {
+            HStack(alignment: .center, spacing: BloomSpacing.small) {
+                VStack(alignment: .leading, spacing: BloomSpacing.small) {
+                    Text(kind == .soilCheck ? "Check soil" : "Compare observation").font(BloomType.section)
+                    Text(plant.displayName + (plant.reminder.map { " · " + $0.formatted(date: .abbreviated, time: .omitted) } ?? ""))
+                        .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                if !typeSize.isAccessibilitySize {
+                    StatusTag(text: kind == .soilCheck ? "Soil check" : "Observation", tone: tone)
+                    BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+                }
+            }
+            if typeSize.isAccessibilitySize {
+                HStack(alignment: .center, spacing: BloomSpacing.small) {
+                    StatusTag(text: kind == .soilCheck ? "Soil check" : "Observation", tone: tone)
+                    Spacer(minLength: BloomSpacing.small)
+                    BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+                }
+            }
+        }.padding(BloomSpacing.medium).frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+            .background(BloomTheme.surface, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
 
     }
 }

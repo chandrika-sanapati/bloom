@@ -182,10 +182,10 @@ extension BloomStore {
         var desired: [UNNotificationRequest] = []
         if canNotify {
             for plant in garden.plants {
-                guard let due = plant.reminder, due > Date(), plant.reminderNotifications != false else { continue }
+                guard let due = plant.reminder, due > Date() else { continue }
                 let soil = (plant.reminderKind ?? .soilCheck) == .soilCheck
                 let content = UNMutableNotificationContent()
-                content.title = "\(soil ? "Check soil" : "Look again") · \(plant.name)"
+                content.title = "\(soil ? "Check soil" : "Look again") · \(plant.displayName)"
                 content.body = soil ? "Check the soil before deciding whether to water." : "Compare your plant with your last observation."
                 content.userInfo = ["plantID": plant.id.uuidString]; content.sound = .default
                 let trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: due), repeats: false)
@@ -194,7 +194,7 @@ extension BloomStore {
             for task in openPlanTasks where task.notifications {
                 guard let due = task.due, due > Date() else { continue }
                 let content = UNMutableNotificationContent()
-                content.title = "\(task.step.title) · \(plant(task.plantID)?.name ?? "Your plant")"
+                content.title = "\(task.step.title) · \(plant(task.plantID)?.displayName ?? "Your plant")"
                 content.body = task.step == .review ? "Compare your original observation with the actions you've recorded." : "Open your care plan for instructions before recording the action."
                 content.userInfo = ["taskID": task.id.uuidString, "plantID": task.plantID.uuidString]; content.sound = .default
                 let trigger = UNCalendarNotificationTrigger(dateMatching: Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: due), repeats: false)

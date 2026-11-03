@@ -54,11 +54,41 @@ struct BloomActionRow: View {
     }
 }
 
+/// Read-only scheduling context, visually separated from the action that opens its editor.
+struct BloomDatedStatusRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let title: String
+    let value: String
+    var accessibilityValue: String? = nil
+    var body: some View {
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(BloomType.body.weight(.semibold)).foregroundStyle(BloomTheme.secondary)
+                    Text(value).font(BloomType.body).foregroundStyle(BloomTheme.ink)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(title).font(BloomType.body.weight(.semibold)).foregroundStyle(BloomTheme.secondary)
+                    Spacer(minLength: 8)
+                    Text(value).font(BloomType.body).foregroundStyle(BloomTheme.ink)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+        }
+        .padding(12).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(BloomTheme.canvas, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(accessibilityValue ?? value)")
+    }
+}
+
 extension View {
     func bloomNativeForm() -> some View {
         scrollContentBackground(.hidden).background(BloomTheme.canvas)
             .headerProminence(.increased).textCase(nil)
             .listSectionSpacing(16).contentMargins(.top, 12, for: .scrollContent)
+            .navigationLinkIndicatorVisibility(.hidden)
     }
     func bloomNativeFooter<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         safeAreaInset(edge: .bottom) { content().padding(.horizontal, 20).padding(.vertical, 12).background(.bar) }
@@ -128,7 +158,7 @@ struct BloomPlantIdentity: View {
         HStack(spacing: 12) {
             PlantPortrait(plant: plant, contentMode: .fit).frame(width: 48, height: 58).clipShape(RoundedRectangle(cornerRadius: 12))
             VStack(alignment: .leading, spacing: 4) {
-                Text(plant.name).font(BloomType.section)
+                Text(plant.displayName).font(BloomType.section)
                 Text(plant.location.isEmpty ? "Your plant" : plant.location).font(BloomType.body).foregroundStyle(.secondary)
             }
         }.accessibilityElement(children: .combine)
@@ -136,58 +166,66 @@ struct BloomPlantIdentity: View {
 }
 
 
-/// Dated plant status belongs with the plant identity, independently of reminders.
+/// Recent recorded soil and watering care belongs with plant identity, independently of reminders.
 struct PlantStatusSummary: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     let check: CareRecord?
     let lastWatered: Date?
-    private var soil: String { check?.soil?.rawValue ?? "Not recorded" }
+    @ScaledMetric(relativeTo: .body) private var iconSize = 36
     private func dateLabel(_ date: Date?) -> String {
         guard let date else { return "Not recorded" }
         let style = Date.FormatStyle.dateTime.day().month(.abbreviated)
         return date.formatted(Calendar.current.isDate(date, equalTo: .now, toGranularity: .year) ? style : style.year())
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                statusRow("Last soil check", date: check?.date)
-                if let recordedSoil = check?.soil { StatusTag(text: recordedSoil.rawValue, tone: .blue) }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Recent care").font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                .accessibilityAddTraits(.isHeader)
+            VStack(spacing: 10) {
+                statusRow("Last soil check", date: check?.date, symbol: "checkmark.circle", tone: .teal)
+                Rectangle().fill(BloomTheme.border).frame(height: 1).padding(.leading, iconSize + 10)
+                statusRow("Last watered", date: lastWatered, symbol: "drop", tone: .blue)
             }
-            statusRow("Last watered", date: lastWatered)
         }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
             .background(BloomTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Last soil check: \(check?.date.formatted(date: .complete, time: .shortened) ?? "Not recorded"). Soil: \(soil). Last watered: \(lastWatered?.formatted(date: .complete, time: .omitted) ?? "Not recorded").")
+            .accessibilityLabel("Recent care. Last soil check: \(check?.date.formatted(date: .complete, time: .shortened) ?? "Not recorded"). Last watered: \(lastWatered?.formatted(date: .complete, time: .omitted) ?? "Not recorded").")
     }
     private func dateValue(_ date: Date?) -> some View {
         Text(dateLabel(date)).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
             .fixedSize(horizontal: false, vertical: true)
     }
-    @ViewBuilder private func statusRow(_ label: String, date: Date?) -> some View {
-        if typeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 6) {
+    private func statusRow(_ label: String, date: Date?, symbol: String, tone: BloomTone) -> some View {
+        HStack(spacing: 10) {
+            BloomSymbol(name: symbol).foregroundStyle(tone.ink)
+                .frame(width: iconSize, height: iconSize)
+                .background(tone.surface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(label).font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                    dateValue(date)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            } else {
                 Text(label).font(BloomType.section).foregroundStyle(BloomTheme.ink)
-                dateValue(date)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        } else {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(label).font(BloomType.section).foregroundStyle(BloomTheme.ink)
-                Spacer(minLength: 12)
+                Spacer(minLength: 8)
                 dateValue(date).multilineTextAlignment(.trailing)
             }
-        }
+        }.frame(maxWidth: .infinity, minHeight: max(44, iconSize), alignment: .leading)
     }
 }
 
 /// Transient feedback stays with the user's plant; it is never part of saved garden data.
 struct CareFlowFeedback: Identifiable {
+    static let dismissalDuration: TimeInterval = 2.5
     let id = UUID()
     let plantID: UUID
     var title: String
     var detail: String
     var planID: UUID? = nil
     var receipt: PlanTaskReceipt? = nil
+    var careReceipt: CareSaveReceipt? = nil
     var isSuccess = true
+    var autoDismiss = true
 }
 
 struct CareFeedbackBanner: View {
@@ -201,7 +239,7 @@ struct CareFeedbackBanner: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
-                        if plantID == nil, let plant = store.plant(feedback.plantID) { Text(plant.name).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary) }
+                        if plantID == nil, let plant = store.plant(feedback.plantID) { Text(plant.displayName).font(BloomType.supporting).foregroundStyle(BloomTheme.secondary) }
                         Group {
                             if feedback.isSuccess { Label(feedback.title, systemImage: "checkmark.circle.fill") }
                             else { Text(feedback.title) }
@@ -235,12 +273,29 @@ struct CareFeedbackBanner: View {
                             }
                         }
                     }.font(BloomType.section).buttonStyle(.bordered).controlSize(.small)
+                } else if let receipt = feedback.careReceipt {
+                    Button("Undo") {
+                        Task {
+                            if await store.undoCare(receipt), store.careFeedback?.id == feedback.id {
+                                withAnimation { store.careFeedback = nil }
+                            }
+                        }
+                    }
+                    .font(BloomType.section).buttonStyle(.bordered).controlSize(.small)
+                    .accessibilityIdentifier("undo-record")
                 }
             }.foregroundStyle(feedback.isSuccess ? BloomTheme.teal : BloomTheme.ink).padding(16)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: BloomTheme.cardRadius))
                 .overlay(RoundedRectangle(cornerRadius: BloomTheme.cardRadius).strokeBorder(BloomTheme.border))
                 .padding(.horizontal, 16).padding(.vertical, 8)
                 .accessibilityElement(children: .contain)
+                .task(id: feedback.id) {
+                    // Keep receipt banners visible while Undo or another recovery action is available.
+                    guard feedback.autoDismiss, feedback.receipt == nil else { return }
+                    try? await Task.sleep(nanoseconds: UInt64(CareFlowFeedback.dismissalDuration * 1_000_000_000))
+                    guard !Task.isCancelled, store.careFeedback?.id == feedback.id else { return }
+                    withAnimation { store.careFeedback = nil }
+                }
                 .sheet(isPresented: $scheduling) {
                     if let id = feedback.planID { PlanReviewScheduleView(planID: id) }
                 }
@@ -276,7 +331,6 @@ struct BloomCareStepSummary: View {
             BloomIconTile(symbol: symbol, tone: tone)
             VStack(alignment: .leading, spacing: 4) {
                 Text(step.title).font(BloomType.section)
-                if let instruction = step.instructions.first { Text(instruction).font(BloomType.body).foregroundStyle(BloomTheme.secondary) }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }.accessibilityElement(children: .combine)
     }

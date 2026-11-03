@@ -11,7 +11,7 @@ import XCTest
     }
     private func fixture() -> (BloomStore, Plant, CareRecord) {
         let s = BloomStore(fileURL: url, managesNotifications: false)
-        let plant = Plant(name: "Milo", species: "Monstera deliciosa", asset: "monstera", placement: .indoor)
+        let plant = Plant(name: "Monstera", species: "Monstera deliciosa", asset: "monstera", placement: .indoor)
         XCTAssertTrue(s.savePlant(plant))
         let record = CareRecord(plantID: plant.id, kind: .change, area: .leaves, observation: "Dropping leaves", note: "Two leaves since yesterday", photo: Data([1, 2, 3]))
         XCTAssertTrue(s.saveRecord(record)); return (s, plant, record)

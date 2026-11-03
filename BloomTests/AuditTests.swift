@@ -7,7 +7,7 @@ import XCTest
         defer { try? FileManager.default.removeItem(at: folder) }
         let url = folder.appending(path: "garden.json")
         let store = BloomStore(fileURL: url, managesNotifications: false)
-        let plant = Plant(name: "Desk plant", species: "Monstera deliciosa", asset: "monstera")
+        let plant = Plant(name: "Monstera", species: "Monstera deliciosa", asset: "monstera")
         XCTAssertTrue(store.savePlant(plant))
         let observation = CareRecord(plantID: plant.id, kind: .change, area: .leaves, observation: "Dropping leaves")
         XCTAssertTrue(store.saveRecord(observation))
@@ -44,7 +44,7 @@ import XCTest
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }
         let store = BloomStore(fileURL: folder.appending(path: "garden.json"), managesNotifications: false)
-        let plant = Plant(name: "Milo", species: "Monstera deliciosa", asset: "monstera")
+        let plant = Plant(name: "Monstera", species: "Monstera deliciosa", asset: "monstera")
         XCTAssertTrue(store.savePlant(plant))
         let observation = CareRecord(plantID: plant.id, kind: .change, area: .leaves, observation: "Dropping leaves")
         XCTAssertTrue(store.saveRecord(observation))

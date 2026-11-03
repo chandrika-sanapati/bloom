@@ -10,7 +10,7 @@ struct CareGuidanceEntry: View {
         VStack(alignment: .leading, spacing: 12) {
             if let plan = store.plan(for: observationID) {
                 NavigationLink { CarePlanDetailView(planID: plan.id) } label: {
-                    Text("View care plan").frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                    BloomActionRow(title: "View care plan")
                 }.accessibilityIdentifier("view-care-plan")
             } else {
                 VStack(alignment: .leading, spacing: 10) {
@@ -29,7 +29,6 @@ struct PestCareGuidanceFlow: View {
     @Environment(\.dismiss) private var dismiss
     let observationID: UUID
     var replacing: UUID? = nil
-    var justSaved = false
     var finish: (() -> Void)? = nil
     @State private var answers = PestAssessment()
     @State private var path: [GuidancePage] = []
@@ -41,7 +40,6 @@ struct PestCareGuidanceFlow: View {
                 if let observation = store.record(observationID), let plant = store.plant(observation.plantID) {
                     Form {
                         Section {
-                            if justSaved { Label("Change saved", systemImage: "checkmark.circle.fill").foregroundStyle(BloomTheme.teal) }
                             BloomPlantIdentity(plant: plant)
                             Text(observation.observation).font(BloomType.section)
                             Text("These checks are optional. Unknown answers keep the inspection route available.").font(BloomType.body).foregroundStyle(.secondary)
