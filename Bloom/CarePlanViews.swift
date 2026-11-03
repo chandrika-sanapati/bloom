@@ -56,7 +56,9 @@ struct CarePlanDetailView: View {
                         Text(plan.baseline.observation).font(BloomType.section)
                         Text(plan.baseline.date, format: .dateTime.month(.abbreviated).day().year()).font(BloomType.supporting).foregroundStyle(.secondary)
                         if let data = plan.baseline.photo, let image = UIImage(data: data) { Image(uiImage: image).resizable().scaledToFit().accessibilityLabel("Original observation photo") }
-                        NavigationLink("Open original record") { RecordDetailView(recordID: plan.observationID) }
+                        NavigationLink { RecordDetailView(recordID: plan.observationID) } label: {
+                            BloomActionRow(title: "Open original record")
+                        }
                     }
                     if store.planIsOpen(planID) {
                         Section {
@@ -67,10 +69,15 @@ struct CarePlanDetailView: View {
                             Button("Stop this plan", role: .destructive) { stopping = true }
                         }
                     } else if let newer = store.plan(for: plan.observationID), newer.id != planID {
-                        Section { NavigationLink("Open revised plan") { CarePlanDetailView(planID: newer.id) } }
+                        Section {
+                            NavigationLink { CarePlanDetailView(planID: newer.id) } label: {
+                                BloomActionRow(title: "Open revised plan")
+                            }
+                        }
                     }
                     CareGuidanceSourceSection(kind: plan.kind)
-                }.listStyle(.insetGrouped).bloomNativeForm().navigationTitle("Care plan").navigationBarTitleDisplayMode(.inline)
+                }.listStyle(.insetGrouped).bloomNativeForm().navigationLinkIndicatorVisibility(.hidden)
+                    .navigationTitle("Care plan").navigationBarTitleDisplayMode(.inline)
             } else { ContentUnavailableView("Plan unavailable", systemImage: "leaf") }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { CareFeedbackBanner(plantID: plan?.plantID) }

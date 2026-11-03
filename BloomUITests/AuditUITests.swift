@@ -17,7 +17,7 @@ import XCTest
         if app.buttons["dismiss-care-feedback"].exists { app.buttons["dismiss-care-feedback"].tap() }
     }
     private func newInspection(_ app: XCUIApplication) {
-        tap("plant-Snake Plant", app); tap("start-observation", app)
+        tap("plant-Snake Plant-Living-room", app); tap("start-observation", app)
         capture("Audit observation areas", app)
         tap("observation-area-leaves", app); tap("Dropping leaves", app)
         tap("continue-observation", app); tap("save-change", app)
@@ -33,14 +33,14 @@ import XCTest
             dismissFeedback(app)
         }
     }
-    func testInlinePreferencesAndPhotoEditingPreservePlantIdentity() {
+    func testInlinePreferencesAndPlantEditingPreservePlantIdentity() {
         let app = launch(); capture("Audit home", app)
         tap("home-preferences", app)
         XCTAssertTrue(app.switches["task-notifications-toggle"].exists)
         XCTAssertFalse(app.buttons["preferences-notifications"].exists)
         XCTAssertFalse(app.staticTexts["Default reminder time"].exists)
         capture("Audit preferences", app)
-        tap("close-preferences", app); tap("plant-Snake Plant", app)
+        tap("close-preferences", app); tap("plant-Snake Plant-Living-room", app)
         XCTAssertTrue(app.navigationBars["Plant"].exists)
         capture("Audit plant details", app)
         tap("Plant options", app); tap("Edit plant", app)
@@ -49,47 +49,47 @@ import XCTest
         XCTAssertTrue(type.label.contains("Snake Plant"))
         XCTAssertFalse(app.textFields["plant-type-value"].exists)
         XCTAssertFalse(app.buttons["plant-type-value"].exists)
-        XCTAssertEqual(app.textFields["plant-name-field"].label, "Nickname")
-        XCTAssertTrue(app.staticTexts["Nickname"].exists)
-        XCTAssertFalse(app.textFields["Room or location"].exists)
+        XCTAssertFalse(app.textFields["plant-name-field"].exists)
+        XCTAssertTrue(app.staticTexts["Plant type"].exists)
+        XCTAssertTrue(app.textFields["edit-plant-location"].exists)
+        XCTAssertTrue(app.buttons["edit-plant-placement"].exists)
+        XCTAssertTrue(app.buttons["edit-plant-initial-condition"].exists)
         XCTAssertFalse(app.switches["I know when I last watered"].exists)
-        capture("Audit edit plant", app)
+        capture("Audit edit plant without name editing", app)
         tap("edit-plant-photo", app)
         XCTAssertTrue(app.buttons["change-plant-photo"].exists)
         capture("Audit photo viewer", app)
         tap("Close photo", app)
-        let name = app.textFields["plant-name-field"]
-        let previousName = name.value as? String ?? ""
-        name.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5)).tap()
-        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previousName.count) + "Desk snake")
-        XCTAssertEqual(name.value as? String, "Desk snake")
-        tap("save-plant", app)
+        app.swipeUp()
+        app.buttons["save-plant"].tap()
         let identity = app.descendants(matching: .any).matching(identifier: "plant-detail-identity").firstMatch
         XCTAssertTrue(identity.label.contains("Dracaena trifasciata"))
-        XCTAssertTrue(identity.label.contains("Desk snake"))
+        XCTAssertTrue(identity.label.contains("Snake Plant"))
         let location = app.descendants(matching: .any).matching(identifier: "plant-detail-location").firstMatch
         for _ in 0..<4 { if location.exists { break }; app.swipeUp() }
         XCTAssertEqual(location.value as? String, "Living room")
-        let savedType = app.descendants(matching: .any).matching(identifier: "plant-detail-type").firstMatch
-        XCTAssertTrue(savedType.label.contains("Snake Plant"))
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "plant-detail-type").firstMatch.exists)
         app.navigationBars["Plant"].buttons.firstMatch.tap()
-        tap("plant-Desk snake", app); tap("start-observation", app)
+        tap("plant-Snake Plant-Living-room", app); tap("start-observation", app)
         capture("Audit final observation areas", app)
         tap("Cancel", app)
         tap("plant-all-activity", app)
         XCTAssertTrue(app.navigationBars["Plant activity"].waitForExistence(timeout: 5))
     }
-    func testDuplicatePlantGetsNicknameHintAndNamedSuccess() {
+    func testDuplicatePlantKeepsCanonicalNameAndNamedSuccess() {
         let app = launch(); tap("home-add-plant", app); tap("select-species-Snake Plant", app)
-        XCTAssertTrue(app.staticTexts["duplicate-plant-hint"].exists)
+        XCTAssertFalse(app.staticTexts["duplicate-plant-hint"].exists)
+        XCTAssertFalse(app.textFields["overlay-plant-name"].exists)
+        XCTAssertTrue(app.staticTexts["Snake Plant"].exists)
         XCTAssertTrue(app.navigationBars["Add plant"].exists)
-        tap("overlay-continue-plant", app); tap("Skip location", app)
-        tap("setup-status-Looking good", app); tap("overlay-save-plant", app)
+        tap("overlay-save-plant", app)
         XCTAssertTrue(app.staticTexts["care-feedback-title"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["care-feedback-title"].label, "Snake Plant added")
+        app.navigationBars["Plant"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["My plants (6)"].waitForExistence(timeout: 5))
     }
     func testRemovalHasCancelAndNamedConfirmation() {
-        let app = launch(); tap("plant-Snake Plant", app); tap("Plant options", app); tap("Remove plant", app)
+        let app = launch(); tap("plant-Snake Plant-Living-room", app); tap("Plant options", app); tap("Remove plant", app)
         XCTAssertTrue(app.alerts["Remove Snake Plant?"].exists)
         app.alerts.buttons["Cancel"].tap()
         XCTAssertTrue(app.navigationBars["Plant"].exists)
@@ -132,13 +132,16 @@ import XCTest
         let summary = app.descendants(matching: .any).matching(identifier: "plant-last-care-summary").firstMatch
         for _ in 0..<4 { if !summary.isHittable { app.swipeUp() } }
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        XCTAssertTrue(summary.label.contains("Recent care."))
         XCTAssertTrue(summary.label.contains("Last soil check:"))
-        XCTAssertTrue(summary.label.contains("Soil:"))
         XCTAssertTrue(summary.label.contains("Last watered:"))
+        XCTAssertTrue(summary.label.contains("Not recorded"))
+        XCTAssertFalse(summary.label.contains("Soil:"))
         XCTAssertFalse(summary.label.contains("Action:"))
-        XCTAssertTrue(summary.label.contains("Not sure"))
+        XCTAssertFalse(summary.label.contains("Not sure"))
         XCTAssertFalse(summary.label.contains("Will check later"))
         XCTAssertFalse(app.buttons["plant-last-care-summary"].exists)
+        XCTAssertFalse(app.staticTexts["Plant details"].exists)
         let identity = app.descendants(matching: .any).matching(identifier: "plant-detail-identity").firstMatch
         let soilAction = app.buttons["start-check"]
         XCTAssertGreaterThan(summary.frame.minY, identity.frame.maxY)

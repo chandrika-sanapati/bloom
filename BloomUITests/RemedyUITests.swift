@@ -64,11 +64,11 @@ import XCTest
     }
     func testObservationToCarePlanActionsAndExplicitResolution() {
         let app = XCUIApplication(); app.launchArguments = ["--uitesting"]; app.launch()
-        app.buttons["plant-Snake Plant"].tap(); app.buttons["start-observation"].tap()
+        app.buttons["plant-Snake Plant-Living-room"].tap(); app.buttons["start-observation"].tap()
         app.buttons["observation-area-pests"].tap()
         app.buttons["Visible insects"].tap(); app.buttons["continue-observation"].tap(); app.buttons["save-change"].tap()
         XCTAssertTrue(app.buttons["leaf-start-care-plan"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Change saved"].exists)
+        XCTAssertFalse(app.staticTexts["Change saved"].exists)
         capture("53 Native pest causes after saving", app)
         let checks = app.buttons["leaf-check-pests"]; reveal(checks, app: app); checks.tap()
         assess(app, signs: "White cotton-like clusters", extent: "A small, reachable area")
@@ -147,7 +147,7 @@ import XCTest
         app.buttons["assessment-continue"].tap(); app.buttons["start-care-plan"].tap()
         XCTAssertTrue(app.staticTexts["Care plan added"].waitForExistence(timeout: 5))
         clearBanner(app)
-        app.buttons["plant-Snake Plant"].tap()
+        app.buttons["plant-Snake Plant-Living-room"].tap()
         openAcceptedPlan(app)
         XCTAssertTrue(app.buttons["plan-step-askExpert"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["plan-step-removeBugs"].exists)

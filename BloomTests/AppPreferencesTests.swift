@@ -28,15 +28,6 @@ import UserNotifications
     func testUnitTestStoresNeverTouchSystemNotificationScheduler() {
         XCTAssertFalse(BloomStore(fileURL: url).allowsPlanNotifications)
     }
-    func testDiscoveryOffRetainsChoicesAndReusesSavedCityAfterRelaunch() {
-        let s = store(); XCTAssertTrue(s.start(sample: false))
-        let profile = PlantSearchPreferences(area: "Berlin", light: .lower, location: .berlin, plantTypes: [.bushy, .trailing])
-        XCTAssertTrue(s.savePlantSearchPreferences(profile))
-        XCTAssertTrue(s.setPersonalizedPicks(false)); XCTAssertNil(s.discoveryPreferences)
-        let loaded = store()
-        XCTAssertEqual(loaded.plantSearchPreferences, profile); XCTAssertNil(loaded.discoveryPreferences)
-        XCTAssertTrue(loaded.setPersonalizedPicks(true)); XCTAssertEqual(loaded.discoveryPreferences, profile)
-    }
     func testDefaultTimePersistsWithoutChangingExistingReminderOrPlan() async {
         let s = store(); XCTAssertTrue(s.start(sample: true))
         let observation = CareRecord(plantID: s.garden.plants[0].id, kind: .change, area: .pests, observation: "Visible insects")
@@ -103,20 +94,19 @@ import UserNotifications
         XCTAssertTrue(s.disablePlanNotification(task.id)); await s.waitForNotificationSync()
         XCTAssertNil(n.requests["bloom-plan-\(task.id.uuidString)"])
     }
-    func testLegacyGardenKeepsExistingAlertIntentAndDoesNotRewriteOnRead() throws {
+    func testLegacyGardenKeepsAlertIntentAndRemainsUnchangedOnRead() throws {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let bytes = Data("{\"plants\":[],\"records\":[],\"hasStarted\":true,\"isSample\":false}".utf8)
         try bytes.write(to: url)
-        let s = store(); XCTAssertTrue(s.appPreferences.taskNotifications); XCTAssertTrue(s.appPreferences.personalizedPicks)
+        let s = store(); XCTAssertTrue(s.appPreferences.taskNotifications)
         XCTAssertEqual(try Data(contentsOf: url), bytes)
         XCTAssertTrue(s.setDefaultReminderTime(hour: 10, minute: 30))
         XCTAssertTrue(store().appPreferences.taskNotifications)
     }
-    func testFailedPreferenceWritePreservesGardenAndSearchChoices() throws {
+    func testFailedPreferenceWritePreservesReminderDefaults() throws {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let blocker = folder.appending(path: "blocker"); try Data([0]).write(to: blocker)
         let s = BloomStore(fileURL: blocker.appending(path: "garden.json"), managesNotifications: false)
-        XCTAssertFalse(s.setPersonalizedPicks(false)); XCTAssertTrue(s.appPreferences.personalizedPicks)
         XCTAssertFalse(s.setDefaultReminderTime(hour: 15, minute: 0)); XCTAssertEqual(s.appPreferences.reminderHour, 9)
     }
     func testSchedulingFailureDoesNotLoseTaskOrMisreportStorageFailure() async {
@@ -128,24 +118,24 @@ import UserNotifications
         XCTAssertNil(saved); XCTAssertEqual(s.plant(p.id)?.reminder, due)
         XCTAssertNil(s.errorMessage); XCTAssertNotNil(s.notificationMessage)
     }
-    func testMutingOneReminderKeepsItsTaskAndOtherAlertsThroughGlobalMuteAndRelaunch() async throws {
+    func testOrdinaryRemindersFollowGlobalNotificationPreferenceThroughRelaunch() async throws {
         let notifications = TestNotifications(), s = store(notifications)
         XCTAssertTrue(s.start(sample: true))
         let first = s.garden.plants[0], second = s.garden.plants[1]
         let due = Date().addingTimeInterval(86400)
-        let result = await s.setReminder(for: first.id, date: due, notify: false)
+        let result = await s.setReminder(for: first.id, date: due)
         XCTAssertNil(result)
         let enabled = await s.setTaskNotifications(true); XCTAssertNil(enabled)
         XCTAssertEqual(s.plant(first.id)?.reminder, due)
-        XCTAssertNil(notifications.requests[first.id.uuidString])
+        XCTAssertNotNil(notifications.requests[first.id.uuidString])
         XCTAssertNotNil(notifications.requests[second.id.uuidString])
         let loaded = store(notifications)
-        XCTAssertEqual(loaded.plant(first.id)?.reminderNotifications, false)
+        XCTAssertNil(loaded.plant(first.id)?.reminderNotifications)
         _ = await loaded.setTaskNotifications(false)
         _ = await loaded.setTaskNotifications(true)
-        XCTAssertNil(notifications.requests[first.id.uuidString])
+        XCTAssertNotNil(notifications.requests[first.id.uuidString])
         XCTAssertNotNil(notifications.requests[second.id.uuidString])
-        let updated = await loaded.setReminder(for: first.id, date: due, notify: true)
+        let updated = await loaded.setReminder(for: first.id, date: due)
         XCTAssertNil(updated)
         XCTAssertNotNil(notifications.requests[first.id.uuidString])
     }

@@ -63,12 +63,12 @@ enum InitialPlantStatus: String, Codable, CaseIterable, Identifiable {
 
 struct Plant: Identifiable, Codable, Hashable {
     var id = UUID()
-    var name: String
+    private(set) var name: String
     var species: String
     var asset: String
     var location = ""
-    var light = "Not sure"
-    var drainage = "Not sure"
+    var light = "Not set"
+    var drainage = "Not set"
     var lastWatered: Date?
     var photo: Data?
     var reminder: Date?
@@ -77,17 +77,109 @@ struct Plant: Identifiable, Codable, Hashable {
     var initialStatus: InitialPlantStatus?
     var reminderObservationID: UUID?
     var reminderNotifications: Bool?
-    var typeName: String?
+    private enum CodingKeys: String, CodingKey {
+        case id, name, species, asset, location, light, drainage, lastWatered, photo, reminder, reminderKind
+        case placement, initialStatus, reminderObservationID, reminderNotifications
+        case legacyTypeName = "typeName"
+    }
 
-    /// The original plant identity is independent of its personal nickname.
-    var plantTypeName: String {
-        if let value = typeName?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty { return value }
+    init(id: UUID = UUID(), name: String, species: String, asset: String, location: String = "", light: String = "Not set", drainage: String = "Not set", lastWatered: Date? = nil, photo: Data? = nil, reminder: Date? = nil, reminderKind: PlantReminderKind? = nil, placement: PlantPlacement? = nil, initialStatus: InitialPlantStatus? = nil, reminderObservationID: UUID? = nil, reminderNotifications: Bool? = nil) {
+        self.id = id
+        self.name = name
+        self.species = species
+        self.asset = asset
+        self.location = location
+        self.light = light
+        self.drainage = drainage
+        self.lastWatered = lastWatered
+        self.photo = photo
+        self.reminder = reminder
+        self.reminderKind = reminderKind
+        self.placement = placement
+        self.initialStatus = initialStatus
+        self.reminderObservationID = reminderObservationID
+        self.reminderNotifications = reminderNotifications
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let species = try values.decode(String.self, forKey: .species)
+        let storedName = try values.decode(String.self, forKey: .name)
+        let legacyTypeName = try values.decodeIfPresent(String.self, forKey: .legacyTypeName)
+        let canonicalName = Self.canonicalName(species: species, storedName: storedName, legacyTypeName: legacyTypeName)
+        self.init(
+            id: try values.decodeIfPresent(UUID.self, forKey: .id) ?? UUID(),
+            name: canonicalName,
+            species: species,
+            asset: try values.decode(String.self, forKey: .asset),
+            location: try values.decodeIfPresent(String.self, forKey: .location) ?? "",
+            light: try values.decodeIfPresent(String.self, forKey: .light) ?? "Not set",
+            drainage: try values.decodeIfPresent(String.self, forKey: .drainage) ?? "Not set",
+            lastWatered: try values.decodeIfPresent(Date.self, forKey: .lastWatered),
+            photo: try values.decodeIfPresent(Data.self, forKey: .photo),
+            reminder: try values.decodeIfPresent(Date.self, forKey: .reminder),
+            reminderKind: try values.decodeIfPresent(PlantReminderKind.self, forKey: .reminderKind),
+            placement: try values.decodeIfPresent(PlantPlacement.self, forKey: .placement),
+            initialStatus: try values.decodeIfPresent(InitialPlantStatus.self, forKey: .initialStatus),
+            reminderObservationID: try values.decodeIfPresent(UUID.self, forKey: .reminderObservationID),
+            reminderNotifications: try values.decodeIfPresent(Bool.self, forKey: .reminderNotifications)
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id)
+        try values.encode(name, forKey: .name)
+        try values.encode(species, forKey: .species)
+        try values.encode(asset, forKey: .asset)
+        try values.encode(location, forKey: .location)
+        try values.encode(light, forKey: .light)
+        try values.encode(drainage, forKey: .drainage)
+        try values.encodeIfPresent(lastWatered, forKey: .lastWatered)
+        try values.encodeIfPresent(photo, forKey: .photo)
+        try values.encodeIfPresent(reminder, forKey: .reminder)
+        try values.encodeIfPresent(reminderKind, forKey: .reminderKind)
+        try values.encodeIfPresent(placement, forKey: .placement)
+        try values.encodeIfPresent(initialStatus, forKey: .initialStatus)
+        try values.encodeIfPresent(reminderObservationID, forKey: .reminderObservationID)
+        try values.encodeIfPresent(reminderNotifications, forKey: .reminderNotifications)
+    }
+
+    /// Resolves the plant's identity, including names stored by earlier versions.
+    var displayName: String {
+        Self.canonicalName(species: species, storedName: name, legacyTypeName: nil)
+    }
+
+    private static func canonicalName(species: String, storedName: String, legacyTypeName: String?) -> String {
         let scientific = species.trimmingCharacters(in: .whitespacesAndNewlines)
         if let known = PlantSpecies.catalog.first(where: { $0.scientific.caseInsensitiveCompare(scientific) == .orderedSame }) { return known.name }
+        let original = (legacyTypeName ?? storedName).trimmingCharacters(in: .whitespacesAndNewlines)
+        if let known = PlantSpecies.catalog.first(where: {
+            ([ $0.name, $0.scientific ] + Self.legacyPlantAliases(for: $0)).contains {
+                Self.normalizedLegacyPlantName($0) == Self.normalizedLegacyPlantName(original)
+            }
+        }) { return known.name }
+        if let value = legacyTypeName?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty { return value }
         if !scientific.isEmpty { return scientific }
-        let original = name.trimmingCharacters(in: .whitespacesAndNewlines)
         return original.isEmpty ? "Custom plant" : original
     }
+
+    private static func normalizedLegacyPlantName(_ value: String) -> String {
+        value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
+    private static func legacyPlantAliases(for species: PlantSpecies) -> [String] {
+        switch species.scientific {
+        case "Dracaena trifasciata": ["Snake plant", "Sansevieria", "Mother-in-law's tongue"]
+        case "Monstera deliciosa": ["Monstera", "Swiss cheese plant"]
+        case "Ficus elastica": ["Rubber plant", "Rubber tree"]
+        case "Epipremnum aureum": ["Pothos", "Golden pothos", "Devil’s ivy", "Devil's ivy"]
+        default: [species.name]
+        }
+    }
+
+    mutating func normalizeLegacyIdentity() { name = displayName }
 
     var referenceURL: URL? {
         let known = ["Dracaena trifasciata", "Monstera deliciosa", "Ficus elastica", "Epipremnum aureum"]
@@ -140,7 +232,9 @@ struct Garden: Codable {
     var sampleRevision: Int?
     var carePlans: [CarePlan]?
     var careTasks: [PlanTask]?
+    // Legacy discovery profile retained only to decode older saved gardens.
     var plantSearchPreferences: PlantSearchPreferences?
+    // Retained only to decode older saved gardens; current search does not persist queries.
     var recentPlantSearches: [String]?
     var appPreferences: AppPreferences?
 }
@@ -200,14 +294,6 @@ final class BloomStore {
             }
             if ProcessInfo.processInfo.arguments.contains("--uitesting-no-activity") { garden.records = [] }
             self.canSave = false
-            if ProcessInfo.processInfo.arguments.contains("--uitesting-search-location") {
-                garden.plantSearchPreferences = PlantSearchPreferences(area: "Berlin", light: .unsure, location: .berlin)
-            }
-            if ProcessInfo.processInfo.arguments.contains("--uitesting-preferences") {
-                garden.appPreferences = AppPreferences()
-                garden.plantSearchPreferences = PlantSearchPreferences(area: "Berlin", light: .lower, location: .berlin, plantTypes: [.bushy, .trailing])
-                garden.recentPlantSearches = ["Monstera", "Pothos"]
-            }
             if ProcessInfo.processInfo.arguments.contains("--uitesting-leaf") {
                 garden.plants[0].placement = .indoor
                 let observation = CareRecord(plantID: garden.plants[0].id, kind: .change, area: .leaves, observation: "Dropping leaves", note: "Two leaves since yesterday")
@@ -225,7 +311,18 @@ final class BloomStore {
             }
         } else if FileManager.default.fileExists(atPath: self.fileURL.path) {
             do {
-                garden = try JSONDecoder().decode(Garden.self, from: Data(contentsOf: self.fileURL))
+                let savedData = try Data(contentsOf: self.fileURL)
+                garden = try JSONDecoder().decode(Garden.self, from: savedData)
+                let savedObject = try JSONSerialization.jsonObject(with: savedData) as? [String: Any]
+                let savedPlants = savedObject?["plants"] as? [[String: Any]] ?? []
+                let hasLegacyPlantIdentity = savedPlants.contains { savedPlant in
+                    if savedPlant["typeName"] != nil { return true }
+                    guard let id = savedPlant["id"] as? String,
+                          let plant = garden.plants.first(where: { $0.id.uuidString.caseInsensitiveCompare(id) == .orderedSame }),
+                          let savedName = savedPlant["name"] as? String else { return false }
+                    return savedName != plant.name
+                }
+                if hasLegacyPlantIdentity { _ = commit { $0 = garden } }
                 if let upgraded = Self.upgradeSample(garden) { _ = commit { $0 = upgraded } }
             }
             catch {
@@ -275,32 +372,37 @@ final class BloomStore {
     func status(for plant: Plant) -> String { latestCheck(for: plant.id)?.summary ?? "Not checked yet" }
 
     func savePlant(_ plant: Plant) -> Bool {
-        commit { garden in
+        var plant = plant
+        plant.normalizeLegacyIdentity()
+        return commit { garden in
             if let i = garden.plants.firstIndex(where: { $0.id == plant.id }) { garden.plants[i] = plant }
             else { garden.plants.append(plant) }
         }
     }
-    /// Editing personal details cannot replace identity or overwrite newer care data.
+    /// Editing plant details cannot replace identity or overwrite newer care data.
     func updatePlantDetails(_ draft: Plant) -> Bool {
-        let nickname = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !nickname.isEmpty, var current = plant(draft.id) else { return false }
-        current.typeName = current.plantTypeName
-        current.name = nickname
+        guard var current = plant(draft.id) else { return false }
         current.photo = draft.photo
         current.placement = draft.placement
+        current.location = draft.location.trimmingCharacters(in: .whitespacesAndNewlines)
+        current.initialStatus = draft.initialStatus
         current.light = draft.light
         current.drainage = draft.drainage
         return savePlant(current)
     }
-    /// Save the whole setup at once, so closing the flow never leaves a partial plant.
-    func addPlant(_ plant: Plant, placement: PlantPlacement, status: InitialPlantStatus?) -> Bool {
+    /// Save the plant and any optional setup details together; unknown answers stay unset.
+    func addPlant(_ plant: Plant, status: InitialPlantStatus?) -> Bool {
         var ready = plant
-        ready.name = ready.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !ready.name.isEmpty else { return false }
-        ready.typeName = ready.plantTypeName
-        ready.placement = placement
+        guard !ready.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        ready.normalizeLegacyIdentity()
         ready.initialStatus = status
         return savePlant(ready)
+    }
+    /// Compatibility for existing callers that intentionally provide a placement.
+    func addPlant(_ plant: Plant, placement: PlantPlacement, status: InitialPlantStatus?) -> Bool {
+        var ready = plant
+        ready.placement = placement
+        return addPlant(ready, status: status)
     }
     func deletePlant(_ id: UUID) -> Bool {
         let hadReminder = plant(id)?.reminder != nil
@@ -375,15 +477,16 @@ final class BloomStore {
         return true
     }
 
-    func setReminder(for plantID: UUID, days: Int?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil, notify: Bool? = nil) async -> String? {
-        await setReminder(for: plantID, date: days.map { newReminderDate(days: $0) }, kind: kind, observationID: observationID, notify: notify)
+    func setReminder(for plantID: UUID, days: Int?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil) async -> String? {
+        await setReminder(for: plantID, date: days.map { newReminderDate(days: $0) }, kind: kind, observationID: observationID)
     }
 
-    func setReminder(for plantID: UUID, date: Date?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil, notify: Bool? = nil) async -> String? {
+    func setReminder(for plantID: UUID, date: Date?, kind: PlantReminderKind = .soilCheck, observationID: UUID? = nil) async -> String? {
         guard var plant = plant(plantID) else { return "This plant is no longer in your garden." }
         if let date, date <= Date() { return "Choose a future date and time." }
         plant.reminder = date; plant.reminderKind = date == nil ? nil : kind
-        plant.reminderNotifications = date == nil ? nil : notify ?? plant.reminderNotifications
+        // Ordinary reminders follow the app-wide notification preference.
+        plant.reminderNotifications = nil
         plant.reminderObservationID = date == nil || kind != .observation ? nil : (observationID ?? plant.reminderObservationID ?? records(for: plantID).first { $0.kind == .change }?.id)
         guard savePlant(plant) else { return "The reminder couldn't be saved. Please try again." }
         // Dates belong to tasks. Alerts are a separate, optional app preference.
@@ -395,8 +498,8 @@ final class BloomStore {
         let snake = Plant(name: "Snake Plant", species: "Dracaena trifasciata", asset: "snake", location: "Living room", light: "Indirect light", drainage: "Yes")
         let monstera = Plant(name: "Monstera", species: "Monstera deliciosa", asset: "monstera", location: "By the window", light: "Indirect light", drainage: "Yes", reminder: Date().addingTimeInterval(86400), reminderKind: .soilCheck)
         let rubber = Plant(name: "Rubber Plant", species: "Ficus elastica", asset: "rubber", location: "Bedroom")
-        let office = Plant(name: "Office Snake", species: "Dracaena trifasciata", asset: "area-whole", location: "Workspace", light: "Indirect light", reminder: Date().addingTimeInterval(172800), reminderKind: .observation)
-        let kitchen = Plant(name: "Kitchen Monstera", species: "Monstera deliciosa", asset: "monstera", location: "Kitchen", placement: .indoor, initialStatus: .lookingGood)
+        let office = Plant(name: "Snake Plant", species: "Dracaena trifasciata", asset: "area-whole", location: "Workspace", light: "Indirect light", reminder: Date().addingTimeInterval(172800), reminderKind: .observation)
+        let kitchen = Plant(name: "Monstera", species: "Monstera deliciosa", asset: "monstera", location: "Kitchen", placement: .indoor, initialStatus: .lookingGood)
         let change = CareRecord(plantID: office.id, date: Date().addingTimeInterval(-259200), kind: .change, area: .whole, observation: "No new growth", firstNoticed: "Recently", note: "Sample observation: keeping a record to compare next time.")
         return Garden(plants: [snake, monstera, rubber, office, kitchen], records: [
             CareRecord(plantID: snake.id, date: Date().addingTimeInterval(-7200), kind: .check, soil: .damp, action: .waited, note: "The soil still feels damp below the surface."),
@@ -414,7 +517,7 @@ final class BloomStore {
         // Only expand a recognizable legacy demo; never repopulate a real garden.
         guard ["snake", "monstera", "rubber"].allSatisfy({ asset in old.plants.contains { $0.asset == asset } }) else { return next }
         if !next.plants.contains(where: { $0.asset == "area-whole" }) { next.plants.append(sampleGarden().plants[3]) }
-        if !next.plants.contains(where: { $0.name == "Kitchen Monstera" }) { next.plants.append(sampleGarden().plants[4]) }
+        if !next.plants.contains(where: { $0.species == "Monstera deliciosa" && $0.location == "Kitchen" }) { next.plants.append(sampleGarden().plants[4]) }
         if let i = next.plants.firstIndex(where: { $0.asset == "monstera" }), next.plants[i].reminder == nil {
             next.plants[i].reminder = Date().addingTimeInterval(86400)
             next.plants[i].reminderKind = .soilCheck

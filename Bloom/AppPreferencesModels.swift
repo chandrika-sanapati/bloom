@@ -2,6 +2,7 @@ import Foundation
 import UserNotifications
 
 struct AppPreferences: Codable, Equatable {
+    // Legacy discovery flag retained only to decode previously saved gardens.
     var personalizedPicks = true
     var taskNotifications = false
     var reminderHour = 9
@@ -51,12 +52,6 @@ extension BloomStore {
         // Older gardens retain existing opted-in alerts. New gardens begin quietly.
         garden.appPreferences ?? AppPreferences(taskNotifications: garden.hasStarted)
     }
-    var discoveryPreferences: PlantSearchPreferences? { appPreferences.personalizedPicks ? plantSearchPreferences : nil }
-
-    @discardableResult func setPersonalizedPicks(_ enabled: Bool) -> Bool {
-        var next = appPreferences; next.personalizedPicks = enabled
-        return commit { $0.appPreferences = next }
-    }
     @discardableResult func setDefaultReminderTime(hour: Int, minute: Int) -> Bool {
         guard (0...23).contains(hour), (0...59).contains(minute) else { return false }
         var next = appPreferences; next.reminderHour = hour; next.reminderMinute = minute
@@ -76,13 +71,5 @@ extension BloomStore {
         guard commit({ $0.appPreferences = next }) else { return "Your notification preference couldn't be saved." }
         await waitForNotificationSync()
         return notificationMessage
-    }
-    var growingSpaceSummary: String {
-        guard let profile = plantSearchPreferences else { return "Choose your area, light & plants" }
-        var parts: [String] = []
-        if !profile.area.isEmpty { parts.append(profile.displayArea) }
-        if profile.light != .unsure { parts.append(profile.light.rawValue) }
-        if !profile.selectedTypes.isEmpty { parts.append("\(profile.selectedTypes.count) plant types") }
-        return parts.isEmpty ? "All plant shapes · Light not set" : parts.joined(separator: " · ")
     }
 }

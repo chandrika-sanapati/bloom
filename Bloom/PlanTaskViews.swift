@@ -65,12 +65,15 @@ struct PlanTaskFlowView: View {
                                 Text(task.step.title).font(BloomType.section)
                                 StatusTag(text: task.status.displayTitle, tone: .teal)
                                 if task.status == .waiting { Text("Record the plan's actions before its progress check is scheduled.").foregroundStyle(.secondary) }
-                                NavigationLink("View care plan") { CarePlanDetailView(planID: plan.id) }
+                        NavigationLink { CarePlanDetailView(planID: plan.id) } label: {
+                            BloomActionRow(title: "View care plan")
+                        }.accessibilityIdentifier("task-view-care-plan")
                             }
                             if let record = store.garden.records.first(where: { $0.planTaskID == task.id }) {
                                 Section { Text(record.outcome); if !record.note.isEmpty { Text(record.note) } }
                             }
-                        }.listStyle(.insetGrouped).bloomNativeForm().navigationTitle("Care task").navigationBarTitleDisplayMode(.inline)
+                        }.listStyle(.insetGrouped).bloomNativeForm().navigationLinkIndicatorVisibility(.hidden)
+                            .navigationTitle("Care task").navigationBarTitleDisplayMode(.inline)
                     }
                 } else { ContentUnavailableView("Task unavailable", systemImage: "checkmark.circle", description: Text("The task or its observation may have been removed.")) }
             }

@@ -2,9 +2,11 @@
 
 **Current simplified flow:** [Area cards](49-native-choose-plant-area-cards.png) → [Change cards](50-native-choose-visible-change-cards.png) → optional photo/note → [What could help](56-native-straightforward-change-guidance.png) → [Back to the plant's next care task](57-native-added-care-returns-to-plant.png). Completing the [care task](58-native-concise-care-task.png) returns with [a confirmation and check-in date](59-native-action-saved-without-another-page.png); [progress choices](60-native-simple-progress-choices.png) use Better / Same / Worse. Bloom's existing colors, typography, photographs and card styles are retained. Earlier saved-receipt and mandatory plan-setup screens are historical and superseded.
 
+Some captures below are historical: routine care now records soil and care decision on one screen, populated Home no longer repeats the Add plant action, and Activity tabs appear after the first plant is added, even before the first care record.
+
 Updated 2026-10-22. Captures from the running iPhone 17 app during XCUITest journeys, using an isolated sample garden. Test activities and added plants do not modify your saved garden.
 
-Home combines a horizontal **My plants** row with **Care → Tasks / Activity**. The fixed header has a preferences gear; there is no bell destination or bottom tab bar. Plant cards open details, while See all opens the full searchable collection. The labelled Add plant action belongs directly below the plant cards; the floating Home plus has been removed.
+With at least one plant, Home combines a horizontal **My plants** row with **Activity → Upcoming / Past**, including helpful empty states before the first care record. With no plants, Home focuses on the single centered Add plant card and omits Activity. The fixed header has Preferences and one outlined plus when plants exist. There is no bell destination or bottom tab bar. Plant cards open details, while See all opens the full searchable collection. Existing screenshots are historical and may show the earlier duplicate Home action.
 
 - [Home and Care tasks](01-native-home.png)
 - [Horizontal plant selection](11-native-horizontal-plants.png)
@@ -68,23 +70,21 @@ The new remedy captures use isolated sample plants and observations. They show a
 - [Inspection when evidence is uncertain](20-native-inspection-alternative.png)
 - [Reassessed plan](21-native-reassessed-plan.png)
 
-## Personalized plant search
+## Plant search
 
-A saved city or Locate me supplies seasonal context automatically. Compact text light choices and illustrated multi-select plant forms shape explained picks. Locate me sits at the right of the city field; Reset preferences stays available while scrolling. Recent searches stay local, ownership is visible, and unlisted plants can still be added by name. These are curated suggestions from the small indoor catalog, not live local trend data.
+The current Add plant journey browses the small local indoor catalog, searches common/scientific names and aliases, and permits adding an unlisted plant by name. The following older captures show the retired location and personalized-picks feature; they are historical and do not represent the current app.
 
-- [Growing-space preferences](22-native-growing-area-preferences.png)
-- [Personalized seasonal picks](23-native-personalized-seasonal-picks.png)
-- [Recent plant searches](24-native-recent-plant-searches.png)
+- [Recent plant searches · Historical](24-native-recent-plant-searches.png)
 - [Adding an unlisted plant](25-native-unlisted-plant-search.png)
-
-- [Compact light choices and visual plant shapes](26-native-visual-plant-preferences.png)
-- [Manual city search after location access fallback](27-native-location-access-fallback.png)
-
-- [Reset light and plant types together](28-native-compact-preference-reset.png)
+- [Growing-space preferences · Historical](22-native-growing-area-preferences.png)
+- [Personalized seasonal picks · Historical](23-native-personalized-seasonal-picks.png)
+- [Visual plant preferences · Historical](26-native-visual-plant-preferences.png)
+- [Location access fallback · Historical](27-native-location-access-fallback.png)
+- [Preference reset · Historical](28-native-compact-preference-reset.png)
 
 ## App preferences
 
-29–31 and 33 show the streamlined native Preferences menu, task notifications, default reminder-time picker, and cleared recent-search state. Plant discovery controls are available from Search plants → Personalize. Settings footer explanations have been removed; notification categories read Scheduled task and Care plan task. These captures use an isolated sample garden; the notification-permission result shown is simulated. No real GPS access or notification permission was requested by UI tests.
+29–31 and 33 show the native Preferences menu, task notifications, default reminder-time picker, and a historical cleared-search state. Current Preferences contain no location or personalization controls. These captures use an isolated sample garden; the notification-permission result shown is simulated.
 
 - [Preferences](29-native-app-preferences.png)
 - [Task notifications](30-native-task-notification-preferences.png)
@@ -117,7 +117,7 @@ These isolated journeys show the new condition checks and source-backed starting
 
 ## Visual guidance · current flow
 
-This replaces the mandatory leaf questionnaire shown in previews 34 and 43. **Find next steps** opens possible causes and illustrated first actions immediately. The cause cards explain possibilities; they are not a diagnosis picker. **Add care task** is enabled without checks. Optional observations refine the advice, with sources and longer instructions collapsed.
+This replaces the mandatory leaf questionnaire shown in previews 34 and 43. **Find next steps** opens possible causes and concise first actions immediately. The cause cards are not a diagnosis picker. **Add to care plan** works without extra checks; unknown evidence keeps the recommendation conservative. Optional assessment controls are not shown in this first-step flow. Sources and longer instructions remain available in disclosures.
 
 - [Immediate visual guidance](44-native-visual-next-steps-without-questions.png)
 - [Optional observations](45-native-optional-visual-checks.png)

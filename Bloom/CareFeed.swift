@@ -22,7 +22,7 @@ struct HomeCareFeed: View {
     private var activity: [CareRecord] { store.garden.records.sorted { $0.date > $1.date } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: BloomSpacing.medium) {
             Text("Activity").bloomHeading().accessibilityAddTraits(.isHeader)
             Picker("Activity", selection: $selection) {
                 ForEach(CareFeedSelection.allCases) { Text($0.rawValue).tag($0) }
@@ -30,14 +30,23 @@ struct HomeCareFeed: View {
             if selection == .tasks {
                 ForEach(store.carePlans.filter { $0.status == .needsReview }) { plan in
                     NavigationLink { CarePlanDetailView(planID: plan.id).toolbar(.visible, for: .navigationBar) } label: {
-                        InfoCard(title: "Review the plan · \(store.plant(plan.plantID)?.name ?? "Your plant")", message: "The result needs another look. Reassess before choosing more treatment.", icon: "magnifyingglass")
-                    }.buttonStyle(.plain)
+                        HStack(spacing: BloomSpacing.medium) {
+                            BloomIconTile(symbol: "magnifyingglass", tone: .yellow)
+                            VStack(alignment: .leading, spacing: BloomSpacing.small) {
+                                Text("Needs review").font(BloomType.section).foregroundStyle(BloomTheme.ink)
+                                Text(store.plant(plan.plantID)?.displayName ?? "Your plant")
+                                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }.frame(maxWidth: .infinity, alignment: .leading)
+                            BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+                        }.bloomCard(padding: BloomSpacing.medium).contentShape(RoundedRectangle(cornerRadius: BloomTheme.cardRadius, style: .continuous))
+                    }.buttonStyle(.plain).accessibilityElement(children: .combine)
                 }
                 if tasks.isEmpty {
-                    InfoCard(title: "No tasks scheduled", message: "Open a plant to check its soil or record a change. Set a reminder when you want to check back.", icon: "checkmark.circle")
+                    InfoCard(title: "Nothing scheduled", icon: "calendar", tone: .neutral)
                 } else {
                     TimelineView(.periodic(from: .now, by: 60)) { context in
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: BloomSpacing.medium) {
                             ForEach(CareTaskTiming.allCases) { timing in
                                 let scheduled = tasks.filter { CareTaskTiming.classify($0.due, now: context.date) == timing }
                                 if !scheduled.isEmpty {
@@ -61,20 +70,20 @@ struct HomeCareFeed: View {
                 }
             } else {
                 if activity.isEmpty {
-                    InfoCard(title: "Your care story starts here", message: "Saved checks, decisions, and observations will appear here. Waiting counts, too.", icon: "clock")
+                    InfoCard(title: "No activity yet", icon: "clock.arrow.circlepath", tone: .neutral)
                 } else {
                     ForEach(activity.prefix(5)) { record in
                         NavigationLink {
                             RecordDetailView(recordID: record.id).toolbar(.visible, for: .navigationBar)
                         } label: {
-                            HStack(spacing: 10) {
-                                RecordRow(record: record, plantName: store.plant(record.plantID)?.name ?? "Plant")
+                            HStack(alignment: .center, spacing: BloomSpacing.small) {
+                                RecordRow(record: record, plantName: store.plant(record.plantID)?.displayName ?? "Plant")
                                 Spacer(minLength: 0)
                                 BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal).accessibilityHidden(true)
-                            }.bloomCard(padding: 16)
+                            }.bloomCard(padding: BloomSpacing.medium)
                         }.buttonStyle(.plain).accessibilityIdentifier("home-activity-\(record.id.uuidString)")
                     }
-                    NavigationLink("See all activity", value: PlantsRoute.activity)
+                    NavigationLink("See all", value: PlantsRoute.activity)
                         .font(BloomType.section).frame(minHeight: 44)
                         .accessibilityIdentifier("home-all-activity")
                 }
@@ -87,16 +96,28 @@ struct HomeCareFeed: View {
 
 struct HomePlanTaskRow: View {
     @Environment(BloomStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     let task: PlanTask
     var body: some View {
-        HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(task.step.title).font(BloomType.section).fixedSize(horizontal: false, vertical: true)
-                Text((store.plant(task.plantID)?.name ?? "Your plant") + (task.due.map { " · " + $0.formatted(date: .abbreviated, time: .omitted) } ?? ""))
-                    .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            StatusTag(text: task.step == .review ? "Review" : "Care plan", tone: task.step == .review ? .yellow : .blue)
-            BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
-        }.bloomCard(padding: 16).accessibilityElement(children: .combine)
+        VStack(alignment: .leading, spacing: BloomSpacing.small) {
+            HStack(alignment: .center, spacing: BloomSpacing.small) {
+                VStack(alignment: .leading, spacing: BloomSpacing.small) {
+                    Text(task.step.title).font(BloomType.section).fixedSize(horizontal: false, vertical: true)
+                    Text((store.plant(task.plantID)?.displayName ?? "Your plant") + (task.due.map { " · " + $0.formatted(date: .abbreviated, time: .omitted) } ?? ""))
+                        .font(BloomType.supporting).foregroundStyle(BloomTheme.secondary)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                if !typeSize.isAccessibilitySize {
+                    StatusTag(text: task.step == .review ? "Review" : "Care plan", tone: task.step == .review ? .yellow : .blue)
+                    BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+                }
+            }
+            if typeSize.isAccessibilitySize {
+                HStack(alignment: .center, spacing: BloomSpacing.small) {
+                    StatusTag(text: task.step == .review ? "Review" : "Care plan", tone: task.step == .review ? .yellow : .blue)
+                    Spacer(minLength: BloomSpacing.small)
+                    BloomSymbol(name: "chevron.right", compact: true).foregroundStyle(BloomTheme.teal)
+                }
+            }
+        }.bloomCard(padding: BloomSpacing.medium).accessibilityElement(children: .combine)
     }
 }
