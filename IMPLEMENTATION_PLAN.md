@@ -356,6 +356,8 @@ Acceptance:
 
 **Goal:** Create the single primary care interaction.
 
+**Status:** Complete — two-outcome watering task domain verified 14 November 2026.
+
 Tasks:
 
 - Replace the current three-choice `CareAction` UI with two choices: Watered and Checked — not watered.
@@ -375,6 +377,7 @@ Acceptance:
 - Dry/concerning checks offer a shorter follow-up.
 - Unknown/damp healthy checks do not create an unsupported diagnosis.
 - No Check later or postponed choice appears.
+- Verification passed on iPhone 18 Pro Max: Phase 0–2 tests executed 16 tests with 0 failures.
 
 ### Phase 3 — Home, Upcoming, and Past simplification
 

@@ -101,3 +101,8 @@ struct WateringSchedule: Identifiable, Codable, Hashable {
 enum WateringScheduleSource: String, Codable {
     case plantType
 }
+
+enum WateringFollowUp {
+    static let defaultDays = 3
+    static let allowedDays = 2...5
+}
