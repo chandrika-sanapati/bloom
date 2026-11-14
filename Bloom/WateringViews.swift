@@ -3,6 +3,7 @@ import SwiftUI
 struct WateringHomeView: View {
     @Environment(BloomStore.self) private var store
     @State private var showingCatalog = false
+    @State private var showingSettings = false
     @State private var selectedTab = HomeTab.upcoming
     @State private var taskPlantID: UUID?
 
@@ -39,6 +40,7 @@ struct WateringHomeView: View {
             .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
             .sheet(isPresented: $showingCatalog) { PlantCatalogView() }
+            .sheet(isPresented: $showingSettings) { NotificationSettingsView() }
             .fullScreenCover(item: taskRoute) { WateringCheckView(plantID: $0.id) }
         }
     }
@@ -62,6 +64,15 @@ struct WateringHomeView: View {
                     .foregroundStyle(.white)
             }
             .accessibilityLabel("Add plant")
+            .accessibilityIdentifier("home-add-plant")
+            Button { showingSettings = true } label: {
+                Image(systemName: "bell")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 44, height: 44)
+                    .foregroundStyle(.tint)
+            }
+            .accessibilityLabel("Notification settings")
+            .accessibilityIdentifier("home-notification-settings")
         }
         .padding(.top, 18)
     }
@@ -104,7 +115,7 @@ struct WateringHomeView: View {
             Text("Activity").font(.title3.bold())
             Picker("Activity", selection: $selectedTab) {
                 ForEach(HomeTab.allCases) { Text($0.rawValue).tag($0) }
-            }.pickerStyle(.segmented)
+            }.pickerStyle(.segmented).accessibilityLabel("Activity view")
             if selectedTab == .upcoming { upcoming } else { past }
         }
     }
@@ -115,7 +126,7 @@ struct WateringHomeView: View {
                 let items = scheduledPlants.filter { CareTaskTiming.classify($0.1.nextCheckAt) == timing }
                 if !items.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(timing.rawValue).font(.headline)
+                        if timing != .upcoming { Text(timing.rawValue).font(.headline) }
                         ForEach(items, id: \.0.id) { item in
                             Button { taskPlantID = item.0.id } label: {
                                 WateringTaskRow(plant: item.0, schedule: item.1, timing: timing)
@@ -389,6 +400,7 @@ struct WateringCheckView: View {
                 .safeAreaInset(edge: .bottom) {
                     Button("Save check") { save() }
                         .buttonStyle(.borderedProminent)
+                        .disabled(outcome == nil)
                         .frame(maxWidth: .infinity).padding()
                         .background(.bar)
                 }
@@ -415,5 +427,40 @@ struct WateringCheckView: View {
             return
         }
         dismiss()
+    }
+}
+
+private struct NotificationSettingsView: View {
+    @Environment(BloomStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var busy = false
+    @State private var message: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("Watering notifications", isOn: Binding(
+                        get: { store.garden.appPreferences.taskNotifications },
+                        set: update
+                    ))
+                    Text("Bloom only reminds you about future checks. Overdue tasks never create a notification burst.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                if let message { Section { Text(message).foregroundStyle(.secondary) } }
+            }
+            .navigationTitle("Notifications")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .overlay { if busy { ProgressView().controlSize(.large) } }
+        }
+    }
+
+    private func update(_ enabled: Bool) {
+        busy = true
+        Task {
+            message = await store.setTaskNotifications(enabled)
+            busy = false
+        }
     }
 }

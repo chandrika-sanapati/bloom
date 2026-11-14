@@ -460,6 +460,8 @@ Acceptance:
 
 **Goal:** Deliver an exceptional, calm, accessible experience and collect evidence.
 
+**Status:** Complete — focused watering UX polish and validation baseline verified 15 November 2026.
+
 Tasks:
 
 - Review every watering screen against `DESIGN_GUIDELINES.md`.
@@ -478,6 +480,7 @@ Acceptance:
 - The user can distinguish Watered from Checked — not watered.
 - The user understands an overdue task and can resolve it.
 - The app feels focused rather than like a partially hidden care platform.
+- Verification passed on iPhone 18 Pro Max: build succeeded and Phase 0–2 plus Phase 5 tests executed 19 tests with 0 failures.
 
 ## 6. Removal and deferral strategy
 
