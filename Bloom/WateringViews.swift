@@ -59,15 +59,17 @@ struct WateringHomeView: View {
                 Text("One small check at a time.").font(.subheadline).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Button { showingCatalog = true } label: {
-                Image(systemName: "plus")
-                    .font(.headline.weight(.semibold))
-                    .frame(width: 44, height: 44)
-                    .background(.tint, in: Circle())
-                    .foregroundStyle(.white)
+            if !store.garden.plants.isEmpty {
+                Button { showingCatalog = true } label: {
+                    Image(systemName: "plus")
+                        .font(.headline.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .background(.tint, in: Circle())
+                        .foregroundStyle(.white)
+                }
+                .accessibilityLabel("Add plant")
+                .accessibilityIdentifier("home-add-plant")
             }
-            .accessibilityLabel("Add plant")
-            .accessibilityIdentifier("home-add-plant")
             Button { showingSettings = true } label: {
                 Image(systemName: "bell")
                     .font(.headline.weight(.semibold))
@@ -93,9 +95,15 @@ struct WateringHomeView: View {
                 Text("Add a Snake Plant, Monstera, Rubber Plant, or Pothos to get a simple watering check-in schedule.")
                     .font(.body).foregroundStyle(.secondary)
             }
-            Button("Add a plant") { showingCatalog = true }
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
+            Button { showingCatalog = true } label: {
+                Text("Add plant")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 14))
+            .controlSize(.large)
+            .accessibilityIdentifier("empty-add-plant")
         }
         .padding(20)
         .background(.background, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
