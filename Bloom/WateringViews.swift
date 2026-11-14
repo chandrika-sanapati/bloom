@@ -24,23 +24,20 @@ struct WateringHomeView: View {
 
     var body: some View {
         NavigationStack {
-            GeometryReader { geometry in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        header
-                        if store.garden.plants.isEmpty {
-                            emptyState
-                        } else {
-                            plantsSection
-                            activitySection
-                        }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 24) {
+                    header
+                    if store.garden.plants.isEmpty {
+                        emptyState
+                    } else {
+                        plantsSection
+                        activitySection
                     }
-                    .padding(.bottom, 32)
-                    .frame(width: max(0, geometry.size.width - 48), alignment: .leading)
                 }
                 .padding(.horizontal, 24)
-                .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+                .padding(.bottom, 32)
             }
+            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
             .sheet(isPresented: $showingCatalog) { PlantCatalogView() }
             .sheet(isPresented: $showingSettings) { NotificationSettingsView() }
@@ -54,10 +51,8 @@ struct WateringHomeView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Bloom").font(.largeTitle.bold())
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Bloom").font(.largeTitle.bold())
+            Spacer(minLength: 0)
             Button { showingCatalog = true } label: {
                 Image(systemName: "plus")
                     .font(.headline.weight(.semibold))
@@ -82,25 +77,29 @@ struct WateringHomeView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 16) {
             Image("area-whole")
-                .resizable().scaledToFill()
+                .resizable()
+                .scaledToFill()
+                .frame(height: 220)
                 .frame(maxWidth: .infinity)
-                .aspectRatio(1.55, contentMode: .fit)
                 .clipped()
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Start with your plants").font(.title2.bold())
-                Text("Add a Snake Plant, Monstera, Rubber Plant, or Pothos to get a simple watering check-in schedule.")
-                    .font(.body).foregroundStyle(.secondary)
-            }.padding(.horizontal, 20)
-            Button { showingCatalog = true } label: {
-                Text("Add plant")
-                    .font(.body.weight(.semibold))
-                    .frame(minWidth: 132, minHeight: 44)
-                    .padding(.horizontal, 8)
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Add your first plant").font(.title2.bold())
+                    Text("Choose a supported plant to start its watering check-ins.")
+                        .font(.body).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Button { showingCatalog = true } label: {
+                    Text("Add plant")
+                        .font(.body.weight(.semibold))
+                        .frame(minWidth: 132, minHeight: 44)
+                        .padding(.horizontal, 8)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.roundedRectangle(radius: 14))
+                .accessibilityIdentifier("empty-add-plant")
             }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.roundedRectangle(radius: 14))
-            .accessibilityIdentifier("empty-add-plant")
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
         }
         .padding(.bottom, 20)
         .background(.background, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
