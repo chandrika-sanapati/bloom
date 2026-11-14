@@ -24,21 +24,34 @@ struct WateringHomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 24) {
-                    header
-                    if store.garden.plants.isEmpty {
-                        emptyState
-                    } else {
-                        plantsSection
-                        activitySection
+            VStack(spacing: 0) {
+                header
+                if store.garden.plants.isEmpty {
+                    emptyState
+                } else {
+                    List {
+                        Section { plantsSection }
+                        Section { activitySection }
                     }
+                    .listStyle(.insetGrouped)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
+            .overlay(alignment: .bottomTrailing) {
+                Button { showingCatalog = true } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.semibold))
+                        .frame(width: 56, height: 56)
+                        .background(.tint, in: Circle())
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                }
+                .accessibilityLabel("Add plant")
+                .accessibilityIdentifier("home-add-plant")
+                .padding(20)
+            }
             .sheet(isPresented: $showingCatalog) { PlantCatalogView() }
             .sheet(isPresented: $showingSettings) { NotificationSettingsView() }
             .fullScreenCover(item: taskRoute) { WateringCheckView(plantID: $0.id) }
@@ -53,15 +66,6 @@ struct WateringHomeView: View {
         HStack(alignment: .center) {
             Text("Bloom").font(.largeTitle.bold())
             Spacer(minLength: 0)
-            Button { showingCatalog = true } label: {
-                Image(systemName: "plus")
-                    .font(.headline.weight(.semibold))
-                    .frame(width: 44, height: 44)
-                    .background(.tint, in: Circle())
-                    .foregroundStyle(.white)
-            }
-            .accessibilityLabel("Add plant")
-            .accessibilityIdentifier("home-add-plant")
             Button { showingSettings = true } label: {
                 Image(systemName: "bell")
                     .font(.headline.weight(.semibold))
@@ -71,40 +75,28 @@ struct WateringHomeView: View {
             .accessibilityLabel("Notification settings")
             .accessibilityIdentifier("home-notification-settings")
         }
-        .padding(.top, 18)
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
     }
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Image("area-whole")
-                .resizable()
-                .scaledToFill()
-                .frame(height: 220)
-                .frame(maxWidth: .infinity)
-                .clipped()
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Add your first plant").font(.title2.bold())
-                    Text("Choose a supported plant to start its watering check-ins.")
-                        .font(.body).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            Color.clear
+                .frame(height: 200)
+                .overlay {
+                    Image("area-whole").resizable().scaledToFill()
                 }
-                Button { showingCatalog = true } label: {
-                    Text("Add plant")
-                        .font(.body.weight(.semibold))
-                        .frame(minWidth: 132, minHeight: 44)
-                        .padding(.horizontal, 8)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 14))
-                .accessibilityIdentifier("empty-add-plant")
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Add your first plant").font(.title3.bold())
+                Text("Tap + to choose a supported plant and start its watering check-ins.")
+                    .font(.body).foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 20)
         }
-        .padding(.bottom, 20)
+        .padding(20)
         .background(.background, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
     }
 
     private var plantsSection: some View {
