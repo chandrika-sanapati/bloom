@@ -90,7 +90,9 @@ struct WateringHomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(store.garden.plants) { plant in
-                        PlantSummaryCard(plant: plant, schedule: store.schedule(plant.id))
+                        NavigationLink { PlantWateringDetailView(plantID: plant.id) } label: {
+                            PlantSummaryCard(plant: plant, schedule: store.schedule(plant.id))
+                        }.buttonStyle(.plain)
                     }
                 }
             }
@@ -222,13 +224,13 @@ private struct EmptyActivityCard: View {
 private struct PlantCatalogView: View {
     @Environment(BloomStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedSpecies: PlantSpecies?
+
     var body: some View {
         NavigationStack {
             List(PlantSpecies.catalog) { species in
                 Button {
-                    let plant = Plant(name: species.name, species: species.scientific, asset: species.asset)
-                    _ = store.addPlant(plant)
-                    dismiss()
+                    selectedSpecies = species
                 } label: {
                     HStack(spacing: 14) {
                         Image(species.asset).resizable().scaledToFill().frame(width: 64, height: 64).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
@@ -243,6 +245,102 @@ private struct PlantCatalogView: View {
             }
             .navigationTitle("Add a plant")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+            .sheet(item: $selectedSpecies) { species in
+                PlantSetupView(species: species)
+            }
+        }
+    }
+}
+
+private struct PlantSetupView: View {
+    @Environment(BloomStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    let species: PlantSpecies
+    @State private var knowsLastWatered = false
+    @State private var lastWatered = Date()
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text(species.name).font(.title2.bold())
+                    Text(species.scientific).font(.subheadline.italic()).foregroundStyle(.secondary)
+                    Text("Bloom will suggest when to check the soil. You decide whether the plant needs water.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                Section("Last watered") {
+                    Toggle("I know the last watered date", isOn: $knowsLastWatered)
+                    if knowsLastWatered {
+                        DatePicker("Date", selection: $lastWatered, in: ...Date(), displayedComponents: .date)
+                    }
+                }
+            }
+            .navigationTitle("Add \(species.name)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        let plant = Plant(name: species.name, species: species.scientific, asset: species.asset)
+                        _ = store.addPlant(plant, lastWatered: knowsLastWatered ? lastWatered : nil)
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct PlantWateringDetailView: View {
+    @Environment(BloomStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    let plantID: UUID
+    @State private var check = false
+    @State private var editingDate = false
+    @State private var nextDate = Date()
+
+    var body: some View {
+        if let plant = store.plant(plantID), let schedule = store.schedule(plantID) {
+            List {
+                Section {
+                    Image(plant.asset).resizable().scaledToFill().frame(height: 220).clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    Text(plant.displayName).font(.title.bold())
+                    Text(plant.species).font(.subheadline.italic()).foregroundStyle(.secondary)
+                }
+                Section("Watering") {
+                    LabeledContent("Next check", value: schedule.nextCheckAt.formatted(date: .abbreviated, time: .shortened))
+                    LabeledContent("Starting suggestion", value: "Every \(schedule.profileIntervalDays) days")
+                    if let lastWatered = store.lastWatered(for: plantID) {
+                        LabeledContent("Last watered", value: lastWatered.formatted(date: .abbreviated, time: .omitted))
+                    } else {
+                        LabeledContent("Last watered", value: "Not recorded")
+                    }
+                    Button("Check watering") { check = true }
+                        .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity)
+                }
+                Section {
+                    Button("Edit next check") { nextDate = schedule.nextCheckAt; editingDate = true }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Plant")
+            .navigationBarTitleDisplayMode(.inline)
+            .fullScreenCover(isPresented: $check) { WateringCheckView(plantID: plantID) }
+            .sheet(isPresented: $editingDate) {
+                NavigationStack {
+                    DatePicker("Next check", selection: $nextDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                        .datePickerStyle(.graphical).padding()
+                        .navigationTitle("Edit next check")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { editingDate = false } }
+                            ToolbarItem(placement: .confirmationAction) { Button("Save") { _ = store.editNextCheck(for: plantID, date: nextDate); editingDate = false } }
+                        }
+                }
+            }
+        } else {
+            ContentUnavailableView("Plant unavailable", systemImage: "leaf")
         }
     }
 }

@@ -126,11 +126,25 @@ final class BloomStore {
     func start() -> Bool { commit { $0.hasStarted = true } }
 
     @discardableResult
-    func addPlant(_ plant: Plant) -> Bool {
+    func addPlant(_ plant: Plant, lastWatered: Date? = nil) -> Bool {
         guard !plant.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
-        guard commit({ $0.plants.append(plant) }) else { return false }
-        _ = ensureWateringSchedule(for: plant.id)
-        return true
+        let profile = WateringProfile.forPlant(plant)
+        let now = Date()
+        return commit { garden in
+            garden.plants.append(plant)
+            if let profile {
+                let schedule = WateringSchedule.initial(
+                    for: plant,
+                    profile: profile,
+                    lastWatered: lastWatered,
+                    now: now,
+                    reminderHour: garden.appPreferences.reminderHour,
+                    reminderMinute: garden.appPreferences.reminderMinute,
+                    calendar: .current
+                )
+                garden.wateringSchedules.append(schedule)
+            }
+        }
     }
 
     @discardableResult

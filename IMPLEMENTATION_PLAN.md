@@ -408,6 +408,8 @@ Acceptance:
 
 **Goal:** Make adding a supported plant fast and make the next watering state obvious.
 
+**Status:** Complete — focused supported-plant setup and watering detail verified 15 November 2026.
+
 Tasks:
 
 - Keep the existing catalog search for the four supported plants.
@@ -426,6 +428,7 @@ Acceptance:
 - Last-watered is optional and clear.
 - A custom plant can be saved without receiving false watering guidance.
 - Plant detail answers “what do I do next?” immediately.
+- Verification passed on iPhone 18 Pro Max: Phase 0–2 tests executed 16 tests with 0 failures; the Phase 4 application build also succeeded.
 
 ### Phase 5 — Notifications and persistence hardening
 
