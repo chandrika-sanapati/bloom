@@ -319,6 +319,8 @@ The four profiles should be versioned content. The schedule engine should consum
 
 **Goal:** Establish a safe working baseline before changing behavior.
 
+**Status:** Complete — protection baseline, test-scope reset, and simulator verification recorded 14 November 2026.
+
 Tasks:
 
 - Confirm the working tree and preserve untracked/user files.
@@ -326,11 +328,18 @@ Tasks:
 - Identify all code paths that write `Plant.reminder`, `Plant.reminderKind`, `Plant.lastWatered`, and `CareAction.postponed`.
 - Identify all navigation entry points to observations, care plans, leaf guidance, pest guidance, and broader history filters.
 - Decide whether compatibility code remains in the main target or moves behind a legacy namespace/file grouping.
-- Do not remove files or run tests in this phase unless explicitly requested.
+- Remove broader product tests from the active test surface; add them back phase by phase when the corresponding capability returns.
+- Do not remove production feature files in this phase; preserve compatibility code until the watering implementation has a stable replacement.
+- Do not run tests in this phase; repository guidance requires explicit user approval before test execution.
 
 Deliverable:
 
 - A verified file/symbol inventory and a fixture strategy.
+- The active test surface contains only `BloomTests/Phase0ProtectionTests.swift`.
+- Phase 0 tests protect the four-plant catalog boundary, custom-plant persistence without an invented schedule, supported plant/history relaunch persistence, legacy observation-reminder decoding, failed writes, and corrupt-file preservation.
+- Broader care-plan, leaf/pest, observation, location, preferences, audit, remedy, and UI journey tests are intentionally removed from the active test target and will be reintroduced only with their future phases.
+- The empty `BloomUITests` target was removed from `Bloom.xcodeproj`; UI tests will be reintroduced when a later phase has a deliberate MVP UI journey to verify.
+- Verification passed on iPhone 18 Pro Max: `Phase0ProtectionTests` executed 6 tests with 0 failures.
 
 ### Phase 1 — Profile content and schedule domain
 

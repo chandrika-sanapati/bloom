@@ -19,13 +19,11 @@
 /* Begin PBXFileReference section */
 		00000000000000000000000A /* Bloom.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = Bloom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		00000000000000000000000B /* BloomTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = BloomTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		00000000000000000000000C /* BloomUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = BloomUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		000000000000000000000014 /* Bloom */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Bloom; sourceTree = "<group>"; };
 		000000000000000000000015 /* BloomTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BloomTests; sourceTree = "<group>"; };
-		000000000000000000000016 /* BloomUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BloomUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,7 +56,6 @@
 			children = (
 				00000000000000000000000A /* Bloom.app */,
 				00000000000000000000000B /* BloomTests.xctest */,
-				00000000000000000000000C /* BloomUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,7 +65,6 @@
 			children = (
 				000000000000000000000014 /* Bloom */,
 				000000000000000000000015 /* BloomTests */,
-				000000000000000000000016 /* BloomUITests */,
 				000000000000000000000017 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -117,27 +113,6 @@
 			productReference = 00000000000000000000000B /* BloomTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		000000000000000000000034 /* BloomUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 00000000000000000000003E /* Build configuration list for PBXNativeTarget "BloomUITests" */;
-			buildPhases = (
-				000000000000000000000024 /* Sources */,
-				000000000000000000000025 /* Frameworks */,
-				000000000000000000000026 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				000000000000000000000029 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				000000000000000000000016 /* BloomUITests */,
-			);
-			name = BloomUITests;
-			productName = BloomUITests;
-			productReference = 00000000000000000000000C /* BloomUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -151,9 +126,6 @@
 						CreatedOnToolsVersion = 27.0;
 					};
 					000000000000000000000033 = {
-						TestTargetID = 000000000000000000000032;
-					};
-					000000000000000000000034 = {
 						TestTargetID = 000000000000000000000032;
 					};
 				};
@@ -173,7 +145,6 @@
 			targets = (
 				000000000000000000000032 /* Bloom */,
 				000000000000000000000033 /* BloomTests */,
-				000000000000000000000034 /* BloomUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -211,13 +182,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		000000000000000000000021 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		000000000000000000000024 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -339,34 +303,6 @@
 			};
 			name = Release;
 		};
-		00000000000000000000004C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_TESTABILITY = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.chandrika.bloom.care.uitests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Bloom;
-			};
-			name = Debug;
-		};
-		00000000000000000000004D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.chandrika.bloom.care.uitests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Bloom;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -384,15 +320,6 @@
 			buildConfigurations = (
 				00000000000000000000004A /* Debug */,
 				00000000000000000000004B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		00000000000000000000003E /* Build configuration list for PBXNativeTarget "BloomUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				00000000000000000000004C /* Debug */,
-				00000000000000000000004D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
