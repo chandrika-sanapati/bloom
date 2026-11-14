@@ -24,21 +24,23 @@ struct WateringHomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    header
-                    if store.garden.plants.isEmpty {
-                        emptyState
-                    } else {
-                        plantsSection
-                        activitySection
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        header
+                        if store.garden.plants.isEmpty {
+                            emptyState
+                        } else {
+                            plantsSection
+                            activitySection
+                        }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 32)
+                    .frame(width: geometry.size.width, alignment: .leading)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             }
-            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
             .sheet(isPresented: $showingCatalog) { PlantCatalogView() }
             .sheet(isPresented: $showingSettings) { NotificationSettingsView() }
@@ -56,7 +58,7 @@ struct WateringHomeView: View {
                 Text("Bloom").font(.largeTitle.bold())
                 Text("One small check at a time.").font(.subheadline).foregroundStyle(.secondary)
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
             Button { showingCatalog = true } label: {
                 Image(systemName: "plus")
                     .font(.headline.weight(.semibold))
