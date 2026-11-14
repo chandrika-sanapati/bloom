@@ -48,6 +48,7 @@ If it does not, it should be deferred, hidden from the primary flow, or removed 
 - Prefer explicit next-date editing over interval configuration in the MVP.
 - Prefer a clean greenfield model over compatibility layers for deferred prototype features.
 - Prefer task-first language over feature-first language.
+- Do not add taglines, eyebrow text, or helper copy by default; include supporting text only when it helps the user's current decision.
 - Prefer a short, complete journey over a broad but fragmented platform.
 - Do not add a control merely because the existing model supports it.
 - Do not keep a visible feature in the MVP only because it already exists.

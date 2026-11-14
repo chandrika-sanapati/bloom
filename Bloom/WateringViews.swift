@@ -37,8 +37,8 @@ struct WateringHomeView: View {
                     }
                     .padding(.bottom, 32)
                     .frame(width: max(0, geometry.size.width - 48), alignment: .leading)
-                    .padding(.horizontal, 24)
                 }
+                .padding(.horizontal, 24)
                 .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             }
             .navigationBarHidden(true)
@@ -56,7 +56,6 @@ struct WateringHomeView: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Bloom").font(.largeTitle.bold())
-                Text("One small check at a time.").font(.subheadline).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if !store.garden.plants.isEmpty {
@@ -98,11 +97,11 @@ struct WateringHomeView: View {
             Button { showingCatalog = true } label: {
                 Text("Add plant")
                     .font(.body.weight(.semibold))
-                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .frame(minWidth: 132, minHeight: 44)
+                    .padding(.horizontal, 8)
             }
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.roundedRectangle(radius: 14))
-            .controlSize(.large)
             .accessibilityIdentifier("empty-add-plant")
         }
         .padding(20)
