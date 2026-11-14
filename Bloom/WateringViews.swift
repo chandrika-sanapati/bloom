@@ -1,0 +1,325 @@
+import SwiftUI
+
+struct WateringHomeView: View {
+    @Environment(BloomStore.self) private var store
+    @State private var showingCatalog = false
+    @State private var selectedTab = HomeTab.upcoming
+    @State private var taskPlantID: UUID?
+
+    enum HomeTab: String, CaseIterable, Identifiable {
+        case upcoming = "Upcoming"
+        case past = "Past"
+        var id: Self { self }
+    }
+
+    private var scheduledPlants: [(Plant, WateringSchedule)] {
+        store.garden.plants.compactMap { plant in
+            guard let schedule = store.schedule(plant.id) else { return nil }
+            return (plant, schedule)
+        }.sorted { $0.1.nextCheckAt < $1.1.nextCheckAt }
+    }
+
+    private var pastRecords: [WateringRecord] { Array(store.garden.wateringRecords.sorted { $0.recordedAt > $1.recordedAt }.prefix(5)) }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    header
+                    if store.garden.plants.isEmpty {
+                        emptyState
+                    } else {
+                        plantsSection
+                        activitySection
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 32)
+            }
+            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showingCatalog) { PlantCatalogView() }
+            .fullScreenCover(item: taskRoute) { WateringCheckView(plantID: $0.id) }
+        }
+    }
+
+    private var taskRoute: Binding<WateringRoute?> {
+        Binding(get: { taskPlantID.map(WateringRoute.init(id:)) }, set: { taskPlantID = $0?.id })
+    }
+
+    private var header: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Bloom").font(.largeTitle.bold())
+                Text("One small check at a time.").font(.subheadline).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button { showingCatalog = true } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 44, height: 44)
+                    .background(.tint, in: Circle())
+                    .foregroundStyle(.white)
+            }
+            .accessibilityLabel("Add plant")
+        }
+        .padding(.top, 18)
+    }
+
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Image("area-whole")
+                .resizable().scaledToFill().frame(height: 220).clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Start with your plants").font(.title2.bold())
+                Text("Add a Snake Plant, Monstera, Rubber Plant, or Pothos to get a simple watering check-in schedule.")
+                    .font(.body).foregroundStyle(.secondary)
+            }
+            Button("Add a plant") { showingCatalog = true }
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(20)
+        .background(.background, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private var plantsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("My plants").font(.title3.bold())
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(store.garden.plants) { plant in
+                        PlantSummaryCard(plant: plant, schedule: store.schedule(plant.id))
+                    }
+                }
+            }
+        }
+    }
+
+    private var activitySection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Activity").font(.title3.bold())
+            Picker("Activity", selection: $selectedTab) {
+                ForEach(HomeTab.allCases) { Text($0.rawValue).tag($0) }
+            }.pickerStyle(.segmented)
+            if selectedTab == .upcoming { upcoming } else { past }
+        }
+    }
+
+    private var upcoming: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            ForEach(CareTaskTiming.allCases) { timing in
+                let items = scheduledPlants.filter { CareTaskTiming.classify($0.1.nextCheckAt) == timing }
+                if !items.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(timing.rawValue).font(.headline)
+                        ForEach(items, id: \.0.id) { item in
+                            Button { taskPlantID = item.0.id } label: {
+                                WateringTaskRow(plant: item.0, schedule: item.1, timing: timing)
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            if scheduledPlants.isEmpty {
+                EmptyActivityCard(title: "Nothing scheduled", detail: "Add a supported plant to start watering check-ins.")
+            }
+        }
+    }
+
+    private var past: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if pastRecords.isEmpty {
+                EmptyActivityCard(title: "No watering history yet", detail: "Your completed checks will appear here.")
+            } else {
+                ForEach(pastRecords) { record in
+                    if let plant = store.plant(record.plantID) {
+                        WateringHistoryRow(plant: plant, record: record)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct WateringRoute: Identifiable { let id: UUID }
+
+private struct PlantSummaryCard: View {
+    let plant: Plant
+    let schedule: WateringSchedule?
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(plant.asset).resizable().scaledToFill().frame(width: 150, height: 110).clipped()
+            Text(plant.displayName).font(.headline)
+            if let schedule { Text("Check \(schedule.nextCheckAt, format: .dateTime.month().day())").font(.caption).foregroundStyle(.secondary) }
+            else { Text("Schedule unavailable").font(.caption).foregroundStyle(.secondary) }
+        }
+        .frame(width: 150, alignment: .leading)
+        .padding(12)
+        .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
+private struct WateringTaskRow: View {
+    let plant: Plant
+    let schedule: WateringSchedule
+    let timing: CareTaskTiming
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: timing == .overdue ? "exclamationmark.circle.fill" : "drop.fill")
+                .foregroundStyle(timing == .overdue ? .orange : .blue)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Check watering").font(.headline)
+                Text(plant.displayName).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(schedule.nextCheckAt, format: .dateTime.month().day())
+                .font(.subheadline.weight(.semibold)).foregroundStyle(timing == .overdue ? .orange : .secondary)
+            Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .background(.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Check watering for \(plant.displayName), \(timing.rawValue)")
+    }
+}
+
+private struct WateringHistoryRow: View {
+    let plant: Plant
+    let record: WateringRecord
+    var body: some View {
+        HStack {
+            Image(systemName: record.outcome == .watered ? "drop.fill" : "eye.fill")
+                .foregroundStyle(record.outcome == .watered ? .blue : .secondary)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(record.outcome.rawValue).font(.headline)
+                Text(plant.displayName).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(record.recordedAt, format: .dateTime.month().day()).font(.subheadline).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 10)
+    }
+}
+
+private struct EmptyActivityCard: View {
+    let title: String
+    let detail: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.headline)
+            Text(detail).font(.subheadline).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct PlantCatalogView: View {
+    @Environment(BloomStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            List(PlantSpecies.catalog) { species in
+                Button {
+                    let plant = Plant(name: species.name, species: species.scientific, asset: species.asset)
+                    _ = store.addPlant(plant)
+                    dismiss()
+                } label: {
+                    HStack(spacing: 14) {
+                        Image(species.asset).resizable().scaledToFill().frame(width: 64, height: 64).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(species.name).font(.headline)
+                            Text(species.scientific).font(.subheadline.italic()).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+            }
+            .navigationTitle("Add a plant")
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+        }
+    }
+}
+
+struct WateringCheckView: View {
+    @Environment(BloomStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    let plantID: UUID
+    @State private var outcome: WateringOutcome?
+    @State private var soil: Soil = .unknown
+    @State private var note = ""
+    @State private var dateEditing = false
+    @State private var date = Date()
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            if let plant = store.plant(plantID), let schedule = store.schedule(plantID) {
+                Form {
+                    Section {
+                        Text(plant.displayName).font(.title2.bold())
+                        if let profile = store.wateringProfile(for: plant) {
+                            Text(profile.careCue).font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        LabeledContent("Scheduled check", value: schedule.nextCheckAt.formatted(date: .abbreviated, time: .shortened))
+                    }
+                    Section("What did you find?") {
+                        Picker("Soil", selection: $soil) { ForEach(Soil.allCases) { Text($0.rawValue).tag($0) } }
+                    }
+                    Section("What did you do?") {
+                        ForEach(WateringOutcome.allCases) { value in
+                            Button { outcome = value } label: {
+                                HStack {
+                                    Text(value.rawValue)
+                                    Spacer()
+                                    if outcome == value { Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint) }
+                                }
+                            }.foregroundStyle(.primary)
+                        }
+                    }
+                    Section {
+                        Button("Edit next check") { date = schedule.nextCheckAt; dateEditing = true }
+                        TextField("Note · Optional", text: $note, axis: .vertical)
+                    }
+                    if let error { Section { Text(error).foregroundStyle(.red) } }
+                }
+                .navigationTitle("Check watering")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+                .safeAreaInset(edge: .bottom) {
+                    Button("Save check") { save() }
+                        .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity).padding()
+                        .background(.bar)
+                }
+                .sheet(isPresented: $dateEditing) {
+                    NavigationStack {
+                        DatePicker("Next check", selection: $date, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                            .datePickerStyle(.graphical).padding()
+                            .navigationTitle("Edit next check")
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dateEditing = false } }
+                                ToolbarItem(placement: .confirmationAction) { Button("Save") { _ = store.editNextCheck(for: plantID, date: date); dateEditing = false } }
+                            }
+                    }
+                }
+            } else { ContentUnavailableView("Watering task unavailable", systemImage: "drop") }
+        }
+    }
+
+    private func save() {
+        guard let outcome else { error = "Choose what you did."; return }
+        let followUp = outcome == .checkedNotWatered && soil == .dry ? WateringFollowUp.defaultDays : nil
+        guard store.completeWateringCheck(for: plantID, outcome: outcome, soil: soil, note: note, followUpDays: followUp) != nil else {
+            error = "Your check couldn't be saved. Please try again."
+            return
+        }
+        dismiss()
+    }
+}

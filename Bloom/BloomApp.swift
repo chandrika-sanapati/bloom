@@ -18,7 +18,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if store.garden.hasStarted {
-                ContentUnavailableView("Watering MVP coming next", systemImage: "drop")
+                WateringHomeView()
             } else {
                 VStack(spacing: 16) {
                     Text("Bloom").font(.largeTitle.bold())

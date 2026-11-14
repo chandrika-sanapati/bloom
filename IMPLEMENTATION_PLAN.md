@@ -383,6 +383,8 @@ Acceptance:
 
 **Goal:** Make the MVP surface calm and task-first.
 
+**Status:** Complete — focused Home, Upcoming, Past, catalog, and watering-check surface verified 15 November 2026.
+
 Tasks:
 
 - Simplify `HomeCareFeed` to watering tasks plus only the minimum existing compatibility content required by saved gardens.
@@ -400,6 +402,7 @@ Acceptance:
 - An untouched overdue task is visible in Upcoming/Overdue but absent from Past.
 - Past labels clearly distinguish Watered from Checked — not watered.
 - No deferred record or schedule configuration event appears in Past.
+- Verification passed on iPhone 18 Pro Max: Phase 0–2 domain tests executed 16 tests with 0 failures; the Phase 3 application build also succeeded.
 
 ### Phase 4 — Plant setup and detail simplification
 
