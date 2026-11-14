@@ -9,7 +9,9 @@
 
 This document translates the reduced Bloom MVP into an implementation sequence.
 
-The current app is a broad plant-care prototype with:
+The current app is a broad plant-care prototype. We are intentionally resetting the implementation as a greenfield MVP rather than preserving the prototype's broader feature surface or saved-data compatibility.
+
+The prototype currently contains:
 
 - one-off plant reminders;
 - soil checks and observations;
@@ -25,7 +27,7 @@ The agreed MVP is intentionally much smaller:
 
 > **For four supported plant types, help the user check the right plant, record Watered or Checked — not watered, and schedule the next check from what actually happened.**
 
-The implementation should simplify the product surface without destroying existing local garden data or making the codebase impossible to extend later.
+The implementation should simplify the product surface by removing obsolete prototype behavior and building the smallest coherent watering product directly.
 
 ## 1.1 North-star implementation principle: simplify the experience first
 
@@ -44,7 +46,7 @@ If it does not, it should be deferred, hidden from the primary flow, or removed 
 - Prefer progressive disclosure over showing every capability at once.
 - Prefer a stable active schedule over pause, seasonal, or adaptive states.
 - Prefer explicit next-date editing over interval configuration in the MVP.
-- Prefer preserving legacy data silently over exposing legacy feature concepts.
+- Prefer a clean greenfield model over compatibility layers for deferred prototype features.
 - Prefer task-first language over feature-first language.
 - Prefer a short, complete journey over a broad but fragmented platform.
 - Do not add a control merely because the existing model supports it.
@@ -75,7 +77,7 @@ Automatic watering schedules are available only for:
 | Rubber Plant | *Ficus elastica* | 7–21 days | 14 days |
 | Pothos | *Epipremnum aureum* | 7–21 days | 14 days |
 
-Custom and unlisted plants remain addable, but do not receive an invented schedule. Their plant detail shows **Set up watering schedule**.
+Custom and unlisted plants are out of the MVP catalog. The add flow should offer only the four supported plants.
 
 ### Schedule behavior
 
@@ -131,7 +133,7 @@ Untouched overdue tasks and schedule configuration changes do not appear in Past
 - Older watering records, unrelated observations, care plans, and later activity remain unchanged.
 - Immediate Undo may be retained where it can be implemented safely.
 
-### Explicitly deferred
+### Explicitly deferred or removed
 
 Do not add to the watering release:
 
@@ -148,7 +150,7 @@ Do not add to the watering release:
 - new Past filters/search;
 - broad navigation into care plans, observations, or leaf/pest guidance.
 
-Existing saved care-plan and observation data must remain decodable and safe, but those capabilities should not compete with the watering MVP surface.
+The prototype's old care-plan, observation, discovery, and reminder data does not need to remain decodable. The greenfield MVP may use a clean data model and a clean local store.
 
 ## 3. Current implementation audit
 
@@ -167,17 +169,15 @@ Relevant existing types are in `Bloom/Models.swift`:
 - `Garden` stores plants, records, optional care plans/tasks, legacy preferences, and app preferences.
 - `PlantSpecies.catalog` already contains exactly the four supported catalog species.
 
-### Current store behavior
+### Current store behavior — to replace, not preserve
 
 `Bloom/BloomStore` behavior is currently distributed across `Models.swift` and extensions:
 
-- `setReminder` saves one date and a reminder kind.
-- `finishCare` completes matching one-off reminders and clears the reminder.
-- `undoCare` restores one-off reminder state.
-- `deleteRecord` uses `removeCareRecords(startingAt:)`, which is broader than the MVP's most-recent-only deletion rule.
-- `wateredDate(for:)` derives a display date from `lastWatered` and saved watered records.
-- `commit` already provides atomic JSON writes and is the foundation for schedule transitions.
-- `refreshPlanTaskNotifications` is currently named around care-plan notifications and is triggered after every commit.
+- `setReminder` saves a one-off date and reminder kind; it will be replaced by watering schedule operations.
+- `finishCare` handles several care domains; it will be replaced by explicit watering outcomes.
+- `deleteRecord` handles broad care history; it will be replaced by most-recent watering-record deletion.
+- `commit` can be retained as a small local persistence primitive, but the Garden model should be rebuilt around watering.
+- Plan-task notification synchronization will be removed with the care-plan feature.
 
 ### Current UI surface
 
@@ -192,7 +192,7 @@ The main surface is in `GardenViews.swift`, `CareFeed.swift`, `CareViews.swift`,
 - `PlantDetailView` exposes Check soil, Record a change, ReminderCard, care plans, plant details, and recent activity.
 - `HistoryView` exposes filters for checks, changes, follow-ups, actions, search, and plant selection.
 
-### Current broader feature surface
+### Current broader feature surface — remove
 
 These files represent capabilities outside the reduced watering MVP:
 
@@ -207,7 +207,7 @@ These files represent capabilities outside the reduced watering MVP:
 - `PlantSetupViews.swift`
 - `PreferencesView.swift` sections for broader data/guidance
 
-Do not delete these files in the first phase. First isolate their entry points and preserve decoding compatibility. Removal can happen later when the MVP has a stable replacement and data migration policy.
+These files can be deleted as part of the greenfield reset once their references are removed from the remaining MVP files. Do not retain compatibility wrappers for removed product concepts.
 
 ### Current test and fixture surface
 
@@ -221,19 +221,13 @@ Existing tests strongly encode the broader product:
 - portions of `BloomUITests/AuditUITests.swift`
 - care-plan, observation, and reminder assertions in `BloomUITests/BloomUITests.swift`
 
-The implementation should not remove these tests blindly. First classify them as:
-
-1. **MVP behavior** — retain and update.
-2. **Legacy compatibility** — retain model coverage, but stop exposing the route from MVP UI.
-3. **Deferred product behavior** — move to a later target or leave documented as stale until the feature returns.
-
-Per repository guidance, do not run tests during this documentation phase.
+The broader tests have already been removed. Phase 0 protection tests should now be reduced to the greenfield MVP boundary: four supported profiles, clean local persistence, schedule/record integrity, and failed-write behavior. No legacy decoding tests are needed.
 
 ## 4. Recommended architecture direction
 
 ### 4.1 Make watering first-class
 
-Do not continue extending `Plant.reminder` as the long-term model. Introduce a first-class schedule model while keeping a compatibility decoder for old gardens.
+Do not extend `Plant.reminder`. Replace the prototype reminder model with a first-class schedule model.
 
 Conceptual target:
 
@@ -261,24 +255,16 @@ WateringRecord
 
 Implementation notes:
 
-- A `CareRecord` may remain the persisted activity representation if that is safer for compatibility, but the schedule transition logic should be isolated in named watering methods.
+- Use a dedicated `WateringRecord` for MVP activity; do not overload the broad prototype `CareRecord`.
 - Do not persist `deferred` or `postponed` as a watering outcome.
 - Do not persist `paused` or a seasonal schedule state.
 - Do not persist user-adjusted interval state in the MVP.
 - Store `scheduledFor` separately from `recordedAt` so late completion remains understandable.
 - Keep `previousNextCheckAt` only if it is needed for safe Undo; do not build a general audit ledger.
 
-### 4.2 Isolate compatibility from product UI
+### 4.2 Keep the greenfield model small
 
-Existing `Plant.reminderKind == .observation` records and care-plan data may exist in saved gardens. The MVP should:
-
-- decode them without crashing;
-- preserve them during writes;
-- avoid treating them as watering schedules;
-- avoid showing observation/care-plan creation routes in the watering MVP;
-- keep notification routing for legacy records only if removing it would break existing saved data.
-
-The product surface and storage compatibility layer do not need to have identical capabilities.
+The MVP model should contain only plant identity, the four supported profile values, watering schedules, watering records, and notification preferences. Do not retain reminder kinds, observation IDs, care-plan IDs, leaf assessments, pest assessments, or legacy discovery fields.
 
 ### 4.3 Centralize schedule transitions
 
@@ -319,50 +305,52 @@ The four profiles should be versioned content. The schedule engine should consum
 
 **Goal:** Establish a safe working baseline before changing behavior.
 
-**Status:** Complete — protection baseline, test-scope reset, and simulator verification recorded 14 November 2026.
+**Status:** Complete — greenfield reset, test-scope reset, and simulator verification recorded 14 November 2026.
 
 Tasks:
 
-- Confirm the working tree and preserve untracked/user files.
-- Create a small sample garden fixture that represents the reduced MVP: supported plants, one overdue task, one healthy non-watering check, and one watered record.
-- Identify all code paths that write `Plant.reminder`, `Plant.reminderKind`, `Plant.lastWatered`, and `CareAction.postponed`.
+- Confirm the working tree before the reset and record the files being intentionally removed.
+- Create a small greenfield fixture strategy for supported plants, watering schedules, and watering records.
+- Identify the prototype model and entry points being removed rather than migrated.
 - Identify all navigation entry points to observations, care plans, leaf guidance, pest guidance, and broader history filters.
-- Decide whether compatibility code remains in the main target or moves behind a legacy namespace/file grouping.
+- Remove obsolete prototype production files and references instead of creating a compatibility namespace.
 - Remove broader product tests from the active test surface; add them back phase by phase when the corresponding capability returns.
-- Do not remove production feature files in this phase; preserve compatibility code until the watering implementation has a stable replacement.
-- Do not run tests in this phase; repository guidance requires explicit user approval before test execution.
+- Remove obsolete prototype production files as part of the greenfield reset.
+- Run the focused Phase 0 protection tests once the greenfield model is in place.
 
 Deliverable:
 
-- A verified file/symbol inventory and a fixture strategy.
+- A verified file/symbol inventory and a greenfield fixture strategy.
 - The active test surface contains only `BloomTests/Phase0ProtectionTests.swift`.
-- Phase 0 tests protect the four-plant catalog boundary, custom-plant persistence without an invented schedule, supported plant/history relaunch persistence, legacy observation-reminder decoding, failed writes, and corrupt-file preservation.
-- Broader care-plan, leaf/pest, observation, location, preferences, audit, remedy, and UI journey tests are intentionally removed from the active test target and will be reintroduced only with their future phases.
+- Phase 0 tests protect the four-plant catalog boundary, clean schedule/history persistence, failed writes, and corrupt-file handling.
+- No legacy observation-reminder decoding test is required because the greenfield store intentionally does not decode the prototype model.
 - The empty `BloomUITests` target was removed from `Bloom.xcodeproj`; UI tests will be reintroduced when a later phase has a deliberate MVP UI journey to verify.
-- Verification passed on iPhone 18 Pro Max: `Phase0ProtectionTests` executed 6 tests with 0 failures.
+- Greenfield verification passed on iPhone 18 Pro Max: `Phase0ProtectionTests` executed 4 tests with 0 failures.
 
 ### Phase 1 — Profile content and schedule domain
 
 **Goal:** Replace generic reminder assumptions with a first-class watering schedule foundation.
+
+**Status:** Complete — greenfield watering profiles and schedule domain verified 14 November 2026.
 
 Tasks:
 
 - Add `WateringProfile` for Snake Plant, Monstera, Rubber Plant, and Pothos.
 - Add profile range, deterministic starting interval, and care cue.
 - Add a schedule representation with active status only.
-- Add a migration/read adapter from known existing soil reminders to watering schedules.
-- Define the custom/unlisted state as unscheduled, not fallback-scheduled.
+- Define the catalog as the four supported plants only; remove custom/unlisted add-by-name from the MVP.
 - Implement initial schedule creation using the hybrid last-watered rule.
 - Implement due/today/upcoming/overdue classification.
-- Keep old observation reminders distinguishable and preserved.
+- Keep the data model free of observation reminders and legacy reminder kinds.
 
 Acceptance:
 
 - A supported plant gets exactly one active schedule.
 - A known last-watered date produces the expected first check.
 - An unknown last-watered date produces a baseline check today.
-- A custom plant gets no invented automatic interval.
-- Past records and existing care-plan data survive a load/save cycle.
+- The add flow exposes only supported catalog plants.
+- Watering schedules and records survive a clean store relaunch.
+- Verification passed on iPhone 18 Pro Max: Phase 0 and Phase 1 tests executed 10 tests with 0 failures.
 
 ### Phase 2 — Watering task experience
 
@@ -417,7 +405,7 @@ Acceptance:
 Tasks:
 
 - Keep the existing catalog search for the four supported plants.
-- Keep custom add-by-name, but show Set up watering schedule after saving.
+- Remove custom add-by-name; the MVP catalog contains only four supported plants.
 - Add optional last-watered capture without making it a blocking setup questionnaire.
 - Remove environmental context questions from the watering release.
 - Remove or defer optional room/light/drainage setup if it distracts from adding the plant and first schedule.
@@ -445,7 +433,7 @@ Tasks:
 - Never replay overdue history as a notification burst.
 - Keep global task-notification preference and default reminder time.
 - Make schedule transition, record, Last watered, and notification sync failure behavior visible and recoverable.
-- Add migration handling for existing one-off soil reminders.
+- Reset the local greenfield store cleanly when the MVP schema changes; no prototype migration is required.
 - Ensure deleting the latest watering record cannot delete later or unrelated activity.
 
 Acceptance:
@@ -492,36 +480,36 @@ The safest order is to remove entry points before deleting implementation:
 5. Remove new history filters/search from the watering surface.
 6. Retain legacy views only if they are still needed to open existing records safely.
 
-### Keep temporarily for compatibility
+### Remove from the greenfield model
 
-Keep these model fields/types until a migration decision is made:
+Remove these prototype concepts rather than retaining compatibility fields:
 
+- `Plant.reminder`
 - `Plant.reminderKind`
 - `Plant.reminderObservationID`
 - `Plant.reminderNotifications`
-- legacy `PlantSearchPreferences`
+- `Plant.lastWatered` once derived from `WateringRecord`
+- legacy `PlantSearchPreferences` and recent searches
 - `CarePlan`, `PlanTask`, and related saved data
-- observation and leaf/pest fields on `CareRecord`
-- legacy `.postponed` decoding if existing gardens contain it
-
-Compatibility decoding does not mean these features remain in the MVP UI.
+- observation and leaf/pest fields on the broad `CareRecord`
+- `CareAction.postponed`
 
 ### Candidate file treatment
 
 | Area | MVP treatment |
 | --- | --- |
-| `Models.swift` | Refactor watering models and transitions; retain legacy decoding. |
+| `Models.swift` | Replace the broad model with the clean MVP model. |
 | `CareViews.swift` | Simplify into the primary watering check and schedule UI. |
 | `CareFeed.swift` | Make watering tasks and compact Past history primary. |
 | `GardenViews.swift` | Simplify Home and plant detail entry points. |
 | `DesignSystem.swift` | Add watering-specific task/status components; remove only unused components after migration. |
-| `AddPlantFlow.swift` | Keep catalog add flow; add first-schedule behavior; remove/defer non-MVP setup prompts. |
-| `PlantDiscovery.swift` | Keep four-plant catalog and custom add-by-name. |
+| `AddPlantFlow.swift` | Keep the four-plant catalog add flow; remove custom add-by-name and non-MVP setup prompts. |
+| `PlantDiscovery.swift` | Keep only four-plant catalog search. |
 | `BloomApp.swift` | Retain notification routing; simplify watering notification routes. |
 | `AppPreferencesModels.swift` / `PreferencesView.swift` | Keep global notification preference and default reminder time; defer unrelated settings only if they add surface noise. |
-| `CarePlan*.swift` | Preserve decoding and tests initially; remove primary navigation entry points. |
-| `ObservationViews.swift` / `LeafCare*.swift` | Preserve compatibility initially; defer new UI exposure. |
-| `PlanTaskViews.swift` | Preserve existing saved-task routing only as needed; do not extend for MVP. |
+| `CarePlan*.swift` | Delete from the MVP target. |
+| `ObservationViews.swift` / `LeafCare*.swift` | Delete from the MVP target. |
+| `PlanTaskViews.swift` | Delete from the MVP target. |
 | `PlantSetupViews.swift` | Defer from the watering setup unless required for existing garden compatibility. |
 
 Do not physically delete broad feature files as a first move. Deleting them can break saved gardens, tests, previews, or Xcode target references and makes rollback harder.
