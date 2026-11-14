@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 
 extension BloomStore {
     var wateringSchedules: [WateringSchedule] { garden.wateringSchedules }
@@ -28,6 +29,63 @@ extension BloomStore {
             garden.wateringSchedules[index].updatedAt = now
         }
     }
+
+    func setTaskNotifications(_ enabled: Bool) async -> String? {
+        if enabled {
+            do {
+                guard try await notificationClient.requestAccess() else { return "Notifications are off in iOS Settings. Your tasks stay in Bloom." }
+            } catch {
+                return "Notification access couldn't be enabled. Your tasks stay in Bloom."
+            }
+        }
+        guard commit({ $0.appPreferences.taskNotifications = enabled }) else {
+            return "Your notification preference couldn't be saved."
+        }
+        syncWateringNotifications()
+        await waitForNotificationSync()
+        return notificationMessage
+    }
+
+    func syncWateringNotifications() {
+        let previous = notificationSyncTask
+        notificationSyncTask = Task { [weak self] in
+            await previous?.value
+            await self?.performWateringNotificationSync()
+        }
+    }
+
+    func waitForNotificationSync() async { await notificationSyncTask?.value }
+
+    private func performWateringNotificationSync() async {
+        let pending = await notificationClient.pending()
+        let managed = pending.map(\.identifier).filter { $0.hasPrefix("bloom-watering-") }
+        let future = garden.appPreferences.taskNotifications
+            ? wateringSchedules.filter { $0.nextCheckAt > Date() }
+            : []
+        let desiredIDs = Set(future.map { wateringNotificationID(for: $0.plantID) })
+        notificationClient.remove(managed.filter { !desiredIDs.contains($0) })
+        guard garden.appPreferences.taskNotifications, await notificationClient.access() == .allowed else { return }
+        for schedule in future {
+            guard let plant = plant(schedule.plantID), let trigger = calendarNotificationTrigger(for: schedule.nextCheckAt) else { continue }
+            let content = UNMutableNotificationContent()
+            content.title = "Check watering"
+            content.body = "Check \(plant.displayName)'s soil before deciding whether to water."
+            content.sound = .default
+            content.userInfo = ["plantID": plant.id.uuidString]
+            do {
+                try await notificationClient.add(UNNotificationRequest(identifier: wateringNotificationID(for: plant.id), content: content, trigger: trigger))
+            } catch {
+                notificationMessage = "A watering notification couldn't be scheduled. Your task stays in Bloom."
+            }
+        }
+    }
+
+    private func calendarNotificationTrigger(for date: Date) -> UNCalendarNotificationTrigger? {
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        return UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+    }
+
+    func wateringNotificationID(for plantID: UUID) -> String { "bloom-watering-\(plantID.uuidString)" }
 
     @discardableResult
     func completeWateringCheck(

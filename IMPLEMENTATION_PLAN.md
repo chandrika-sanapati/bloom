@@ -434,6 +434,8 @@ Acceptance:
 
 **Goal:** Make the core loop dependable across relaunches and notification states.
 
+**Status:** Complete — watering-only notification service and future/permission behavior verified 15 November 2026.
+
 Tasks:
 
 - Rename/refactor notification synchronization around watering tasks rather than plan tasks where appropriate.
@@ -452,6 +454,7 @@ Acceptance:
 - Notification permission denial leaves in-app tasks intact.
 - Date edits do not leave stale notifications.
 - Overdue tasks do not produce a burst of notifications.
+- Verification passed on iPhone 18 Pro Max: Phase 5 notification tests executed 3 tests with 0 failures.
 
 ### Phase 6 — UX polish and MVP validation
 

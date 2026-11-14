@@ -78,15 +78,20 @@ struct PlantSpecies: Identifiable, Hashable {
 final class BloomStore {
     private(set) var garden: Garden
     var errorMessage: String?
+    var notificationMessage: String?
     private let fileURL: URL
+    let notificationClient: any BloomNotificationClient
+    var notificationSyncTask: Task<Void, Never>?
 
-    init(fileURL: URL? = nil) {
+    init(fileURL: URL? = nil, notificationClient: (any BloomNotificationClient)? = nil) {
         self.fileURL = fileURL ?? URL.applicationSupportDirectory.appending(path: "Bloom/garden.json")
+        self.notificationClient = notificationClient ?? SystemBloomNotifications()
         if let data = try? Data(contentsOf: self.fileURL), let saved = try? JSONDecoder().decode(Garden.self, from: data) {
             garden = saved
         } else {
             garden = Garden()
         }
+        if garden.hasStarted { syncWateringNotifications() }
     }
 
     @discardableResult
@@ -97,6 +102,7 @@ final class BloomStore {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(next).write(to: fileURL, options: .atomic)
             garden = next
+            syncWateringNotifications()
             return true
         } catch {
             errorMessage = "Your changes couldn't be saved. Your previous records are safe."
@@ -111,6 +117,11 @@ final class BloomStore {
 
     @discardableResult
     func start() -> Bool { commit { $0.hasStarted = true } }
+
+    func reminderDate(days: Int = 3, now: Date = .now, calendar: Calendar = .current) -> Date {
+        let day = calendar.date(byAdding: .day, value: max(1, days), to: now) ?? now.addingTimeInterval(86_400)
+        return calendar.date(bySettingHour: garden.appPreferences.reminderHour, minute: garden.appPreferences.reminderMinute, second: 0, of: day) ?? day
+    }
 
     @discardableResult
     func addPlant(_ plant: Plant, lastWatered: Date? = nil) -> Bool {
@@ -144,10 +155,12 @@ final class BloomStore {
 
     @discardableResult
     func deletePlant(_ id: UUID) -> Bool {
-        commit { garden in
+        let saved = commit { garden in
             garden.plants.removeAll { $0.id == id }
             garden.wateringSchedules.removeAll { $0.plantID == id }
             garden.wateringRecords.removeAll { $0.plantID == id }
         }
+        if saved { notificationClient.remove([wateringNotificationID(for: id)]) }
+        return saved
     }
 }
