@@ -36,9 +36,7 @@ final class Phase1WateringScheduleTests: XCTestCase {
         let plant = Plant(name: "Snake Plant", species: "Dracaena trifasciata", asset: "snake")
         let lastWatered = Date(timeIntervalSince1970: 1_800_000_000)
 
-        XCTAssertTrue(store.savePlant(plant))
-        XCTAssertTrue(store.commit { $0.wateringRecords = [WateringRecord(plantID: plant.id, scheduledFor: lastWatered, recordedAt: lastWatered, outcome: .watered, soil: .dry)] })
-        XCTAssertTrue(store.ensureWateringSchedule(for: plant.id, now: lastWatered, calendar: Calendar(identifier: .gregorian)))
+        XCTAssertTrue(store.addPlant(plant, lastWatered: lastWatered))
 
         let schedule = try XCTUnwrap(store.schedule(plant.id))
         let expected = Calendar.current.date(byAdding: .day, value: 21, to: lastWatered)!
@@ -52,8 +50,7 @@ final class Phase1WateringScheduleTests: XCTestCase {
         let plant = Plant(name: "Monstera", species: "Monstera deliciosa", asset: "monstera")
         let now = Date()
 
-        XCTAssertTrue(store.savePlant(plant))
-        XCTAssertTrue(store.ensureWateringSchedule(for: plant.id, now: now))
+        XCTAssertTrue(store.addPlant(plant, lastWatered: nil))
         let schedule = try XCTUnwrap(store.schedule(plant.id))
         XCTAssertTrue(Calendar.current.isDate(schedule.nextCheckAt, inSameDayAs: now))
     }

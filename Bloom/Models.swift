@@ -60,30 +60,17 @@ struct Garden: Codable {
     var appPreferences = AppPreferences()
 }
 
-enum PlantCareLevel: String, CaseIterable {
-    case easy = "Easy"
-    case moderate = "Moderate"
-    case hard = "Hard"
-}
-
-enum PlantLightNeed: String, CaseIterable {
-    case low = "Low light"
-    case indirect = "Indirect light"
-}
-
 struct PlantSpecies: Identifiable, Hashable {
     var name: String
     var scientific: String
     var asset: String
-    var care: PlantCareLevel = .moderate
-    var light: PlantLightNeed = .indirect
     var id: String { scientific }
 
     static let catalog = [
-        PlantSpecies(name: "Snake Plant", scientific: "Dracaena trifasciata", asset: "snake", care: .easy, light: .low),
+        PlantSpecies(name: "Snake Plant", scientific: "Dracaena trifasciata", asset: "snake"),
         PlantSpecies(name: "Monstera", scientific: "Monstera deliciosa", asset: "monstera"),
         PlantSpecies(name: "Rubber Plant", scientific: "Ficus elastica", asset: "rubber"),
-        PlantSpecies(name: "Pothos", scientific: "Epipremnum aureum", asset: "pothos", care: .easy)
+        PlantSpecies(name: "Pothos", scientific: "Epipremnum aureum", asset: "pothos")
     ]
 }
 

@@ -351,7 +351,6 @@ struct WateringCheckView: View {
     let plantID: UUID
     @State private var outcome: WateringOutcome?
     @State private var soil: Soil = .unknown
-    @State private var note = ""
     @State private var dateEditing = false
     @State private var date = Date()
     @State private var error: String?
@@ -381,10 +380,7 @@ struct WateringCheckView: View {
                             }.foregroundStyle(.primary)
                         }
                     }
-                    Section {
-                        Button("Edit next check") { date = schedule.nextCheckAt; dateEditing = true }
-                        TextField("Note · Optional", text: $note, axis: .vertical)
-                    }
+                    Section { Button("Edit next check") { date = schedule.nextCheckAt; dateEditing = true } }
                     if let error { Section { Text(error).foregroundStyle(.red) } }
                 }
                 .navigationTitle("Check watering")
@@ -414,7 +410,7 @@ struct WateringCheckView: View {
     private func save() {
         guard let outcome else { error = "Choose what you did."; return }
         let followUp = outcome == .checkedNotWatered && soil == .dry ? WateringFollowUp.defaultDays : nil
-        guard store.completeWateringCheck(for: plantID, outcome: outcome, soil: soil, note: note, followUpDays: followUp) != nil else {
+        guard store.completeWateringCheck(for: plantID, outcome: outcome, soil: soil, followUpDays: followUp) != nil else {
             error = "Your check couldn't be saved. Please try again."
             return
         }
