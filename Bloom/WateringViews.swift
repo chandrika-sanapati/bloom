@@ -58,17 +58,15 @@ struct WateringHomeView: View {
                 Text("Bloom").font(.largeTitle.bold())
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if !store.garden.plants.isEmpty {
-                Button { showingCatalog = true } label: {
-                    Image(systemName: "plus")
-                        .font(.headline.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                        .background(.tint, in: Circle())
-                        .foregroundStyle(.white)
-                }
-                .accessibilityLabel("Add plant")
-                .accessibilityIdentifier("home-add-plant")
+            Button { showingCatalog = true } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.semibold))
+                    .frame(width: 44, height: 44)
+                    .background(.tint, in: Circle())
+                    .foregroundStyle(.white)
             }
+            .accessibilityLabel("Add plant")
+            .accessibilityIdentifier("home-add-plant")
             Button { showingSettings = true } label: {
                 Image(systemName: "bell")
                     .font(.headline.weight(.semibold))
@@ -86,14 +84,13 @@ struct WateringHomeView: View {
             Image("area-whole")
                 .resizable().scaledToFill()
                 .frame(maxWidth: .infinity)
-                .frame(height: 220)
+                .aspectRatio(1.55, contentMode: .fit)
                 .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             VStack(alignment: .leading, spacing: 8) {
                 Text("Start with your plants").font(.title2.bold())
                 Text("Add a Snake Plant, Monstera, Rubber Plant, or Pothos to get a simple watering check-in schedule.")
                     .font(.body).foregroundStyle(.secondary)
-            }
+            }.padding(.horizontal, 20)
             Button { showingCatalog = true } label: {
                 Text("Add plant")
                     .font(.body.weight(.semibold))
@@ -103,9 +100,12 @@ struct WateringHomeView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.roundedRectangle(radius: 14))
             .accessibilityIdentifier("empty-add-plant")
+            .frame(maxWidth: .infinity)
         }
-        .padding(20)
+        .padding(.bottom, 20)
         .background(.background, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
     private var plantsSection: some View {
