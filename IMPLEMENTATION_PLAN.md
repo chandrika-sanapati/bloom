@@ -462,6 +462,8 @@ Acceptance:
 
 **Status:** Complete — focused watering UX polish and validation baseline verified 15 November 2026.
 
+The empty Home state is the app's first screen. There is no separate start/onboarding gate; Bloom opens directly to the single **Add a plant** action.
+
 Tasks:
 
 - Review every watering screen against `DESIGN_GUIDELINES.md`.
@@ -481,6 +483,89 @@ Acceptance:
 - The user understands an overdue task and can resolve it.
 - The app feels focused rather than like a partially hidden care platform.
 - Verification passed on iPhone 18 Pro Max: build succeeded and Phase 0–2 plus Phase 5 tests executed 19 tests with 0 failures.
+
+### Phase 7 — MVP validation and case-study evidence
+
+**Goal:** Validate that the simplified watering loop is understandable, low-friction, and trustworthy before adding post-MVP capabilities.
+
+**Status:** Planned.
+
+This phase is validation work, not a feature-expansion phase. It should test the product we have before adding environmental checks, additional plant types, nutrition, repotting, or symptom guidance.
+
+Tasks:
+
+- Run the complete first-time journey on iPhone 18 Pro Max:
+  - Start Bloom.
+  - Add each supported plant type.
+  - Understand the profile starting suggestion.
+  - Open a Today or Upcoming task.
+  - Choose Watered.
+  - Confirm Last watered and the next check.
+- Run the non-watering journey:
+  - Open an overdue or due task.
+  - Choose Checked — not watered.
+  - Verify Last watered remains unchanged.
+  - Verify the normal or shorter follow-up behavior is understandable.
+- Validate the schedule-editing journey:
+  - Edit the next check date.
+  - Confirm the task moves to the expected timing group.
+  - Confirm no activity record is created by schedule editing.
+- Validate notification behavior:
+  - Notifications disabled.
+  - Permission denied.
+  - Future notification enabled.
+  - Overdue task with no notification burst.
+- Review empty and recovery states:
+  - No plants.
+  - No watering history.
+  - No tasks scheduled.
+  - Failed save.
+  - Invalid or unavailable task.
+- Review accessibility:
+  - Dynamic Type at large and accessibility sizes.
+  - VoiceOver labels, selected state, dates, outcome choices, and save action.
+  - 44-point touch targets.
+  - Reduced Motion behavior.
+- Capture case-study artifacts:
+  - Final core-flow screenshots.
+  - Early scope or flow artifacts.
+  - Rejected concepts and why they were rejected.
+  - Schedule/profile model.
+  - Validation notes and observed friction.
+- Classify findings as **Observed**, **Designed**, or **Planned**.
+- Record the top usability gaps and decide whether each requires a fix, a content change, or a post-MVP decision.
+- Update the PRD case-study evidence section with honest user and product impact. Do not invent business outcomes.
+
+Validation questions:
+
+- Does the user understand that a due date means **check**, not automatically **water**?
+- Can the user distinguish Watered from Checked — not watered without explanation?
+- Does the user understand what an overdue task requires?
+- Does the next-check date feel trustworthy after a late completion?
+- Does the user understand why the next check is shorter after a dry/concerning non-watering check?
+- Does adding a supported plant feel fast enough?
+- Does the Home surface feel focused rather than sparse or confusing?
+- Do notifications feel helpful rather than like another schedule to manage?
+
+Evidence to capture:
+
+- Task completion and hesitation points.
+- Misunderstood labels or dates.
+- User quotes and confidence feedback.
+- Accessibility findings.
+- Notification and persistence issues.
+- Requests for deferred capabilities, recorded as future hypotheses rather than immediate scope.
+
+Acceptance:
+
+- A first-time user can complete the main watering journey without facilitator explanation.
+- Users understand the distinction between checking and watering.
+- Users can resolve an overdue task without guessing what Bloom expects.
+- Users trust the next check after on-time and late completion.
+- Empty, error, permission, and disabled states are understandable.
+- Dynamic Type and VoiceOver do not hide or truncate the primary action.
+- Findings are documented in the PRD and case-study artifacts.
+- Any post-MVP feature proposal is tied to a validated user problem.
 
 ## 6. Removal and deferral strategy
 

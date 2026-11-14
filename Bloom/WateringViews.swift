@@ -36,6 +36,7 @@ struct WateringHomeView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
@@ -80,7 +81,10 @@ struct WateringHomeView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 16) {
             Image("area-whole")
-                .resizable().scaledToFill().frame(height: 220).clipped()
+                .resizable().scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: 220)
+                .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             VStack(alignment: .leading, spacing: 8) {
                 Text("Start with your plants").font(.title2.bold())

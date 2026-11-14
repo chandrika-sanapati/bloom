@@ -16,20 +16,6 @@ struct RootView: View {
     @Environment(BloomStore.self) private var store
 
     var body: some View {
-        Group {
-            if store.garden.hasStarted {
-                WateringHomeView()
-            } else {
-                VStack(spacing: 16) {
-                    Text("Bloom").font(.largeTitle.bold())
-                    Text("A focused watering assistant for four common houseplants.")
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
-                    Button("Start Bloom") { _ = store.start() }
-                        .buttonStyle(.borderedProminent)
-                }
-                .padding(32)
-            }
-        }
+        WateringHomeView()
     }
 }
