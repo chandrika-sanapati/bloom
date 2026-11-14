@@ -35,9 +35,9 @@ struct WateringHomeView: View {
                             activitySection
                         }
                     }
-                    .padding(.horizontal, 24)
                     .padding(.bottom, 32)
-                    .frame(width: geometry.size.width, alignment: .leading)
+                    .frame(width: max(0, geometry.size.width - 48), alignment: .leading)
+                    .padding(.horizontal, 24)
                 }
                 .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             }
