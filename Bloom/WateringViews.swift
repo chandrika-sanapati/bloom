@@ -87,12 +87,12 @@ struct WateringHomeView: View {
             }
             Spacer(minLength: 0)
             Button { showingSettings = true } label: {
-                Image(systemName: "bell")
+                Image(systemName: "gearshape")
                     .font(.headline.weight(.semibold))
                     .frame(width: 44, height: 44)
                     .foregroundStyle(.tint)
             }
-            .accessibilityLabel("Notification settings")
+            .accessibilityLabel("Preferences")
             .accessibilityIdentifier("home-notification-settings")
         }
         .padding(.horizontal, 20)
@@ -187,14 +187,25 @@ private struct PlantSummaryCard: View {
     let schedule: WateringSchedule?
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Image(plant.asset).resizable().scaledToFill().frame(width: 150, height: 110).clipped()
+            Image(plant.asset)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 126, height: 126)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             Text(plant.displayName).font(.headline)
-            if let schedule { Text("Check \(schedule.nextCheckAt, format: .dateTime.month().day())").font(.caption).foregroundStyle(.secondary) }
-            else { Text("Schedule unavailable").font(.caption).foregroundStyle(.secondary) }
+            if let schedule {
+                let timing = CareTaskTiming.classify(schedule.nextCheckAt)
+                Text(timing == .upcoming ? schedule.nextCheckAt.formatted(.dateTime.month().day()) : timing.rawValue)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(timing == .overdue ? .orange : .secondary)
+            } else {
+                Text("Schedule unavailable").font(.caption).foregroundStyle(.secondary)
+            }
         }
-        .frame(width: 150, alignment: .leading)
         .padding(12)
+        .frame(width: 150, alignment: .leading)
         .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -358,6 +369,7 @@ struct PlantWateringDetailView: View {
                     .listRowBackground(Color.clear)
                 }
                 Section("Watering") {
+                    LabeledContent("Added", value: schedule.createdAt.formatted(date: .abbreviated, time: .omitted))
                     LabeledContent("Next check", value: schedule.nextCheckAt.formatted(date: .abbreviated, time: .shortened))
                     LabeledContent("Starting suggestion", value: "Every \(schedule.profileIntervalDays) days")
                     if let lastWatered = store.lastWatered(for: plantID) {
@@ -499,9 +511,9 @@ private struct NotificationSettingsView: View {
                 }
                 if let message { Section { Text(message).foregroundStyle(.secondary) } }
             }
-            .navigationTitle("Notifications")
+            .navigationTitle("Preferences")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
             .overlay { if busy { ProgressView().controlSize(.large) } }
         }
     }
