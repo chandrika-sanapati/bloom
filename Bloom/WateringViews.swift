@@ -245,6 +245,9 @@ private struct WateringHistoryRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(record.outcome.rawValue).font(.headline)
                 Text(plant.displayName).font(.subheadline).foregroundStyle(.secondary)
+                if record.soil != .unknown {
+                    Text("Soil: \(record.soil.rawValue)").font(.caption).foregroundStyle(.secondary)
+                }
             }
             Spacer()
             Text(record.recordedAt, format: .dateTime.month().day()).font(.subheadline).foregroundStyle(.secondary)
@@ -333,7 +336,7 @@ private struct PlantSetupView: View {
                         onAdded()
                     }
                     .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
+                    .buttonBorderShape(.roundedRectangle(radius: 14))
                 }
             }
         }
@@ -360,9 +363,12 @@ struct PlantWateringDetailView: View {
                 }
                 Section {
                     Button { check = true } label: {
-                        Label("Check watering", systemImage: "drop.fill")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 44)
+                        HStack(spacing: 8) {
+                            Image(systemName: "drop.fill")
+                            Text("Check watering")
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle(radius: 14))
@@ -462,7 +468,7 @@ struct WateringCheckView: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") { save() }
                             .buttonStyle(.borderedProminent)
-                            .buttonBorderShape(.capsule)
+                            .buttonBorderShape(.roundedRectangle(radius: 14))
                             .disabled(outcome == nil)
                     }
                 }
