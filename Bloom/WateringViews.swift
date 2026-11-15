@@ -336,6 +336,7 @@ struct PlantWateringDetailView: View {
     @State private var check = false
     @State private var editingDate = false
     @State private var nextDate = Date()
+    @State private var confirmingRemoval = false
 
     var body: some View {
         if let plant = store.plant(plantID), let schedule = store.schedule(plantID) {
@@ -361,10 +362,22 @@ struct PlantWateringDetailView: View {
                 Section {
                     Button("Edit next check") { nextDate = schedule.nextCheckAt; editingDate = true }
                 }
+                Section {
+                    Button("Remove plant", role: .destructive) { confirmingRemoval = true }
+                }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Plant")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Remove \(plant.displayName)?", isPresented: $confirmingRemoval) {
+                Button("Remove plant", role: .destructive) {
+                    _ = store.deletePlant(plantID)
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This also removes its watering history.")
+            }
             .fullScreenCover(isPresented: $check) { WateringCheckView(plantID: plantID) }
             .sheet(isPresented: $editingDate) {
                 NavigationStack {
@@ -423,13 +436,14 @@ struct WateringCheckView: View {
                 }
                 .navigationTitle("Check watering")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-                .safeAreaInset(edge: .bottom) {
-                    Button("Save check") { save() }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(outcome == nil)
-                        .frame(maxWidth: .infinity).padding()
-                        .background(.bar)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") { save() }
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .disabled(outcome == nil)
+                    }
                 }
                 .sheet(isPresented: $dateEditing) {
                     NavigationStack {
