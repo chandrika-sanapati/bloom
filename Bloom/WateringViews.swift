@@ -351,7 +351,7 @@ struct PlantWateringDetailView: View {
                     Button { check = true } label: {
                         Label("Check watering", systemImage: "drop.fill")
                             .font(.headline)
-                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle(radius: 14))
