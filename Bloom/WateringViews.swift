@@ -64,7 +64,11 @@ struct WateringHomeView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
-            Text("Bloom").font(.largeTitle.bold())
+            HStack(spacing: 8) {
+                Image(systemName: "leaf.fill")
+                    .foregroundStyle(.tint)
+                Text("Bloom").font(.largeTitle.bold())
+            }
             Spacer(minLength: 0)
             Button { showingSettings = true } label: {
                 Image(systemName: "bell")
