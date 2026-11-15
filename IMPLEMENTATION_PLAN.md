@@ -53,6 +53,13 @@ If it does not, it should be deferred, hidden from the primary flow, or removed 
 - Do not add a control merely because the existing model supports it.
 - Do not keep a visible feature in the MVP only because it already exists.
 
+### Progressive disclosure decisions
+
+- **First launch opens directly to Home.** No onboarding gate or intro screens.
+- **Introduce one control at a time.** On an empty Home, only the `+` (Add plant) is explained, with a one-time "Tap to add a plant" hint. The hint is stored in `hasSeenAddPlantHint` and disappears on the first tap of `+`.
+- **Notifications stay secondary.** The bell is not introduced on first run, since it adds friction before the user has a plant to remind them about.
+- **Explain by doing, not by reading.** Empty-state copy names the next action; avoid adding extra helper copy beyond the hint.
+
 ### Primary experience to protect
 
 The visible MVP should make this journey feel immediate and coherent:

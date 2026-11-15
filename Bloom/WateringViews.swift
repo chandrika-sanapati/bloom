@@ -6,6 +6,7 @@ struct WateringHomeView: View {
     @State private var showingSettings = false
     @State private var selectedTab = HomeTab.upcoming
     @State private var taskPlantID: UUID?
+    @AppStorage("hasSeenAddPlantHint") private var hasSeenAddPlantHint = false
 
     enum HomeTab: String, CaseIterable, Identifiable {
         case upcoming = "Upcoming"
@@ -40,16 +41,31 @@ struct WateringHomeView: View {
             .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
             .navigationBarHidden(true)
             .overlay(alignment: .bottomTrailing) {
-                Button { showingCatalog = true } label: {
-                    Image(systemName: "plus")
-                        .font(.title2.weight(.semibold))
-                        .frame(width: 56, height: 56)
-                        .background(.tint, in: Circle())
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                VStack(alignment: .trailing, spacing: 12) {
+                    if store.garden.plants.isEmpty && !hasSeenAddPlantHint {
+                        Text("Tap to add a plant")
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(.background, in: Capsule())
+                            .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+                            .allowsHitTesting(false)
+                            .transition(.opacity)
+                    }
+                    Button {
+                        hasSeenAddPlantHint = true
+                        showingCatalog = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.title2.weight(.semibold))
+                            .frame(width: 56, height: 56)
+                            .background(.tint, in: Circle())
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                    }
+                    .accessibilityLabel("Add plant")
+                    .accessibilityIdentifier("home-add-plant")
                 }
-                .accessibilityLabel("Add plant")
-                .accessibilityIdentifier("home-add-plant")
                 .padding(20)
             }
             .sheet(isPresented: $showingCatalog) { PlantCatalogView() }
@@ -265,7 +281,7 @@ private struct PlantCatalogView: View {
             .navigationTitle("Add a plant")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
             .sheet(item: $selectedSpecies) { species in
-                PlantSetupView(species: species)
+                PlantSetupView(species: species, onAdded: { dismiss() })
             }
         }
     }
@@ -275,6 +291,7 @@ private struct PlantSetupView: View {
     @Environment(BloomStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let species: PlantSpecies
+    var onAdded: () -> Void = {}
     @State private var knowsLastWatered = false
     @State private var lastWatered = Date()
 
@@ -302,8 +319,10 @@ private struct PlantSetupView: View {
                     Button("Add") {
                         let plant = Plant(name: species.name, species: species.scientific, asset: species.asset)
                         _ = store.addPlant(plant, lastWatered: knowsLastWatered ? lastWatered : nil)
-                        dismiss()
+                        onAdded()
                     }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
                 }
             }
         }
