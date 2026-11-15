@@ -347,6 +347,16 @@ struct PlantWateringDetailView: View {
                     Text(plant.displayName).font(.title.bold())
                     Text(plant.species).font(.subheadline.italic()).foregroundStyle(.secondary)
                 }
+                Section {
+                    Button { check = true } label: {
+                        Label("Check watering", systemImage: "drop.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.roundedRectangle(radius: 14))
+                    .listRowBackground(Color.clear)
+                }
                 Section("Watering") {
                     LabeledContent("Next check", value: schedule.nextCheckAt.formatted(date: .abbreviated, time: .shortened))
                     LabeledContent("Starting suggestion", value: "Every \(schedule.profileIntervalDays) days")
@@ -355,15 +365,14 @@ struct PlantWateringDetailView: View {
                     } else {
                         LabeledContent("Last watered", value: "Not recorded")
                     }
-                    Button("Check watering") { check = true }
-                        .buttonStyle(.borderedProminent)
-                        .frame(maxWidth: .infinity)
+                    Button { nextDate = schedule.nextCheckAt; editingDate = true } label: {
+                        Label("Edit next check", systemImage: "calendar")
+                    }
                 }
                 Section {
-                    Button("Edit next check") { nextDate = schedule.nextCheckAt; editingDate = true }
-                }
-                Section {
-                    Button("Remove plant", role: .destructive) { confirmingRemoval = true }
+                    Button(role: .destructive) { confirmingRemoval = true } label: {
+                        Label("Remove plant", systemImage: "trash")
+                    }
                 }
             }
             .listStyle(.insetGrouped)
